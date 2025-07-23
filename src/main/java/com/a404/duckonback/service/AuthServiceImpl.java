@@ -4,22 +4,20 @@ import com.a404.duckonback.dto.LoginRequestDTO;
 import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.repository.ArtistRepository;
-import lombok.AllArgsConstructor;
+import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthServiceImpl {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final UserService userService;
-    private final ArtistService artistService;
+    private final UserServiceImpl userServiceImpl;
+    private final ArtistServiceImpl artistServiceImpl;
 
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         String email = loginRequest.getEmail();
@@ -27,27 +25,27 @@ public class AuthService {
         String password = loginRequest.getPassword();
 
         if ((email == null || email.isBlank()) && (userId == null || userId.isBlank())) {
-            throw new RuntimeException("email 또는 userId 중 하나는 필수입니다.");
+            throw new CustomException("email 또는 userId 중 하나는 필수입니다.", HttpStatus.BAD_REQUEST);
         }
 
         if (password == null || password.isBlank()) {
-            throw new RuntimeException("비밀번호는 필수 입력입니다.");
+            throw new CustomException("비밀번호는 필수 입력입니다.", HttpStatus.BAD_REQUEST);
         }
 
         User user = null;
         if (email != null && !email.isBlank()) {
-            user = userService.findByEmail(email);
+            user = userServiceImpl.findByEmail(email);
         } else if (userId != null && !userId.isBlank()) {
-            user = userService.findByUserId(userId);
+            user = userServiceImpl.findByUserId(userId);
         }
 
         if (user == null) {
-            throw new RuntimeException("없는 사용자입니다.");
+            throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED);
         }
 
         //비밀번호 일치 확인 ( 암호화 )
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("비밀번호 불일치");
+            throw new CustomException("비밀번호가 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
         }
 
         //토근 생성
@@ -62,7 +60,7 @@ public class AuthService {
                 .role(user.getRole().name())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(artistService.findAllArtistIdByUserUuid(user.getUuid()))
+                .artistList(artistServiceImpl.findAllArtistIdByUserUuid(user.getUuid()))
                 .build();
 
         return LoginResponseDTO.builder()
