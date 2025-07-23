@@ -3,20 +3,20 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.ArtistFollow;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class ArtistService {
+public class ArtistServiceImpl {
 
     private final ArtistRepository artistRepository;
     private final UserRepository userRepository;
@@ -31,7 +31,8 @@ public class ArtistService {
 
         for (Integer artistId : artistList) {
             Artist artist = artistRepository.findById(artistId)
-                    .orElseThrow(() -> new RuntimeException("아티스트 없음: " + artistId));
+                    .orElseThrow(() -> new CustomException("존재하지 않는 아티스트입니다. ID: " + artistId, HttpStatus.NOT_FOUND));
+
 
             ArtistFollow artistFollow = ArtistFollow.builder()
                     .user(user)

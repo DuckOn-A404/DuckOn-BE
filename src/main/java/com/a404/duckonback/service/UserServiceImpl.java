@@ -4,7 +4,6 @@ import com.a404.duckonback.dto.SignupRequestDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.UserRole;
 import com.a404.duckonback.repository.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,12 +15,12 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserServiceImpl {
 
     private final PasswordEncoder passwordEncoder;
 
     private final UserRepository userRepository;
-    private final ArtistService artistService;
+    private final ArtistServiceImpl artistServiceImpl;
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -53,7 +52,7 @@ public class UserService {
         userRepository.save(user);
 
         if (dto.getArtistList() != null && !dto.getArtistList().isEmpty()) {
-            artistService.followArtists(user.getUuid(), dto.getArtistList());
+            artistServiceImpl.followArtists(user.getUuid(), dto.getArtistList());
         }
 
         return ResponseEntity.ok().body("회원가입이 성공적으로 완료되었습니다!");
