@@ -5,7 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -44,31 +45,46 @@ public class User {
     @Column(name = "img_url", columnDefinition = "TEXT")
     private String imgUrl;
 
-
+    @Builder.Default
     @OneToMany(mappedBy = "reporter")
-    private List<Report> reportsAsReporter;
+    private List<Report> reportsAsReporter = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "reported")
-    private List<Report> reportsAsReported;
+    private List<Report> reportsAsReported = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "blocker")
-    private List<UserBlock> blockedUsers;
+    private List<UserBlock> blockedUsers = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "blocked")
-    private List<UserBlock> blockedByUsers;
+    private List<UserBlock> blockedByUsers = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "follower")
-    private List<Follow> following;
+    private List<Follow> following = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "following")
-    private List<Follow> followers;
+    private List<Follow> followers = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user")
-    private List<ArtistFollow> artistFollows;
+    private List<ArtistFollow> artistFollows = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user")
-    private List<Penalty> penalties;
+    private List<Penalty> penalties = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "creator")
-    private List<Room> rooms;
+    private List<Room> rooms = new ArrayList<>();
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
