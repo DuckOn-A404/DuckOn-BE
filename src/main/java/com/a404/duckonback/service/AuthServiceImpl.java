@@ -5,6 +5,7 @@ import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,10 +15,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final PasswordEncoder passwordEncoder;
-
     private final UserServiceImpl userServiceImpl;
     private final ArtistServiceImpl artistServiceImpl;
+
+    private final PasswordEncoder passwordEncoder;
+    private final JWTUtil jwtUtil;
 
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         String email = loginRequest.getEmail();
@@ -49,8 +51,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         //토근 생성
-        String accessToken = "";
-        String refreshToken = "";
+        String accessToken = jwtUtil.generateAccessToken(user);
+        String refreshToken = jwtUtil.generateRefreshToken(user);
 
         UserDTO userDTO = UserDTO.builder()
                 .email(user.getEmail())
