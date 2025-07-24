@@ -21,7 +21,7 @@ import javax.crypto.SecretKey;
 
 @Component
 public class JWTUtil {
-
+    // (임시) 임의 키로 토큰 생성
     private final Key key = Keys.hmacShaKeyFor("DuckOnSecretKeyMustBeAtLeast32ByteLong".getBytes(StandardCharsets.UTF_8));
 
 //    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // ( 임시 ) 서버 실행마다 바뀜 -> 기존 토큰 무효화됨

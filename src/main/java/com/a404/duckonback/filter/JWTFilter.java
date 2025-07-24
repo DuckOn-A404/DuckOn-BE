@@ -1,8 +1,7 @@
-package com.a404.duckonback.Filter;
+package com.a404.duckonback.filter;
 
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.repository.UserRepository;
-import com.a404.duckonback.service.UserServiceImpl;
 import com.a404.duckonback.util.JWTUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -18,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
