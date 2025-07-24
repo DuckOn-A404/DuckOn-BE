@@ -46,6 +46,12 @@ public class AuthController {
         return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
     }
 
+    @GetMapping("/user-id/{userId}/exists")
+    public ResponseEntity<?> checkUserIdDuplicate(@PathVariable String userId) {
+        boolean isDuplicate = userService.isUserIdDuplicate(userId);
+        return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
+    }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
