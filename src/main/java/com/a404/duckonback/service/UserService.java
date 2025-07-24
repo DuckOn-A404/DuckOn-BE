@@ -8,5 +8,6 @@ public interface UserService {
     void save(User user);
     boolean isEmailDuplicate(String email);
     boolean isUserIdDuplicate(String userId);
+    boolean isNicknameDuplicate(String nickname);
 
 }
