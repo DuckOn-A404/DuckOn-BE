@@ -6,4 +6,6 @@ public interface UserService {
     User findByEmail(String email);
     User findByUserId(String userId);
     void save(User user);
+    boolean isEmailDuplicate(String email);
+
 }
