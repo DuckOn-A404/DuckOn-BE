@@ -1,6 +1,9 @@
 package com.a404.duckonback.util;
 
+import com.a404.duckonback.config.ServiceProperties;
 import com.a404.duckonback.entity.User;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.stereotype.Component;
@@ -20,28 +23,34 @@ import javax.crypto.SecretKey;
 
 
 @Component
+@RequiredArgsConstructor
 public class JWTUtil {
-    // (임시) 임의 키로 토큰 생성
-    private final Key key = Keys.hmacShaKeyFor("DuckOnSecretKeyMustBeAtLeast32ByteLong".getBytes(StandardCharsets.UTF_8));
 
-//    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // ( 임시 ) 서버 실행마다 바뀜 -> 기존 토큰 무효화됨
-    private final long accessTokenExpiration = 1000L * 60 * 60 * 24 * 30; // ( 임시 ) 30일
-    private final long refreshTokenExpiration = 1000L * 60 * 60 * 24 * 30; // ( 임시 ) 30일
+    private final ServiceProperties serviceProperties;
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(
+                serviceProperties.getJwtSecret().getBytes(StandardCharsets.UTF_8)
+        );
+    }
 
     public String generateAccessToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getUserId())
                 .claim("role", user.getRole())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + serviceProperties.getAccessTokenExpiration()))
                 .signWith(key)
                 .compact();
     }
+
     public String generateRefreshToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getUserId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + serviceProperties.getRefreshTokenExpiration()))
                 .signWith(key)
                 .compact();
     }
