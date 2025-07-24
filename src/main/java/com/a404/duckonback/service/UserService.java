@@ -7,5 +7,6 @@ public interface UserService {
     User findByUserId(String userId);
     void save(User user);
     boolean isEmailDuplicate(String email);
+    boolean isUserIdDuplicate(String userId);
 
 }
