@@ -3,6 +3,7 @@ package com.a404.duckonback.oauth.handler;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.util.CookieUtil;
 import com.a404.duckonback.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
