@@ -40,7 +40,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByUserId(userId);
     }
 
-
-
+    public boolean isNicknameDuplicate(String nickname) {
+        return userRepository.existsByNickname(nickname);
+    }
 
 }

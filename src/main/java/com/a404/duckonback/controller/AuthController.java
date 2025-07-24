@@ -52,6 +52,12 @@ public class AuthController {
         return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
     }
 
+    @GetMapping("/nickname/exists")
+    public ResponseEntity<?> checkNicknameDuplicate(@RequestParam String nickname) {
+        boolean isDuplicate = userService.isNicknameDuplicate(nickname);
+        return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
+    }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
