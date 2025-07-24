@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.UserInfoResponseDTO;
 import com.a404.duckonback.entity.User;
 
 public interface UserService {
@@ -9,5 +10,5 @@ public interface UserService {
     boolean isEmailDuplicate(String email);
     boolean isUserIdDuplicate(String userId);
     boolean isNicknameDuplicate(String nickname);
-
+    UserInfoResponseDTO getUserInfo(String accessToken);
 }
