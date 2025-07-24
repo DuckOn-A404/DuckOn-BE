@@ -40,14 +40,15 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/email/{email}/exists")
-    public ResponseEntity<?> checkEmailDuplicate(@PathVariable String email) {
+
+    @GetMapping("/email/exists")
+    public ResponseEntity<?> checkEmailDuplicate(@RequestParam String email) {
         boolean isDuplicate = userService.isEmailDuplicate(email);
         return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
     }
 
-    @GetMapping("/user-id/{userId}/exists")
-    public ResponseEntity<?> checkUserIdDuplicate(@PathVariable String userId) {
+    @GetMapping("/user-id/exists")
+    public ResponseEntity<?> checkUserIdDuplicate(@RequestParam String userId) {
         boolean isDuplicate = userService.isUserIdDuplicate(userId);
         return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
     }
