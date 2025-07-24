@@ -2,6 +2,7 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.LoginRequestDTO;
 import com.a404.duckonback.dto.SignupRequestDTO;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.AuthService;
 import com.a404.duckonback.service.AuthServiceImpl;
 import com.a404.duckonback.service.UserService;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -36,22 +39,19 @@ public class AuthController {
         }
     }
 
-//    @PostMapping("/refresh")
-//    public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
-//        // Bearer 제거
-//        if (!refreshTokenHeader.startsWith("Bearer ")) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("잘못된 형식의 토큰입니다.");
-//        }
-//
-//        String refreshToken = refreshTokenHeader.substring(7);
-//
-//        try {
-//            String newAccessToken = authService.refreshAccessToken(refreshToken);
-//            return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-//        }
-//    }
+
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
+        try {
+            String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
+            return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
+        } catch (CustomException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
 
 
 }

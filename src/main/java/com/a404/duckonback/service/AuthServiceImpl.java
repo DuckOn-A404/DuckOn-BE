@@ -9,6 +9,7 @@ import com.a404.duckonback.enums.UserRole;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.util.JWTUtil;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -63,6 +65,8 @@ public class AuthServiceImpl implements AuthService {
         //토근 생성
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
+        
+        //(추가 필요 )redis에 저장
 
         UserDTO userDTO = UserDTO.builder()
                 .email(user.getEmail())
@@ -108,5 +112,27 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return ResponseEntity.ok().body("회원가입이 성공적으로 완료되었습니다!");
+    }
+
+    public String refreshAccessToken(String refreshTokenHeader){
+                // Bearer 제거
+        if (!refreshTokenHeader.startsWith("Bearer ")) {
+            throw new CustomException("잘못된 형식의 토큰입니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        String refreshToken = refreshTokenHeader.substring(7);
+
+        if (!jwtUtil.validateToken(refreshToken)) {
+            throw new CustomException("유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        Claims claims = jwtUtil.getClaims(refreshToken);
+        String userId = claims.getSubject();
+
+        // (추가 필요 ) redis에 저장된 refreshToken과 비교
+
+
+        User user = userService.findByUserId(userId);
+        return jwtUtil.generateAccessToken(user);
     }
 }
