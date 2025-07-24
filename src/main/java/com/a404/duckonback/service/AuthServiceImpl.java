@@ -38,6 +38,10 @@ public class AuthServiceImpl implements AuthService {
         String userId = loginRequest.getUserId();
         String password = loginRequest.getPassword();
 
+        if((email != null && !email.isBlank()) && (userId != null && !userId.isBlank())){
+            throw new CustomException("email 또는 userId 중 하나만 입력해야합니다.", HttpStatus.BAD_REQUEST);
+        }
+
         if ((email == null || email.isBlank()) && (userId == null || userId.isBlank())) {
             throw new CustomException("email 또는 userId 중 하나는 필수입니다.", HttpStatus.BAD_REQUEST);
         }
