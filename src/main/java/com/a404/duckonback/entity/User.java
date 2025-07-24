@@ -1,5 +1,6 @@
 package com.a404.duckonback.entity;
 
+import com.a404.duckonback.enums.SocialProvider;
 import com.a404.duckonback.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,6 +32,16 @@ public class User {
 
     @Column(name = "nickname", nullable = false, length = 100)
     private String nickname;
+
+    @Column(name = "provider", length = 20)
+    @Enumerated(EnumType.STRING)
+    private SocialProvider provider; // GOOGLE, KAKAO, NAVER, LOCAL
+
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
+    @Column(name = "has_local_credential")
+    private Boolean hasLocalCredential; // ID/PW 직접 설정 여부
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
