@@ -52,7 +52,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         if (user == null) {
             // 신규 가입
             user = User.builder()
-                    .uuid(UUID.randomUUID().toString())
                     .email(info.getEmail() != null ? info.getEmail() : generateFakeEmail(info))
                     .userId(generateRandomUserId()) // 외부 공개용 고정 ID
                     .password("oauth")              // 더미값 (NOT NULL 방지)
