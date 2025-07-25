@@ -5,6 +5,7 @@ import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.SignupRequestDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.PenaltyStatus;
 import com.a404.duckonback.enums.PenaltyType;
 import com.a404.duckonback.enums.UserRole;
 import com.a404.duckonback.exception.CustomException;
@@ -67,7 +68,8 @@ public class AuthServiceImpl implements AuthService {
         boolean isSuspended = user.getPenalties().stream()
                 .anyMatch(p -> p.getPenaltyType() == PenaltyType.ACCOUNT_SUSPENSION
                         && (p.getStartAt() == null || !p.getStartAt().isAfter(now))
-                        && (p.getEndAt() == null || p.getEndAt().isAfter(now)));
+                        && (p.getEndAt() == null || p.getEndAt().isAfter(now))
+                        && (p.getStatus() == PenaltyStatus.ACTIVE));
 
         if (isSuspended) {
             throw new CustomException("계정이 정지되었습니다. 고객센터에 문의하세요.", HttpStatus.FORBIDDEN);
