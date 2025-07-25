@@ -7,10 +7,7 @@ import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -20,6 +17,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final JWTUtil jwtUtil;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authorization) {
@@ -34,4 +32,16 @@ public class UserController {
                     .body(Map.of("message", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
         }
     }
+
+
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteUser(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @RequestHeader("X-Refresh-Token") String refreshTokenHeader) {
+
+        userService.deleteUser(accessTokenHeader, refreshTokenHeader);
+        return ResponseEntity.ok(Map.of("message", "회원탈퇴가 완료되었습니다."));
+    }
+
+
 }
