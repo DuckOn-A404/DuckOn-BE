@@ -5,6 +5,7 @@ import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.SignupRequestDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.PenaltyType;
 import com.a404.duckonback.enums.UserRole;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.UserRepository;
@@ -59,6 +60,17 @@ public class AuthServiceImpl implements AuthService {
 
         if (user == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+
+        LocalDateTime now = LocalDateTime.now();
+        boolean isSuspended = user.getPenalties().stream()
+                .anyMatch(p -> p.getPenaltyType() == PenaltyType.ACCOUNT_SUSPENSION
+                        && (p.getStartAt() == null || !p.getStartAt().isAfter(now))
+                        && (p.getEndAt() == null || p.getEndAt().isAfter(now)));
+
+        if (isSuspended) {
+            throw new CustomException("계정이 정지되었습니다. 고객센터에 문의하세요.", HttpStatus.FORBIDDEN);
         }
 
         //비밀번호 일치 확인 ( 암호화 )
