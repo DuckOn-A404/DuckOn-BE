@@ -62,14 +62,16 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
-        try {
-            String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
-            return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
-        } catch (CustomException e) {
-            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+        String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
+        return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
+//        try {
+//            String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
+//            return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
+//        } catch (CustomException e) {
+//            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+//        }
     }
 
 
