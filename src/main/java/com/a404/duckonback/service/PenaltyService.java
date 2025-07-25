@@ -17,4 +17,5 @@ public interface PenaltyService {
     List<Penalty> getPenaltiesByUser(Long id);
     List<Penalty> getPenaltiesByStatus(PenaltyStatus status);
     List<Penalty> getPenaltiesByType(PenaltyType type);
+    List<Penalty> getActivePenaltiesByUser(Long userId);
 }
