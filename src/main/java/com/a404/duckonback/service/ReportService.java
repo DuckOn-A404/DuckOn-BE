@@ -14,8 +14,8 @@ public interface ReportService {
     Report updateReport(Long reportId, Report updatedReport);
     void deleteReport(Long reportId);
 
-    List<Report> getReportsByReporter(String uuid);
-    List<Report> getReportsByReported(String uuid);
+    List<Report> getReportsByReporter(Long id);
+    List<Report> getReportsByReported(Long id);
     List<Report> getReportsByStatus(ReportStatus status);
     List<Report> getReportsByType(ReportType type);
 }

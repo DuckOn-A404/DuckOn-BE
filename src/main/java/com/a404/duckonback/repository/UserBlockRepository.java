@@ -9,8 +9,8 @@ import java.util.List;
 
 @Repository
 public interface UserBlockRepository extends JpaRepository<UserBlock, UserBlockId> {
-    List<UserBlock> findByBlocker_Uuid(String blockerUuid);
-    List<UserBlock> findByBlocked_Uuid(String blockedUuid);
-    boolean existsByBlocker_UuidAndBlocked_Uuid(String blockerUuid, String blockedUuid);
-    void deleteByBlocker_UuidAndBlocked_Uuid(String blockerUuid, String blockedUuid);
+    List<UserBlock> findByBlocker_Id(Long blockerId);
+    List<UserBlock> findByBlocked_Id(Long blockedId);
+    boolean existsByBlocker_IdAndBlocked_Id(Long blockerId, Long blockedId);
+    void deleteByBlocker_IdAndBlocked_Id(Long blockerId, Long blockedId);
 }

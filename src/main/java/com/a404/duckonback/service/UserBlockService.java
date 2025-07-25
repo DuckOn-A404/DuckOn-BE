@@ -7,9 +7,9 @@ import java.util.Optional;
 
 public interface UserBlockService {
     UserBlock createUserBlock(UserBlock userBlock);
-    Optional<UserBlock> getUserBlock(String blockerUuid, String blockedUuid);
-    List<UserBlock> getBlocksByBlocker(String blockerUuid);
-    List<UserBlock> getBlocksByBlocked(String blockedUuid);
-    boolean isUserBlocked(String blockerUuid, String blockedUuid);
-    void deleteUserBlock(String blockerUuid, String blockedUuid);
+    Optional<UserBlock> getUserBlock(Long blockerId, Long blockedId);
+    List<UserBlock> getBlocksByBlocker(Long blockerId);
+    List<UserBlock> getBlocksByBlocked(Long blockedId);
+    boolean isUserBlocked(Long blockerId, Long blockedId);
+    void deleteUserBlock(Long blockerId, Long blockedId);
 }

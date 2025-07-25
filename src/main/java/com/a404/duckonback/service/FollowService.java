@@ -7,9 +7,9 @@ import java.util.Optional;
 
 public interface FollowService {
     Follow createFollow(Follow follow);
-    Optional<Follow> getFollow(String followerUuid, String followingUuid);
-    List<Follow> getFollowings(String followerUuid);
-    List<Follow> getFollowers(String followingUuid);
-    void deleteFollow(String followerUuid, String followingUuid);
-    boolean isFollowing(String followerUuid, String followingUuid);
+    Optional<Follow> getFollow(Long followerId, Long followingId);
+    List<Follow> getFollowings(Long followerId);
+    List<Follow> getFollowers(Long followingId);
+    void deleteFollow(Long followerId, Long followingId);
+    boolean isFollowing(Long followerId, Long followingId);
 }

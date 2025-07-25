@@ -23,12 +23,12 @@ public class ArtistServiceImpl implements ArtistService {
     private final UserRepository userRepository;
     private final ArtistFollowRepository artistFollowRepository;
 
-    public List<Integer> findAllArtistIdByUserUuid(String uuid){
-        return artistRepository.findAllArtistIdByUserUuid(uuid);
+    public List<Integer> findAllArtistIdByUserId(Long id){
+        return artistRepository.findAllArtistIdByUserId(id);
     }
 
-    public void followArtists(String uuid, List<Integer> artistList){
-        User user = userRepository.findByUuid(uuid);
+    public void followArtists(Long id, List<Integer> artistList){
+        User user = userRepository.findById(id);
 
         for (Integer artistId : artistList) {
             Artist artist = artistRepository.findById(artistId)

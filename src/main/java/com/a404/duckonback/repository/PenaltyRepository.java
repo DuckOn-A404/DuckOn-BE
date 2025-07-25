@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface PenaltyRepository extends JpaRepository<Penalty, Long> {
-    List<Penalty> findByUser_Uuid(String uuid);
+    List<Penalty> findByUser_Id(Long Id);
     List<Penalty> findByStatus(PenaltyStatus status);
     List<Penalty> findByPenaltyType(PenaltyType type);
 }
