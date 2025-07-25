@@ -20,6 +20,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
     private final RoomRepository roomRepository;
+    private final JWTUtil jWTUtil;
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -44,9 +45,10 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByNickname(nickname);
     }
 
-    public UserDetailInfoResponseDTO getUserInfo(String accessToken) {
-        String userId = jwtUtil.getClaims(accessToken).getSubject();
+    public UserDetailInfoResponseDTO getUserDetailInfo(String authorization) {
+        String accessToken = jwtUtil.extractAndValidateToken(authorization);
 
+        String userId = jwtUtil.getClaims(accessToken).getSubject();
         User user = userRepository.findByUserId(userId);
 
         if(user == null){

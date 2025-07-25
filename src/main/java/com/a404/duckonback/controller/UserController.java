@@ -3,6 +3,7 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.UserService;
+import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,7 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authorization) {
         try {
-            // "Bearer " 접두사 제거
-            String accessToken = authorization.replace("Bearer ", "");
-            UserDetailInfoResponseDTO userInfo = userService.getUserInfo(accessToken);
+            UserDetailInfoResponseDTO userInfo = userService.getUserDetailInfo(authorization);
             return ResponseEntity.ok(userInfo);
         } catch (CustomException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
