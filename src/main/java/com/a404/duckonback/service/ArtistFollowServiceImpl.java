@@ -21,13 +21,13 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
     }
 
     @Override
-    public Optional<ArtistFollow> getArtistFollow(String uuid, Integer artistId) {
-        return artistFollowRepository.findById(new ArtistFollowId(uuid, artistId));
+    public Optional<ArtistFollow> getArtistFollow(Long id, Integer artistId) {
+        return artistFollowRepository.findById(new ArtistFollowId(id, artistId));
     }
 
     @Override
-    public List<ArtistFollow> getFollowsByUser(String uuid) {
-        return artistFollowRepository.findByUser_Uuid(uuid);
+    public List<ArtistFollow> getFollowsByUser(Long id) {
+        return artistFollowRepository.findByUser_Id(id);
     }
 
     @Override
@@ -36,12 +36,12 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
     }
 
     @Override
-    public void deleteArtistFollow(String uuid, Integer artistId) {
-        artistFollowRepository.deleteByUser_UuidAndArtist_ArtistId(uuid, artistId);
+    public void deleteArtistFollow(Long id, Integer artistId) {
+        artistFollowRepository.deleteByUser_IdAndArtist_ArtistId(id, artistId);
     }
 
     @Override
-    public boolean isFollowingArtist(String uuid, Integer artistId) {
-        return artistFollowRepository.existsByUser_UuidAndArtist_ArtistId(uuid, artistId);
+    public boolean isFollowingArtist(Long id, Integer artistId) {
+        return artistFollowRepository.existsByUser_IdAndArtist_ArtistId(id, artistId);
     }
 }

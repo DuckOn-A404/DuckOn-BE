@@ -52,8 +52,8 @@ public class PenaltyServiceImpl implements PenaltyService {
     }
 
     @Override
-    public List<Penalty> getPenaltiesByUser(String uuid) {
-        return penaltyRepository.findByUser_Uuid(uuid);
+    public List<Penalty> getPenaltiesByUser(Long id) {
+        return penaltyRepository.findByUser_Id(id);
     }
 
     @Override

@@ -80,7 +80,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole().name())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(artistService.findAllArtistIdByUserUuid(user.getUuid()))
+                .artistList(artistService.findAllArtistIdByUserId(user.getId()))
                 .build();
 
         return LoginResponseDTO.builder()
@@ -98,7 +98,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = User.builder()
-                .uuid(UUID.randomUUID().toString())
                 .email(dto.getEmail())
                 .userId(dto.getUserId())
                 .password(passwordEncoder.encode(dto.getPassword()))
@@ -112,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
         userService.save(user);
 
         if (dto.getArtistList() != null && !dto.getArtistList().isEmpty()) {
-            artistService.followArtists(user.getUuid(), dto.getArtistList());
+            artistService.followArtists(user.getId(), dto.getArtistList());
         }
 
         return ResponseEntity.ok().body("회원가입이 성공적으로 완료되었습니다!");

@@ -16,9 +16,13 @@ import java.util.List;
 @Builder
 public class User {
 
+//    @Id
+//    @Column(name = "id", nullable = false, length = 255)
+//    private String id;
     @Id
-    @Column(name = "uuid", nullable = false, length = 255)
-    private String uuid;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
