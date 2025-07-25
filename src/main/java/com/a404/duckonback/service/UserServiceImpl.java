@@ -23,7 +23,6 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
     private final RoomRepository roomRepository;
-    private final JWTUtil jWTUtil;
     private final PenaltyService penaltyService;
 
     public User findByEmail(String email) {
