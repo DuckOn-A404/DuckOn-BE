@@ -21,6 +21,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest){
@@ -39,6 +40,24 @@ public class AuthController {
         }
     }
 
+
+    @GetMapping("/email/exists")
+    public ResponseEntity<?> checkEmailDuplicate(@RequestParam String email) {
+        boolean isDuplicate = userService.isEmailDuplicate(email);
+        return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
+    }
+
+    @GetMapping("/user-id/exists")
+    public ResponseEntity<?> checkUserIdDuplicate(@RequestParam String userId) {
+        boolean isDuplicate = userService.isUserIdDuplicate(userId);
+        return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
+    }
+
+    @GetMapping("/nickname/exists")
+    public ResponseEntity<?> checkNicknameDuplicate(@RequestParam String nickname) {
+        boolean isDuplicate = userService.isNicknameDuplicate(nickname);
+        return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
+    }
 
 
     @PostMapping("/refresh")
