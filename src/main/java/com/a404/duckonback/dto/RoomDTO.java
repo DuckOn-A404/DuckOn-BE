@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class RoomDTO {
-    private String roomId;
+    private Long roomId;
     private String title;
     private String imgUrl;
     private LocalDateTime createdAt;
