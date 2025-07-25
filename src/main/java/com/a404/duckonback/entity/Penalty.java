@@ -34,7 +34,7 @@ public class Penalty {
     private String reason;
 
     @ManyToOne
-    @JoinColumn(name = "uuid", nullable = false)
+    @JoinColumn(name = "id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)

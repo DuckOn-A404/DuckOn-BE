@@ -21,27 +21,27 @@ public class UserBlockServiceImpl implements UserBlockService {
     }
 
     @Override
-    public Optional<UserBlock> getUserBlock(String blockerUuid, String blockedUuid) {
-        return userBlockRepository.findById(new UserBlockId(blockerUuid, blockedUuid));
+    public Optional<UserBlock> getUserBlock(Long blockerId, Long blockedId) {
+        return userBlockRepository.findById(new UserBlockId(blockerId, blockedId));
     }
 
     @Override
-    public List<UserBlock> getBlocksByBlocker(String blockerUuid) {
-        return userBlockRepository.findByBlocker_Uuid(blockerUuid);
+    public List<UserBlock> getBlocksByBlocker(Long blockerId) {
+        return userBlockRepository.findByBlocker_Id(blockerId);
     }
 
     @Override
-    public List<UserBlock> getBlocksByBlocked(String blockedUuid) {
-        return userBlockRepository.findByBlocked_Uuid(blockedUuid);
+    public List<UserBlock> getBlocksByBlocked(Long blockedId) {
+        return userBlockRepository.findByBlocked_Id(blockedId);
     }
 
     @Override
-    public boolean isUserBlocked(String blockerUuid, String blockedUuid) {
-        return userBlockRepository.existsByBlocker_UuidAndBlocked_Uuid(blockerUuid, blockedUuid);
+    public boolean isUserBlocked(Long blockerId, Long blockedId) {
+        return userBlockRepository.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId);
     }
 
     @Override
-    public void deleteUserBlock(String blockerUuid, String blockedUuid) {
-        userBlockRepository.deleteByBlocker_UuidAndBlocked_Uuid(blockerUuid, blockedUuid);
+    public void deleteUserBlock(Long blockerId, Long blockedId) {
+        userBlockRepository.deleteByBlocker_IdAndBlocked_Id(blockerId, blockedId);
     }
 }

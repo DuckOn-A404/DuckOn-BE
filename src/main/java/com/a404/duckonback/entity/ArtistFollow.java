@@ -17,7 +17,7 @@ public class ArtistFollow {
 
     @Id
     @ManyToOne
-    @JoinColumn(name = "uuid", nullable = false)
+    @JoinColumn(name = "id", nullable = false)
     private User user;
 
     @Id

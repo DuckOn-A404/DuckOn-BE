@@ -13,9 +13,9 @@ import java.util.List;
 
 @Repository
 public interface ArtistFollowRepository extends JpaRepository<ArtistFollow, ArtistFollowId> {
-    List<ArtistFollow> findByUser_Uuid(String uuid);
+    List<ArtistFollow> findByUser_Id(Long id);
     List<ArtistFollow> findByArtist_ArtistId(Integer artistId);
-    boolean existsByUser_UuidAndArtist_ArtistId(String uuid, Integer artistId);
-    void deleteByUser_UuidAndArtist_ArtistId(String uuid, Integer artistId);
+    boolean existsByUser_IdAndArtist_ArtistId(Long id, Integer artistId);
+    void deleteByUser_IdAndArtist_ArtistId(Long id, Integer artistId);
   
 }

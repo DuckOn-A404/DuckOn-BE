@@ -49,8 +49,8 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public List<Room> getRoomsByCreator(String uuid) {
-        return roomRepository.findByCreator_Uuid(uuid);
+    public List<Room> getRoomsByCreator(Long id) {
+        return roomRepository.findByCreator_Id(id);
     }
 
     @Override

@@ -53,13 +53,13 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public List<Report> getReportsByReporter(String uuid) {
-        return reportRepository.findByReporter_Uuid(uuid);
+    public List<Report> getReportsByReporter(Long id) {
+        return reportRepository.findByReporter_Id(id);
     }
 
     @Override
-    public List<Report> getReportsByReported(String uuid) {
-        return reportRepository.findByReported_Uuid(uuid);
+    public List<Report> getReportsByReported(Long id) {
+        return reportRepository.findByReported_Id(id);
     }
 
     @Override

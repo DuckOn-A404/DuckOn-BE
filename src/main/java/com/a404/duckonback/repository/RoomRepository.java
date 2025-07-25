@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Integer> {
-    List<Room> findByCreator_Uuid(String uuid);       // 해당 유저가 만든 방
+    List<Room> findByCreator_Id(Long id);       // 해당 유저가 만든 방
     List<Room> findByArtist_ArtistId(Integer artistId); // 특정 아티스트 방
 }
