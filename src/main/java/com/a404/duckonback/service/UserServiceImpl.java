@@ -32,4 +32,16 @@ public class UserServiceImpl implements UserService {
     public void save(User user) { userRepository.save(user);}
 
 
+    public boolean isEmailDuplicate(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public boolean isUserIdDuplicate(String userId) {
+        return userRepository.existsByUserId(userId);
+    }
+
+    public boolean isNicknameDuplicate(String nickname) {
+        return userRepository.existsByNickname(nickname);
+    }
+
 }
