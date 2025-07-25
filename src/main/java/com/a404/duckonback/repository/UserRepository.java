@@ -1,6 +1,7 @@
 package com.a404.duckonback.repository;
 
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.SocialProvider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByEmail(String email);
     boolean existsByUserId(String userId);
     boolean existsByNickname(String nickname);
+
+    User findByProviderAndProviderId(SocialProvider provider, String providerId);
 }
