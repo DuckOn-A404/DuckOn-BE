@@ -1,8 +1,6 @@
 package com.a404.duckonback.dto;
 
-import com.a404.duckonback.enums.UserRole;
 import lombok.*;
-import org.springframework.context.support.BeanDefinitionDsl;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,7 +10,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserInfoResponseDTO {
+public class UserDetailInfoResponseDTO {
     private String email;
     private String userId;
     private String nickname;
