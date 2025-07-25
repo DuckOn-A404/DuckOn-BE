@@ -2,7 +2,6 @@ package com.a404.duckonback.dto;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -20,8 +19,8 @@ public class UserDetailInfoResponseDTO {
     private List<Integer> artistList;
     private int followingCount;
     private int followerCount;
-    private LocalDateTime bannedTill;
     private String password;
     private List<RoomDTO> roomList;
+    private List<PenaltyDTO> penaltyList;
 
 }
