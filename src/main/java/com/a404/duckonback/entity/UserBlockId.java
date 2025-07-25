@@ -8,6 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class UserBlockId implements Serializable {
-    private String blocker;
-    private String blocked;
+    private Long blocker;
+    private Long blocked;
 }

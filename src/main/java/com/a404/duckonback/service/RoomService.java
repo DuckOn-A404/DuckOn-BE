@@ -11,6 +11,6 @@ public interface RoomService {
     List<Room> getAllRooms();
     Room updateRoom(Integer roomId, Room updatedRoom);
     void deleteRoom(Integer roomId);
-    List<Room> getRoomsByCreator(String uuid);
+    List<Room> getRoomsByCreator(Long id);
     List<Room> getRoomsByArtist(Integer artistId);
 }

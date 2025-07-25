@@ -21,27 +21,27 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
-    public Optional<Follow> getFollow(String followerUuid, String followingUuid) {
-        return followRepository.findById(new FollowId(followerUuid, followingUuid));
+    public Optional<Follow> getFollow(Long followerId, Long followingId) {
+        return followRepository.findById(new FollowId(followerId, followingId));
     }
 
     @Override
-    public List<Follow> getFollowings(String followerUuid) {
-        return followRepository.findByFollower_Uuid(followerUuid);
+    public List<Follow> getFollowings(Long followerId) {
+        return followRepository.findByFollower_Id(followerId);
     }
 
     @Override
-    public List<Follow> getFollowers(String followingUuid) {
-        return followRepository.findByFollowing_Uuid(followingUuid);
+    public List<Follow> getFollowers(Long followingId) {
+        return followRepository.findByFollowing_Id(followingId);
     }
 
     @Override
-    public void deleteFollow(String followerUuid, String followingUuid) {
-        followRepository.deleteByFollower_UuidAndFollowing_Uuid(followerUuid, followingUuid);
+    public void deleteFollow(Long followerId, Long followingId) {
+        followRepository.deleteByFollower_IdAndFollowing_Id(followerId, followingId);
     }
 
     @Override
-    public boolean isFollowing(String followerUuid, String followingUuid) {
-        return followRepository.existsByFollower_UuidAndFollowing_Uuid(followerUuid, followingUuid);
+    public boolean isFollowing(Long followerId, Long followingId) {
+        return followRepository.existsByFollower_IdAndFollowing_Id(followerId, followingId);
     }
 }

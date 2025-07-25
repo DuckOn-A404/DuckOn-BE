@@ -14,7 +14,7 @@ public interface PenaltyService {
     Penalty updatePenalty(Long penaltyId, Penalty updatedPenalty);
     void deletePenalty(Long penaltyId);
 
-    List<Penalty> getPenaltiesByUser(String uuid);
+    List<Penalty> getPenaltiesByUser(Long id);
     List<Penalty> getPenaltiesByStatus(PenaltyStatus status);
     List<Penalty> getPenaltiesByType(PenaltyType type);
 }
