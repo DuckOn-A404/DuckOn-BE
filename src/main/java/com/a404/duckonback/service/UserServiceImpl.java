@@ -1,7 +1,10 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.PenaltyDTO;
 import com.a404.duckonback.dto.RoomDTO;
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
+import com.a404.duckonback.entity.Penalty;
+import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.RoomRepository;
@@ -21,6 +24,7 @@ public class UserServiceImpl implements UserService {
     private final JWTUtil jwtUtil;
     private final RoomRepository roomRepository;
     private final JWTUtil jWTUtil;
+    private final PenaltyService penaltyService;
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -55,9 +59,28 @@ public class UserServiceImpl implements UserService {
             throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.UNAUTHORIZED);
         }
 
-//        List<Room> rooms = roomRepository.findByUserId(userId);
-        List<RoomDTO> rooms = null;
+        List<Room> rooms = roomRepository.findByCreator_Id(user.getId());
+        List<RoomDTO> roomList = (rooms != null ? rooms : List.<Room>of()).stream()
+                .map(room -> RoomDTO.builder()
+                        .roomId(room.getRoomId())
+                        .title(room.getTitle())
+                        .imgUrl(room.getImgUrl())
+                        .createdAt(room.getCreatedAt())
+                        .creatorId(room.getCreator().getUserId())
+                        .artistId(room.getArtist().getArtistId())
+                        .build())
+                .toList();
 
+        List<Penalty> penalties = penaltyService.getActivePenaltiesByUser(user.getId());
+        List<PenaltyDTO> pennaltyList = penalties.stream()
+                .map(penalty -> PenaltyDTO.builder()
+                        .startAt(penalty.getStartAt())
+                        .endAt(penalty.getEndAt())
+                        .reason(penalty.getReason())
+                        .penaltyType(penalty.getPenaltyType().toString())
+                        .status(penalty.getStatus().toString())
+                        .build())
+                .toList();
 
         return UserDetailInfoResponseDTO.builder()
                 .userId(user.getUserId())
@@ -71,9 +94,9 @@ public class UserServiceImpl implements UserService {
                 ).toList())
                 .followingCount(user.getFollowing().size())
                 .followerCount(user.getFollowers().size())
-                .bannedTill(null) // join
                 .password(user.getPassword())
-                .roomList(rooms) // 개발 필요
+                .roomList(roomList)
+                .penaltyList(pennaltyList)
                 .build();
     }
 
