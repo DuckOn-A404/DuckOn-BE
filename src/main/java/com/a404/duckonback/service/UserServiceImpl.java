@@ -1,26 +1,17 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.RoomDTO;
-import com.a404.duckonback.dto.SignupRequestDTO;
-import com.a404.duckonback.dto.UserInfoResponseDTO;
-import com.a404.duckonback.entity.Room;
+import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.enums.UserRole;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.RoomRepository;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +44,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByNickname(nickname);
     }
 
-    public UserInfoResponseDTO getUserInfo(String accessToken) {
+    public UserDetailInfoResponseDTO getUserInfo(String accessToken) {
         String userId = jwtUtil.getClaims(accessToken).getSubject();
 
         User user = userRepository.findByUserId(userId);
@@ -66,7 +57,7 @@ public class UserServiceImpl implements UserService {
         List<RoomDTO> rooms = null;
 
 
-        return UserInfoResponseDTO.builder()
+        return UserDetailInfoResponseDTO.builder()
                 .userId(user.getUserId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())

@@ -1,6 +1,6 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.UserInfoResponseDTO;
+import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class UserController {
         try {
             // "Bearer " 접두사 제거
             String accessToken = authorization.replace("Bearer ", "");
-            UserInfoResponseDTO userInfo = userService.getUserInfo(accessToken);
+            UserDetailInfoResponseDTO userInfo = userService.getUserInfo(accessToken);
             return ResponseEntity.ok(userInfo);
         } catch (CustomException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
