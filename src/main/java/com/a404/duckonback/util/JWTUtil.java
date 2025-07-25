@@ -2,10 +2,12 @@ package com.a404.duckonback.util;
 
 import com.a404.duckonback.config.ServiceProperties;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.exception.CustomException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -71,4 +73,29 @@ public class JWTUtil {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public void validateTokenFormat(String token) {
+        if (token == null || !token.startsWith("Bearer ")) {
+            throw new CustomException("잘못된 형식의 토큰입니다.", HttpStatus.BAD_REQUEST);
+        }
+        String[] parts = token.split(" ", 2);
+        if (parts.length != 2 || parts[1].isBlank()) {
+            throw new CustomException("잘못된 형식의 토큰입니다.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public String extractAndValidateToken(String authorization) {
+        validateTokenFormat(authorization);
+
+        String accessToken = authorization.substring("Bearer ".length()).trim();
+        if (accessToken.isEmpty()) {
+            throw new CustomException("Access Token이 비어 있습니다.", HttpStatus.UNAUTHORIZED);
+        }
+        if (!validateToken(accessToken)) {
+            throw new CustomException("Access Token이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+        }
+        return accessToken;
+    }
+
+
 }

@@ -9,5 +9,4 @@ public interface AuthService {
     LoginResponseDTO login(LoginRequestDTO loginRequest);
     ResponseEntity<?> signup(SignupRequestDTO dto);
     String refreshAccessToken(String refreshToken);
-
 }
