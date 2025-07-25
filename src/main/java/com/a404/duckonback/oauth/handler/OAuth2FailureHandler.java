@@ -17,10 +17,11 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
                                         AuthenticationException exception) throws IOException, ServletException {
-        log.error("소셜 로그인 실패: {}", exception.getMessage());
+        log.warn("소셜 로그인 실패 - 사유: {}", exception.getMessage());
 
-        // 실패 사유를 쿼리 파라미터에 붙여 리디렉션할 수도 있음
-        String redirectUrl = "/login/failure?error=" + exception.getMessage();
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+        // 보안상 상세한 오류 내용은 노출하지 않음
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"message\":\"소셜 로그인에 실패했습니다. 다시 시도해주세요.\"}");
     }
 }
