@@ -26,11 +26,13 @@ public class UserServiceImpl implements UserService {
     private final PenaltyService penaltyService;
 
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmailWithPenalties(email)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED));
     }
 
     public User findByUserId(String userId) {
-        return userRepository.findByUserId(userId);
+        return userRepository.findByUserIdWithPenalties(userId)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED));
     }
 
     public void save(User user) { userRepository.save(user);}

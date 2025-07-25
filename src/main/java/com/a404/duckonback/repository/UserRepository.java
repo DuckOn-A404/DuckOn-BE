@@ -3,7 +3,11 @@ package com.a404.duckonback.repository;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.SocialProvider;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
@@ -15,4 +19,10 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByNickname(String nickname);
 
     User findByProviderAndProviderId(SocialProvider provider, String providerId);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.email = :email")
+    Optional<User> findByEmailWithPenalties(@Param("email") String email);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.userId = :userId")
+    Optional<User> findByUserIdWithPenalties(@Param("userId") String userId);
 }
