@@ -7,6 +7,7 @@ import com.a404.duckonback.repository.PenaltyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,5 +65,19 @@ public class PenaltyServiceImpl implements PenaltyService {
     @Override
     public List<Penalty> getPenaltiesByType(PenaltyType type) {
         return penaltyRepository.findByPenaltyType(type);
+    }
+
+    @Override
+    public List<Penalty> getActivePenaltiesByUser(Long userId) {
+        List<Penalty> penalties = penaltyRepository.findByUser_Id(userId);
+
+        if (penalties == null || penalties.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Filter active penalties
+        return penalties.stream()
+                .filter(penalty -> penalty.getStatus() == PenaltyStatus.ACTIVE)
+                .toList();
     }
 }
