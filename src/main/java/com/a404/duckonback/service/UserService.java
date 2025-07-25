@@ -10,5 +10,5 @@ public interface UserService {
     boolean isEmailDuplicate(String email);
     boolean isUserIdDuplicate(String userId);
     boolean isNicknameDuplicate(String nickname);
-    UserDetailInfoResponseDTO getUserInfo(String accessToken);
+    UserDetailInfoResponseDTO getUserDetailInfo(String accessToken);
 }

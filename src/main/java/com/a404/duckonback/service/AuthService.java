@@ -3,7 +3,6 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.LoginRequestDTO;
 import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.SignupRequestDTO;
-import com.a404.duckonback.dto.UserInfoResponseDTO;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
