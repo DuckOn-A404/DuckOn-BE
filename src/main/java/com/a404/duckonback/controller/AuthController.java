@@ -74,5 +74,14 @@ public class AuthController {
 //        }
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @RequestHeader("RefreshToken") String refreshTokenHeader) {
+
+        authService.logout(accessTokenHeader, refreshTokenHeader);
+        return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
+    }
+
 
 }
