@@ -35,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
 
+    @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         String email = loginRequest.getEmail();
         String userId = loginRequest.getUserId();
@@ -104,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    @Override
     public ResponseEntity<?> signup(SignupRequestDTO dto){
         MultipartFile file = dto.getProfileImg();
         String imgUrl = null;
@@ -131,6 +133,7 @@ public class AuthServiceImpl implements AuthService {
         return ResponseEntity.ok().body("회원가입이 성공적으로 완료되었습니다!");
     }
 
+    @Override
     public String refreshAccessToken(String refreshTokenHeader){
                 // Bearer 제거
         if (!refreshTokenHeader.startsWith("Bearer ")) {
@@ -153,6 +156,7 @@ public class AuthServiceImpl implements AuthService {
         return jwtUtil.generateAccessToken(user);
     }
 
+    @Override
     public void logout(String accessTokenHeader, String refreshTokenHeader){
         String accessToken = jwtUtil.extractAndValidateToken(accessTokenHeader);
         String refreshToken = jwtUtil.extractAndValidateToken(refreshTokenHeader);
