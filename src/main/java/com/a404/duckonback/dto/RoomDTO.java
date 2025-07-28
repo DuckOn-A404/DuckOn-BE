@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class RoomDTO {
-    private long roomId;
+    private Long roomId;
     private String title;
     private String imgUrl;
     private LocalDateTime createdAt;

@@ -1,8 +1,10 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.PenaltyDTO;
 import com.a404.duckonback.dto.RoomDTO;
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.entity.Penalty;
+import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.RoomRepository;
@@ -25,7 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final JWTUtil jwtUtil;
     private final RoomRepository roomRepository;
-    private final JWTUtil jWTUtil;
+    private final PenaltyService penaltyService;
 
     public User findByEmail(String email) {
         return userRepository.findByEmailWithPenalties(email)
@@ -79,13 +81,16 @@ public class UserServiceImpl implements UserService {
                 .map(RoomDTO::fromEntity)
                 .toList();
 
-        LocalDateTime bannedTill = Optional.ofNullable(user.getPenalties())
-                .orElse(List.of())
-                .stream()
-                .filter(p -> p.getEndAt() != null)
-                .map(Penalty::getEndAt)
-                .max(LocalDateTime::compareTo)
-                .orElse(null);
+        List<Penalty> penalties = penaltyService.getActivePenaltiesByUser(user.getId());
+        List<PenaltyDTO> pennaltyList = penalties.stream()
+                .map(penalty -> PenaltyDTO.builder()
+                        .startAt(penalty.getStartAt())
+                        .endAt(penalty.getEndAt())
+                        .reason(penalty.getReason())
+                        .penaltyType(penalty.getPenaltyType().toString())
+                        .status(penalty.getStatus().toString())
+                        .build())
+                .toList();
 
         return UserDetailInfoResponseDTO.builder()
                 .userId(user.getUserId())
@@ -97,7 +102,7 @@ public class UserServiceImpl implements UserService {
                 .artistList(artistList)
                 .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
                 .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
-                .bannedTill(bannedTill)
+                .penaltyList(pennaltyList)
                 .roomList(roomList)
                 .build();
     }
