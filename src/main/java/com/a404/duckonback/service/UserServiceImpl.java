@@ -155,4 +155,29 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public FollowingResponseDTO getFollowing(String userId) {
+        if (userId == null) {
+            throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
+        }
+        if (!userRepository.existsByUserId(userId)) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        User user = userRepository.findByUserId(userId);
+
+        List<Follow> followings = Optional.ofNullable(user.getFollowing()).orElse(List.of());
+        List<FollowingInfoDTO> followingDTOs = followings.stream()
+                .map(following -> FollowingInfoDTO.builder()
+                        .userId(following.getFollowing().getUserId())
+                        .nickname(following.getFollowing().getNickname())
+                        .profileImgUrl(following.getFollowing().getImgUrl())
+                        .build())
+                .toList();
+
+        return FollowingResponseDTO.builder()
+                .following(followingDTOs)
+                .build();
+    }
+
 }
