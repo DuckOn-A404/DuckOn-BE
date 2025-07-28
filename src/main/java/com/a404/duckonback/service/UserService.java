@@ -10,6 +10,7 @@ public interface UserService {
     boolean isEmailDuplicate(String email);
     boolean isUserIdDuplicate(String userId);
     boolean isNicknameDuplicate(String nickname);
-    UserDetailInfoResponseDTO getUserDetailInfo(String accessToken);
-    void deleteUser(String authorization, String refreshToken);
+    UserDetailInfoResponseDTO getUserDetailInfo(String userId);
+    void deleteUser(User user, String refreshToken);
+
 }

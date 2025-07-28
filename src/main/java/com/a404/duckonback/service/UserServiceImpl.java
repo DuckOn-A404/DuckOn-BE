@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.RoomDTO;
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
+import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.RoomRepository;
@@ -12,7 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -48,19 +52,40 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByNickname(nickname);
     }
 
-    public UserDetailInfoResponseDTO getUserDetailInfo(String authorization) {
-        String accessToken = jwtUtil.extractAndValidateToken(authorization);
 
-        String userId = jwtUtil.getClaims(accessToken).getSubject();
-        User user = userRepository.findByUserId(userId);
+    @Transactional(readOnly = true)
+    public UserDetailInfoResponseDTO getUserDetailInfo(String userId) {
+        User user = userRepository.findUserDetailWithArtistFollows(userId)
+                .orElseThrow(() -> new CustomException("사용자 없음", HttpStatus.NOT_FOUND));
 
-        if(user == null){
-            throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.UNAUTHORIZED);
+        return toDTO(user);
+    }
+
+    private UserDetailInfoResponseDTO toDTO(User user) {
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND);
         }
 
-//        List<Room> rooms = roomRepository.findByUserId(userId);
-        List<RoomDTO> rooms = null;
+        List<Integer> artistList = Optional.ofNullable(user.getArtistFollows())
+                .orElse(List.of())
+                .stream()
+                .map(af -> af.getArtist() != null ? af.getArtist().getArtistId() : null)
+                .filter(Objects::nonNull)
+                .toList();
 
+        List<RoomDTO> roomList = Optional.ofNullable(user.getRooms())
+                .orElse(List.of())
+                .stream()
+                .map(RoomDTO::fromEntity)
+                .toList();
+
+        LocalDateTime bannedTill = Optional.ofNullable(user.getPenalties())
+                .orElse(List.of())
+                .stream()
+                .filter(p -> p.getEndAt() != null)
+                .map(Penalty::getEndAt)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
 
         return UserDetailInfoResponseDTO.builder()
                 .userId(user.getUserId())
@@ -69,24 +94,17 @@ public class UserServiceImpl implements UserService {
                 .role(user.getRole().toString())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(user.getArtistFollows().stream().map(
-                        artistFollow -> artistFollow.getArtist().getArtistId()
-                ).toList())
-                .followingCount(user.getFollowing().size())
-                .followerCount(user.getFollowers().size())
-                .bannedTill(null) // join
-                .password(user.getPassword())
-                .roomList(rooms) // 개발 필요
+                .artistList(artistList)
+                .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
+                .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
+                .bannedTill(bannedTill)
+                .roomList(roomList)
                 .build();
     }
 
     @Transactional
-    public void deleteUser(String authorization, String refreshToken){
-        String accessToken = jwtUtil.extractAndValidateToken(authorization);
-
-        String userId = jwtUtil.getClaims(accessToken).getSubject();
-        userRepository.deleteByUserId(userId);
-
+    public void deleteUser(User user, String refreshToken) {
+        userRepository.delete(user);
         //refreshToken 블랙리스트 등록
     }
 
