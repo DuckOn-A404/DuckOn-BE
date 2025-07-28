@@ -21,26 +21,10 @@ public class UserController {
     private final UserService userService;
     private final JWTUtil jwtUtil;
 
-//    @GetMapping("/me")
-//    public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authorization) {
-//        try {
-//            UserDetailInfoResponseDTO userInfo = userService.getUserDetailInfo(authorization);
-//            return ResponseEntity.ok(userInfo);
-//        } catch (CustomException e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(Map.of("message", "Access Token이 유효하지 않거나 누락되었습니다."));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Map.of("message", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."));
-//        }
-//    }
-
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(userService.getUserDetailInfo(userDetails.getUser().getUserId()));
     }
-
-
 
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteUser(

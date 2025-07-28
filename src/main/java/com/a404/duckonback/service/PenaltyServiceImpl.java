@@ -7,6 +7,7 @@ import com.a404.duckonback.repository.PenaltyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,5 +65,12 @@ public class PenaltyServiceImpl implements PenaltyService {
     @Override
     public List<Penalty> getPenaltiesByType(PenaltyType type) {
         return penaltyRepository.findByPenaltyType(type);
+    }
+
+    @Override
+        public List<Penalty> getActivePenaltiesByUser(Long userId) {
+        // ACTIVE 상태의 페널티만 조회하기 전에 만료된 페널티를 EXPIRED 상태로 업데이트
+        penaltyRepository.expireOldPenalties(userId, LocalDateTime.now());
+        return penaltyRepository.findByUser_IdAndStatus(userId, PenaltyStatus.ACTIVE);
     }
 }
