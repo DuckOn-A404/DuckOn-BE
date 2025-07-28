@@ -42,5 +42,10 @@ public class UserController {
         return ResponseEntity.ok(userInfo);
     }
 
+    @GetMapping("/me/followers")
+    public ResponseEntity<?> getFollowers(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(userService.getFollowers(userDetails.getUser().getUserId()));
+    }
+
 
 }
