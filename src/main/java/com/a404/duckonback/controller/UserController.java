@@ -52,5 +52,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getFollowing(userDetails.getUser().getUserId()));
     }
 
+    @PostMapping("/{userId}/follow")
+    public ResponseEntity<?> followUser(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable String userId) {
+        userService.followUser(userDetails.getUser().getUserId(), userId);
+        return ResponseEntity.ok(Map.of("message", "사용자를 팔로우했습니다."));
+    }
+
 
 }

@@ -180,4 +180,32 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public void followUser(String myUserId, String otherUserId){
+        if (myUserId == null || otherUserId == null) {
+            throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
+        }
+        if (!userRepository.existsByUserId(otherUserId)) {
+            throw new CustomException("팔로우할 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+        if (myUserId.equals(otherUserId)) {
+            throw new CustomException("자기 자신은 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST);
+        }
+        if (followService.isFollowing(myUserId, otherUserId)) {
+            throw new CustomException("이미 팔로우한 사용자입니다.", HttpStatus.CONFLICT);
+        }
+
+        User myUser = userRepository.findByUserId(myUserId);
+        User otherUser = userRepository.findByUserId(otherUserId);
+
+
+        Follow follow = followService.createFollow(Follow.builder()
+                .follower(myUser)
+                .following(otherUser)
+                .createdAt(java.time.LocalDateTime.now())
+                .build());
+
+        followService.createFollow(follow);
+    }
+
 }

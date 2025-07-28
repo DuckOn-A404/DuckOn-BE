@@ -21,4 +21,6 @@ public interface UserService {
     FollowersResponseDTO getFollowers(String userId);
 
     FollowingResponseDTO getFollowing(String userId);
+
+    void followUser(String myUserId, String otherUserId);
 }
