@@ -26,31 +26,37 @@ public class UserServiceImpl implements UserService {
     private final RoomRepository roomRepository;
     private final PenaltyService penaltyService;
 
+    @Override
     public User findByEmail(String email) {
         return userRepository.findByEmailWithPenalties(email)
                 .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED));
     }
 
+    @Override
     public User findByUserId(String userId) {
         return userRepository.findByUserIdWithPenalties(userId)
                 .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED));
     }
 
+    @Override
     public void save(User user) { userRepository.save(user);}
 
-
+    @Override
     public boolean isEmailDuplicate(String email) {
         return userRepository.existsByEmail(email);
     }
 
+    @Override
     public boolean isUserIdDuplicate(String userId) {
         return userRepository.existsByUserId(userId);
     }
 
+    @Override
     public boolean isNicknameDuplicate(String nickname) {
         return userRepository.existsByNickname(nickname);
     }
 
+    @Override
     public UserDetailInfoResponseDTO getUserDetailInfo(String authorization) {
         String accessToken = jwtUtil.extractAndValidateToken(authorization);
 
@@ -102,6 +108,7 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
     @Transactional
     public void deleteUser(String authorization, String refreshToken){
         String accessToken = jwtUtil.extractAndValidateToken(authorization);

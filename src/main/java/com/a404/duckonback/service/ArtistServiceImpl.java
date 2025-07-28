@@ -25,10 +25,12 @@ public class ArtistServiceImpl implements ArtistService {
     private final UserRepository userRepository;
     private final ArtistFollowRepository artistFollowRepository;
 
+    @Override
     public List<Integer> findAllArtistIdByUserId(Long id){
         return artistRepository.findAllArtistIdByUserId(id);
     }
 
+    @Override
     public void followArtists(Long id, List<Integer> artistList){
         User user = userRepository.findById(id);
 
@@ -47,6 +49,7 @@ public class ArtistServiceImpl implements ArtistService {
         }
     }
 
+    @Override
     public Page<Artist> getArtists(Pageable pageable) {
         return artistRepository.findAll(pageable);
     }
