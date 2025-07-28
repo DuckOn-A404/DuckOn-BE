@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -153,11 +154,13 @@ public class AuthServiceImpl implements AuthService {
         return jwtUtil.generateAccessToken(user);
     }
 
-    public void logout(String accessTokenHeader, String refreshTokenHeader){
-        String accessToken = jwtUtil.extractAndValidateToken(accessTokenHeader);
-        String refreshToken = jwtUtil.extractAndValidateToken(refreshTokenHeader);
 
-        //블랙리스트 중복등록 방지 +등록 필요
+
+    public void logout(User user, String refreshToken) {
+        //String accessToken = jwtUtil.resolveCurrentToken(); // SecurityContext 기반으로 현재 accessToken 추출
+
+        //accessToken, refreshToken 블랙리스트 중복등록 방지 +등록 필요
+
 
 
     }
