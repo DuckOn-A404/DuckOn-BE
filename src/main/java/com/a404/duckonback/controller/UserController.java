@@ -2,9 +2,12 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.service.UserService;
+import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
