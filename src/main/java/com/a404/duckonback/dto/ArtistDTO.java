@@ -16,14 +16,16 @@ public class ArtistDTO {
     private String nameKr;
     private LocalDate debutDate;
     private String imgUrl;
+    private long followerCount;
 
-    public static ArtistDTO fromEntity(Artist artist) {
+    public static ArtistDTO fromEntity(Artist a, long followerCount) {
         return ArtistDTO.builder()
-                .artistId(artist.getArtistId())
-                .nameEn(artist.getNameEn())
-                .nameKr(artist.getNameKr())
-                .debutDate(artist.getDebutDate())
-                .imgUrl(artist.getImgUrl())
+                .artistId(a.getArtistId())
+                .nameEn(a.getNameEn())
+                .nameKr(a.getNameKr())
+                .debutDate(a.getDebutDate())
+                .imgUrl(a.getImgUrl())
+                .followerCount(followerCount)
                 .build();
     }
 }

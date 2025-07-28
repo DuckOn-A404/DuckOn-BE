@@ -26,18 +26,26 @@ public class ArtistController {
     private final ArtistService artistService;
     private final ArtistFollowRepository artistFollowRepository;
 
+    /**
+     * 전체 아티스트 페이징 조회
+     */
     @GetMapping
     public ResponseEntity<?> getArtistList(@RequestParam(defaultValue = "1") int page,
                                            @RequestParam(defaultValue = "10") int size) {
         if (page < 1 || size < 1) {
-            return ResponseEntity.badRequest().body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
         }
 
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<Artist> artistPage = artistService.getArtists(pageable);
 
         List<ArtistDTO> artistList = artistPage.getContent().stream()
-                .map(ArtistDTO::fromEntity)
+                .map(a -> {
+                    long cnt = artistFollowRepository.countByArtist_ArtistId(a.getArtistId());
+                    return ArtistDTO.fromEntity(a, cnt);
+                })
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -50,27 +58,35 @@ public class ArtistController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 키워드 검색
+     */
     @GetMapping(params = "keyword")
     public ResponseEntity<?> searchArtists(@RequestParam String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "keyword는 필수 파라미터입니다."));
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "keyword는 필수 파라미터입니다."));
         }
 
         log.info("Searching artists with keyword: {}", keyword);
+        List<Artist> artistList = artistService.searchArtists(keyword.trim());
 
-        List<Artist> artistList = artistService.searchArtists(keyword);
         List<ArtistDTO> responseList = artistList.stream()
-                .map(ArtistDTO::fromEntity)
+                .map(a -> {
+                    long cnt = artistFollowRepository.countByArtist_ArtistId(a.getArtistId());
+                    return ArtistDTO.fromEntity(a, cnt);
+                })
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of("artistList", responseList));
     }
 
-    /** 랜덤 아티스트 조회 */
+    /**
+     * 랜덤 아티스트 조회
+     */
     @GetMapping("/random")
-    public ResponseEntity<?> getRandomArtists(
-            @RequestParam(defaultValue = "16") int size) {
-
+    public ResponseEntity<?> getRandomArtists(@RequestParam(defaultValue = "16") int size) {
         if (size < 1) {
             return ResponseEntity
                     .badRequest()
@@ -83,9 +99,8 @@ public class ArtistController {
                     long cnt = artistFollowRepository.countByArtist_ArtistId(a.getArtistId());
                     return ArtistDTO.fromEntity(a, cnt);
                 })
-                .toList();
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of("artistList", dtoList));
     }
-
 }
