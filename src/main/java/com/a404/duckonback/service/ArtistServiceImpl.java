@@ -62,4 +62,12 @@ public class ArtistServiceImpl implements ArtistService {
         return artistRepository.searchByKeyword(keyword.trim());
     }
 
+    @Override
+    public List<Artist> getRandomArtists(int size) {
+        if (size < 1) {
+            throw new CustomException("size는 1 이상의 정수여야 합니다.", HttpStatus.BAD_REQUEST);
+        }
+        return artistRepository.findRandomArtists(size);
+    }
+
 }
