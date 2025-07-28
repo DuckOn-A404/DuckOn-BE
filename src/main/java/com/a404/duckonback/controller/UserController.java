@@ -1,11 +1,12 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.dto.UserInfoResponseDTO;
+import com.a404.duckonback.filter.CustomUserDetails;
 import com.a404.duckonback.service.UserService;
 import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,17 +20,17 @@ public class UserController {
     private final JWTUtil jwtUtil;
 
     @GetMapping("/me")
-    public ResponseEntity<?> getUserDetailInfo(@RequestHeader("Authorization") String authorization) {
-        UserDetailInfoResponseDTO userDetailInfo = userService.getUserDetailInfo(authorization);
-        return ResponseEntity.ok(userDetailInfo);
+    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(userService.getUserDetailInfo(userDetails.getUser().getUserId()));
     }
+
 
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteUser(
-            @RequestHeader("Authorization") String accessTokenHeader,
-            @RequestHeader("X-Refresh-Token") String refreshTokenHeader)
-    {
-        userService.deleteUser(accessTokenHeader, refreshTokenHeader);
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("X-Refresh-Token") String refreshTokenHeader) {
+
+        userService.deleteUser(userDetails.getUser(), refreshTokenHeader);
         return ResponseEntity.ok(Map.of("message", "회원탈퇴가 완료되었습니다."));
     }
 

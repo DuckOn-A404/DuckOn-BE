@@ -3,6 +3,7 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.LoginRequestDTO;
 import com.a404.duckonback.dto.SignupRequestDTO;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.filter.CustomUserDetails;
 import com.a404.duckonback.service.AuthService;
 import com.a404.duckonback.service.AuthServiceImpl;
 import com.a404.duckonback.service.UserService;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -64,22 +66,14 @@ public class AuthController {
     public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
         String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
         return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
-//        try {
-//            String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
-//            return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
-//        } catch (CustomException e) {
-//            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-//        }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
-            @RequestHeader("Authorization") String accessTokenHeader,
-            @RequestHeader("RefreshToken") String refreshTokenHeader) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("X-Refresh-Token") String refreshToken) {
 
-        authService.logout(accessTokenHeader, refreshTokenHeader);
+        authService.logout(userDetails.getUser(), refreshToken);
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
     }
 
