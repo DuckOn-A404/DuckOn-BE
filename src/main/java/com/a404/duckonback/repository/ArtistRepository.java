@@ -14,4 +14,11 @@ public interface ArtistRepository extends JpaRepository<Artist, Integer> {
     @Query("SELECT af.artist.artistId FROM ArtistFollow af WHERE af.user.id = :id")
     List<Integer> findAllArtistIdByUserId(@Param("id") Long id);
 
+    @Query("""
+        SELECT a FROM Artist a 
+        WHERE LOWER(a.nameKr) LIKE LOWER(CONCAT('%', :keyword, '%')) 
+           OR LOWER(a.nameEn) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        """)
+    List<Artist> searchByKeyword(@Param("keyword") String keyword);
+
 }

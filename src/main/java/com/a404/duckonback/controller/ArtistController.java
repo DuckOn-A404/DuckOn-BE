@@ -4,6 +4,7 @@ import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.service.ArtistService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/artists")
 @RequiredArgsConstructor
@@ -45,4 +47,22 @@ public class ArtistController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping(params = "keyword")
+    public ResponseEntity<?> searchArtists(@RequestParam String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "keyword는 필수 파라미터입니다."));
+        }
+
+        log.info("Searching artists with keyword: {}", keyword);
+
+        List<Artist> artistList = artistService.searchArtists(keyword);
+        List<ArtistDTO> responseList = artistList.stream()
+                .map(ArtistDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of("artistList", responseList));
+    }
+
+
 }

@@ -54,4 +54,12 @@ public class ArtistServiceImpl implements ArtistService {
         return artistRepository.findAll(pageable);
     }
 
+    @Override
+    public List<Artist> searchArtists(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new CustomException("keyword는 필수 파라미터입니다.", HttpStatus.BAD_REQUEST);
+        }
+        return artistRepository.searchByKeyword(keyword.trim());
+    }
+
 }
