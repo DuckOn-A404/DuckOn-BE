@@ -12,4 +12,5 @@ public interface FollowService {
     List<Follow> getFollowers(Long followingId);
     void deleteFollow(Long followerId, Long followingId);
     boolean isFollowing(Long followerId, Long followingId);
+    boolean isFollowing(String followerUserId, String followingUserId);
 }
