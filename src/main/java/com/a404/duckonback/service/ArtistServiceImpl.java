@@ -8,6 +8,8 @@ import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -44,4 +46,9 @@ public class ArtistServiceImpl implements ArtistService {
             artistFollowRepository.save(artistFollow);
         }
     }
+
+    public Page<Artist> getArtists(Pageable pageable) {
+        return artistRepository.findAll(pageable);
+    }
+
 }
