@@ -13,6 +13,7 @@ import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -100,5 +101,16 @@ public class UserServiceImpl implements UserService {
                 .penaltyList(pennaltyList)
                 .build();
     }
+
+    @Transactional
+    public void deleteUser(String authorization, String refreshToken){
+        String accessToken = jwtUtil.extractAndValidateToken(authorization);
+
+        String userId = jwtUtil.getClaims(accessToken).getSubject();
+        userRepository.deleteByUserId(userId);
+
+        //refreshToken 블랙리스트 등록
+    }
+
 
 }
