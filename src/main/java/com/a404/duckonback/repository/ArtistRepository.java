@@ -10,6 +10,8 @@ import java.util.List;
 
 @Repository
 public interface ArtistRepository extends JpaRepository<Artist, Integer> {
+
     @Query("SELECT af.artist.artistId FROM ArtistFollow af WHERE af.user.id = :id")
     List<Integer> findAllArtistIdByUserId(@Param("id") Long id);
+
 }
