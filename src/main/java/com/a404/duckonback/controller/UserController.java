@@ -1,6 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
+import com.a404.duckonback.dto.UserInfoResponseDTO;
 import com.a404.duckonback.service.UserService;
 import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
@@ -18,19 +19,24 @@ public class UserController {
     private final JWTUtil jwtUtil;
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String authorization) {
-        UserDetailInfoResponseDTO userInfo = userService.getUserDetailInfo(authorization);
-        return ResponseEntity.ok(userInfo);
+    public ResponseEntity<?> getUserDetailInfo(@RequestHeader("Authorization") String authorization) {
+        UserDetailInfoResponseDTO userDetailInfo = userService.getUserDetailInfo(authorization);
+        return ResponseEntity.ok(userDetailInfo);
     }
-
 
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteUser(
             @RequestHeader("Authorization") String accessTokenHeader,
-            @RequestHeader("X-Refresh-Token") String refreshTokenHeader) {
-
+            @RequestHeader("X-Refresh-Token") String refreshTokenHeader)
+    {
         userService.deleteUser(accessTokenHeader, refreshTokenHeader);
         return ResponseEntity.ok(Map.of("message", "회원탈퇴가 완료되었습니다."));
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getUserInfo(@PathVariable String userId) {
+        UserInfoResponseDTO userInfo = userService.getUserInfo(userId);
+        return ResponseEntity.ok(userInfo);
     }
 
 
