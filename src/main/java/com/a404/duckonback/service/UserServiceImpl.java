@@ -1,9 +1,7 @@
 package com.a404.duckonback.service;
 
-import com.a404.duckonback.dto.PenaltyDTO;
-import com.a404.duckonback.dto.RoomDTO;
-import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
-import com.a404.duckonback.dto.UserInfoResponseDTO;
+import com.a404.duckonback.dto.*;
+import com.a404.duckonback.entity.Follow;
 import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
@@ -130,5 +128,31 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+
+    @Override
+    public FollowersResponseDTO getFollowers(String userId) {
+        if (userId == null) {
+            throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
+        }
+        if (!userRepository.existsByUserId(userId)) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        User user = userRepository.findByUserId(userId);
+
+        List<Follow> followers = Optional.ofNullable(user.getFollowers()).orElse(List.of());
+        List<FollowerInfoDTO> followerDTOs = followers.stream()
+                .map(follower -> FollowerInfoDTO.builder()
+                        .userId(follower.getFollower().getUserId())
+                        .nickname(follower.getFollower().getNickname())
+                        .profileImgUrl(follower.getFollower().getImgUrl())
+                        .following(followService.isFollowing(userId, follower.getFollower().getUserId()))
+                        .build())
+                .toList();
+
+        return FollowersResponseDTO.builder()
+                .followers(followerDTOs)
+                .build();
+    }
 
 }
