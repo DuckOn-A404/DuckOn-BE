@@ -85,4 +85,33 @@ public class ArtistServiceImpl implements ArtistService {
                 .toList();
     }
 
+    @Override
+    public void followArtist(Long userId, Integer artistId) {
+        // 1) 사용자 존재 확인 (커스텀 findById → User or null)
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
+        }
+
+        // 2) 이미 팔로우했는지 검사
+        if (artistFollowRepository.existsByUser_IdAndArtist_ArtistId(userId, artistId)) {
+            throw new CustomException("이미 팔로우한 아티스트입니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 3) 아티스트 존재 확인
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() ->
+                        new CustomException("해당 아티스트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
+                );
+
+        // 4) 팔로우 엔티티 생성 및 저장
+        ArtistFollow af = ArtistFollow.builder()
+                .user(user)
+                .artist(artist)
+                .createdAt(LocalDateTime.now())
+                .build();
+        artistFollowRepository.save(af);
+    }
+
+
 }

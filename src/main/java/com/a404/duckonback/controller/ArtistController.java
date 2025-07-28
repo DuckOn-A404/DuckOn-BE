@@ -2,6 +2,8 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.entity.Artist;
+import com.a404.duckonback.entity.User;
+import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.service.ArtistService;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -63,4 +67,21 @@ public class ArtistController {
         var list = artistService.getRandomArtists(size);
         return ResponseEntity.ok(Map.of("artistList", list));
     }
+
+    // 아티스트 팔로우 추가
+    @PostMapping("/{artistId}/follow")
+    public ResponseEntity<?> followArtist(
+            @PathVariable Integer artistId,
+            @AuthenticationPrincipal User user) {
+
+        // 1) user: 이미 인증된 User 객체가 들어옵니다.
+        // 2) 서비스에 ID와 artistId만 넘기면, 나머지(중복/존재 여부 검증)는 서비스가 알아서 처리
+        artistService.followArtist(user.getId(), artistId);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of("message", "아티스트를 팔로우했습니다."));
+    }
+
+
 }
