@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.ArtistFollow;
 import com.a404.duckonback.entity.User;
@@ -50,24 +51,38 @@ public class ArtistServiceImpl implements ArtistService {
     }
 
     @Override
-    public Page<Artist> getArtists(Pageable pageable) {
-        return artistRepository.findAll(pageable);
+    public Page<ArtistDTO> getArtists(Pageable pageable) {
+        return artistRepository.findAll(pageable)
+                .map(artist -> {
+                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
+                    return ArtistDTO.fromEntity(artist, cnt);
+                });
     }
 
     @Override
-    public List<Artist> searchArtists(String keyword) {
+    public List<ArtistDTO> searchArtists(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new CustomException("keyword는 필수 파라미터입니다.", HttpStatus.BAD_REQUEST);
         }
-        return artistRepository.searchByKeyword(keyword.trim());
+        return artistRepository.searchByKeyword(keyword.trim()).stream()
+                .map(artist -> {
+                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
+                    return ArtistDTO.fromEntity(artist, cnt);
+                })
+                .toList();
     }
 
     @Override
-    public List<Artist> getRandomArtists(int size) {
+    public List<ArtistDTO> getRandomArtists(int size) {
         if (size < 1) {
             throw new CustomException("size는 1 이상의 정수여야 합니다.", HttpStatus.BAD_REQUEST);
         }
-        return artistRepository.findRandomArtists(size);
+        return artistRepository.findRandomArtists(size).stream()
+                .map(artist -> {
+                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
+                    return ArtistDTO.fromEntity(artist, cnt);
+                })
+                .toList();
     }
 
 }
