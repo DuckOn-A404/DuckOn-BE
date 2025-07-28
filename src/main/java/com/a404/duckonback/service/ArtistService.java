@@ -10,4 +10,5 @@ public interface ArtistService {
     List<Integer> findAllArtistIdByUserId(Long id);
     void followArtists(Long id, List<Integer> artistList);
     Page<Artist> getArtists(Pageable pageable);
+    List<Artist> searchArtists(String keyword);
 }
