@@ -11,4 +11,5 @@ public interface ArtistService {
     void followArtists(Long id, List<Integer> artistList);
     Page<Artist> getArtists(Pageable pageable);
     List<Artist> searchArtists(String keyword);
+    List<Artist> getRandomArtists(int size);
 }

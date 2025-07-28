@@ -2,6 +2,7 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.entity.Artist;
+import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.service.ArtistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 public class ArtistController {
 
     private final ArtistService artistService;
+    private final ArtistFollowRepository artistFollowRepository;
 
     @GetMapping
     public ResponseEntity<?> getArtistList(@RequestParam(defaultValue = "1") int page,
@@ -64,5 +66,26 @@ public class ArtistController {
         return ResponseEntity.ok(Map.of("artistList", responseList));
     }
 
+    /** 랜덤 아티스트 조회 */
+    @GetMapping("/random")
+    public ResponseEntity<?> getRandomArtists(
+            @RequestParam(defaultValue = "16") int size) {
+
+        if (size < 1) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "size는 1 이상의 정수여야 합니다."));
+        }
+
+        List<Artist> list = artistService.getRandomArtists(size);
+        List<ArtistDTO> dtoList = list.stream()
+                .map(a -> {
+                    long cnt = artistFollowRepository.countByArtist_ArtistId(a.getArtistId());
+                    return ArtistDTO.fromEntity(a, cnt);
+                })
+                .toList();
+
+        return ResponseEntity.ok(Map.of("artistList", dtoList));
+    }
 
 }

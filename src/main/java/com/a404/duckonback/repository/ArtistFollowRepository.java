@@ -17,5 +17,7 @@ public interface ArtistFollowRepository extends JpaRepository<ArtistFollow, Arti
     List<ArtistFollow> findByArtist_ArtistId(Integer artistId);
     boolean existsByUser_IdAndArtist_ArtistId(Long id, Integer artistId);
     void deleteByUser_IdAndArtist_ArtistId(Long id, Integer artistId);
-  
+    
+    // 특정 아티스트 팔로워 수 조회
+    long countByArtist_ArtistId(Integer artistId);
 }

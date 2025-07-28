@@ -21,4 +21,11 @@ public interface ArtistRepository extends JpaRepository<Artist, Integer> {
         """)
     List<Artist> searchByKeyword(@Param("keyword") String keyword);
 
+    // size만큼 랜덤으로 아티스트 반환 (MySQL 기준)
+    @Query(
+            value = "SELECT * FROM artist ORDER BY RAND() LIMIT :size",
+            nativeQuery = true
+    )
+    List<Artist> findRandomArtists(@Param("size") int size);
+
 }
