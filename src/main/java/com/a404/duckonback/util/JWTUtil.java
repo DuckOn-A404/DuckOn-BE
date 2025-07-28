@@ -87,14 +87,14 @@ public class JWTUtil {
     public String extractAndValidateToken(String authorization) {
         validateTokenFormat(authorization);
 
-        String accessToken = authorization.substring("Bearer ".length()).trim();
-        if (accessToken.isEmpty()) {
-            throw new CustomException("Access Token이 비어 있습니다.", HttpStatus.UNAUTHORIZED);
+        String Token = authorization.substring("Bearer ".length()).trim();
+        if (Token.isEmpty()) {
+            throw new CustomException("Token이 비어 있습니다.", HttpStatus.UNAUTHORIZED);
         }
-        if (!validateToken(accessToken)) {
-            throw new CustomException("Access Token이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+        if (!validateToken(Token)) {
+            throw new CustomException("Token이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
         }
-        return accessToken;
+        return Token;
     }
 
 

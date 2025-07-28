@@ -11,4 +11,5 @@ public interface UserService {
     boolean isUserIdDuplicate(String userId);
     boolean isNicknameDuplicate(String nickname);
     UserDetailInfoResponseDTO getUserDetailInfo(String accessToken);
+    void deleteUser(String authorization, String refreshToken);
 }

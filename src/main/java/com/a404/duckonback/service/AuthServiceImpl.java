@@ -152,4 +152,13 @@ public class AuthServiceImpl implements AuthService {
         User user = userService.findByUserId(userId);
         return jwtUtil.generateAccessToken(user);
     }
+
+    public void logout(String accessTokenHeader, String refreshTokenHeader){
+        String accessToken = jwtUtil.extractAndValidateToken(accessTokenHeader);
+        String refreshToken = jwtUtil.extractAndValidateToken(refreshTokenHeader);
+
+        //블랙리스트 중복등록 방지 +등록 필요
+
+
+    }
 }
