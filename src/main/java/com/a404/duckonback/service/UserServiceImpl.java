@@ -5,18 +5,14 @@ import com.a404.duckonback.dto.RoomDTO;
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
 import com.a404.duckonback.dto.UserInfoResponseDTO;
 import com.a404.duckonback.entity.Penalty;
-import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
-import com.a404.duckonback.repository.RoomRepository;
 import com.a404.duckonback.repository.UserRepository;
-import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,8 +22,6 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final JWTUtil jwtUtil;
-    private final RoomRepository roomRepository;
     private final PenaltyService penaltyService;
     private final FollowService followService;
 
@@ -116,12 +110,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserInfoResponseDTO getUserInfo(String userId) {
-        User user = userRepository.findByUserId(userId);
-
-        if(user == null){
-            throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND);
+    public UserInfoResponseDTO getUserInfo(String myUserId, String otherUserId) {
+        if (myUserId == null) {
+            throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
         }
+        if (!userRepository.existsByUserId(otherUserId)) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        User user = userRepository.findByUserId(otherUserId);
 
         return UserInfoResponseDTO.builder()
                 .userId(user.getUserId())
@@ -129,8 +126,7 @@ public class UserServiceImpl implements UserService {
                 .imgUrl(user.getImgUrl())
                 .followingCount(user.getFollowing().size())
                 .followerCount(user.getFollowers().size())
-//                .isFollowing(followService.isFollowing()) jwt 코드 구현에 맞춰서 수정 필요
-                .isFollowing(false)
+                .following(followService.isFollowing(myUserId, otherUserId))
                 .build();
     }
 

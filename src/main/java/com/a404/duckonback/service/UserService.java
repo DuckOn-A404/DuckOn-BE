@@ -12,7 +12,7 @@ public interface UserService {
     boolean isUserIdDuplicate(String userId);
     boolean isNicknameDuplicate(String nickname);
 
-    UserInfoResponseDTO getUserInfo(String userId);
+    UserInfoResponseDTO getUserInfo(String myUserId, String otherUserId);
     UserDetailInfoResponseDTO getUserDetailInfo(String userId);
     void deleteUser(User user, String refreshToken);
 }
