@@ -72,7 +72,7 @@ public class UserServiceImpl implements UserService {
             throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND);
         }
 
-        List<Integer> artistList = Optional.ofNullable(user.getArtistFollows())
+        List<Long> artistList = Optional.ofNullable(user.getArtistFollows())
                 .orElse(List.of())
                 .stream()
                 .map(af -> af.getArtist() != null ? af.getArtist().getArtistId() : null)
