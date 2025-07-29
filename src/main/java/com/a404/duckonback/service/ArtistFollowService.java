@@ -12,4 +12,11 @@ public interface ArtistFollowService {
     List<ArtistFollow> getFollowsByArtist(Long artistId);
     void deleteArtistFollow(Long id, Long artistId);
     boolean isFollowingArtist(Long id, Long artistId);
+
+    void followArtists(Long id, List<Long> artistList);
+
+    void followArtist(Long userId, Long artistId);
+    void unfollowArtist(Long userId, Long artistId);
+    void updateArtistFollows(Long userId, List<Long> artistIds);
+
 }

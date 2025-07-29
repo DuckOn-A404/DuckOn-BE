@@ -10,13 +10,9 @@ import java.util.List;
 public interface ArtistService {
 
     List<Long> findAllArtistIdByUserId(Long id);
-    void followArtists(Long id, List<Long> artistList);
 
     Page<ArtistDTO> getArtists(Pageable pageable);
     List<ArtistDTO> searchArtists(String keyword);
     List<ArtistDTO> getRandomArtists(int size);
-
-    void followArtist(Long userId, Long artistId);
-    void unfollowArtist(Long userId, Long artistId);
 
 }
