@@ -71,17 +71,16 @@ public class ArtistController {
     // 아티스트 팔로우 추가
     @PostMapping("/{artistId}/follow")
     public ResponseEntity<?> followArtist(
-            @PathVariable Integer artistId,
-            @AuthenticationPrincipal User user) {
-
-        // 1) user: 이미 인증된 User 객체가 들어옵니다.
-        // 2) 서비스에 ID와 artistId만 넘기면, 나머지(중복/존재 여부 검증)는 서비스가 알아서 처리
-        artistService.followArtist(user.getId(), artistId);
-
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal.getUser().getId();
+        artistService.followArtist(userId, artistId);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of("message", "아티스트를 팔로우했습니다."));
     }
+
 
 
 }
