@@ -3,6 +3,7 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.PenaltyDTO;
 import com.a404.duckonback.dto.RoomDTO;
 import com.a404.duckonback.dto.UserDetailInfoResponseDTO;
+import com.a404.duckonback.dto.UserInfoResponseDTO;
 import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.User;
@@ -16,15 +17,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final JWTUtil jwtUtil;
-    private final RoomRepository roomRepository;
     private final PenaltyService penaltyService;
+    private final FollowService followService;
 
     @Override
     public User findByEmail(String email) {
@@ -57,26 +59,30 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDetailInfoResponseDTO getUserDetailInfo(String authorization) {
-        String accessToken = jwtUtil.extractAndValidateToken(authorization);
+//    @Transactional(readOnly = true)
+    public UserDetailInfoResponseDTO getUserDetailInfo(String userId) {
+        User user = userRepository.findUserDetailWithArtistFollows(userId)
+                .orElseThrow(() -> new CustomException("사용자 없음", HttpStatus.NOT_FOUND));
 
-        String userId = jwtUtil.getClaims(accessToken).getSubject();
-        User user = userRepository.findByUserId(userId);
+        return toDTO(user);
+    }
 
-        if(user == null){
-            throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.UNAUTHORIZED);
+    private UserDetailInfoResponseDTO toDTO(User user) {
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND);
         }
 
-        List<Room> rooms = roomRepository.findByCreator_Id(user.getId());
-        List<RoomDTO> roomList = (rooms != null ? rooms : List.<Room>of()).stream()
-                .map(room -> RoomDTO.builder()
-                        .roomId(room.getRoomId())
-                        .title(room.getTitle())
-                        .imgUrl(room.getImgUrl())
-                        .createdAt(room.getCreatedAt())
-                        .creatorId(room.getCreator().getUserId())
-                        .artistId(room.getArtist().getArtistId())
-                        .build())
+        List<Integer> artistList = Optional.ofNullable(user.getArtistFollows())
+                .orElse(List.of())
+                .stream()
+                .map(af -> af.getArtist() != null ? af.getArtist().getArtistId() : null)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<RoomDTO> roomList = Optional.ofNullable(user.getRooms())
+                .orElse(List.of())
+                .stream()
+                .map(RoomDTO::fromEntity)
                 .toList();
 
         List<Penalty> penalties = penaltyService.getActivePenaltiesByUser(user.getId());
@@ -97,26 +103,40 @@ public class UserServiceImpl implements UserService {
                 .role(user.getRole().toString())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(user.getArtistFollows().stream().map(
-                        artistFollow -> artistFollow.getArtist().getArtistId()
-                ).toList())
-                .followingCount(user.getFollowing().size())
-                .followerCount(user.getFollowers().size())
-                .password(user.getPassword())
-                .roomList(roomList)
+                .artistList(artistList)
+                .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
+                .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
                 .penaltyList(pennaltyList)
+                .roomList(roomList)
                 .build();
     }
 
     @Override
     @Transactional
-    public void deleteUser(String authorization, String refreshToken){
-        String accessToken = jwtUtil.extractAndValidateToken(authorization);
-
-        String userId = jwtUtil.getClaims(accessToken).getSubject();
-        userRepository.deleteByUserId(userId);
-
+    public void deleteUser(User user, String refreshToken) {
+        userRepository.delete(user);
         //refreshToken 블랙리스트 등록
+    }
+
+    @Override
+    public UserInfoResponseDTO getUserInfo(String myUserId, String otherUserId) {
+        if (myUserId == null) {
+            throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
+        }
+        if (!userRepository.existsByUserId(otherUserId)) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        User user = userRepository.findByUserId(otherUserId);
+
+        return UserInfoResponseDTO.builder()
+                .userId(user.getUserId())
+                .nickname(user.getNickname())
+                .imgUrl(user.getImgUrl())
+                .followingCount(user.getFollowing().size())
+                .followerCount(user.getFollowers().size())
+                .following(followService.isFollowing(myUserId, otherUserId))
+                .build();
     }
 
 
