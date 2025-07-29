@@ -1,6 +1,7 @@
 package com.a404.duckonback.filter;
 
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.util.JWTUtil;
 import io.jsonwebtoken.Claims;
@@ -51,12 +52,12 @@ public class JWTFilter extends OncePerRequestFilter {
 
                 User user = userRepository.findByUserId(userId);
                 if (user != null) {
-                    CustomUserDetails userDetails = new CustomUserDetails(user);
+                    CustomUserPrincipal principal = new CustomUserPrincipal(user);
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
-                                    userDetails,
+                                    principal,
                                     null,
-                                    userDetails.getAuthorities()
+                                    principal.getAuthorities()
                             );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
