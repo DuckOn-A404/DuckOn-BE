@@ -1,10 +1,14 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ArtistDTO;
+import com.a404.duckonback.dto.ArtistDetailDTO;
+import com.a404.duckonback.dto.FollowedArtistDTO;
+import com.a404.duckonback.dto.UpdateArtistFollowRequestDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.ArtistFollowRepository;
+import com.a404.duckonback.service.ArtistFollowService;
 import com.a404.duckonback.service.ArtistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +32,20 @@ import java.util.stream.Collectors;
 public class ArtistController {
 
     private final ArtistService artistService;
-    private final ArtistFollowRepository artistFollowRepository;
+    private final ArtistFollowService artistFollowService;
+
+    // 단일 아티스트 상세 조회
+    @GetMapping("/{artistId}")
+    public ResponseEntity<?> getArtist(
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal != null
+                ? principal.getUser().getId()
+                : null;
+        ArtistDetailDTO dto = artistService.getArtistDetail(userId, artistId);
+        return ResponseEntity.ok(dto);
+    }
 
     // 전체 아티스트 페이징 조회
     @GetMapping
@@ -68,20 +85,68 @@ public class ArtistController {
         return ResponseEntity.ok(Map.of("artistList", list));
     }
 
+    // 내가 팔로우한 아티스트 조회
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyFollowedArtists(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserPrincipal principal) {
+
+        if (page < 1 || size < 1) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<FollowedArtistDTO> dtoPage = artistFollowService.getFollowedArtists(
+                principal.getUser().getId(), pageable);
+
+        return ResponseEntity.ok(Map.of(
+                "artistList", dtoPage.getContent(),
+                "page", page,
+                "size", size,
+                "totalPages", dtoPage.getTotalPages(),
+                "totalElements", dtoPage.getTotalElements()
+        ));
+    }
+
     // 아티스트 팔로우 추가
     @PostMapping("/{artistId}/follow")
     public ResponseEntity<?> followArtist(
             @PathVariable Long artistId,
-            @AuthenticationPrincipal User user) {
-
-        // 1) user: 이미 인증된 User 객체가 들어옵니다.
-        // 2) 서비스에 ID와 artistId만 넘기면, 나머지(중복/존재 여부 검증)는 서비스가 알아서 처리
-        artistService.followArtist(user.getId(), artistId);
-
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal.getUser().getId();
+        artistFollowService.followArtist(userId, artistId);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of("message", "아티스트를 팔로우했습니다."));
     }
 
+    // 아티스트 팔로우 취소
+    @DeleteMapping("/{artistId}/follow")
+    public ResponseEntity<?> unfollowArtist(
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal.getUser().getId();
+        artistFollowService.unfollowArtist(userId, artistId);
+        return ResponseEntity
+                .ok(Map.of("message", "아티스트 팔로우를 취소했습니다."));
+    }
+
+    // 아티스트 팔로우 수정
+    @PutMapping("/follow")
+    public ResponseEntity<?> updateFollows(
+            @RequestBody UpdateArtistFollowRequestDTO req,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal.getUser().getId();
+        artistFollowService.updateArtistFollows(userId, req.getArtistList());
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of("message", "아티스트 팔로우 목록을 수정했습니다."));
+    }
 
 }

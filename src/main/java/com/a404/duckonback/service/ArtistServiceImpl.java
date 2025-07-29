@@ -1,6 +1,7 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.ArtistDTO;
+import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.ArtistFollow;
 import com.a404.duckonback.entity.User;
@@ -8,6 +9,7 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,27 +31,32 @@ public class ArtistServiceImpl implements ArtistService {
     private final ArtistFollowRepository artistFollowRepository;
 
     @Override
+    public Artist findById(Long artistId) {
+        return artistRepository.findByArtistId(artistId)
+                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
+    }
+
+    @Override
     public List<Long> findAllArtistIdByUserId(Long id){
         return artistRepository.findAllArtistIdByUserId(id);
     }
 
     @Override
-    public void followArtists(Long id, List<Long> artistList){
-        User user = userRepository.findById(id);
+    public ArtistDetailDTO getArtistDetail(Long userId, Long artistId) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new CustomException(
+                        "해당 아티스트를 찾을 수 없습니다. ID: " + artistId,
+                        HttpStatus.NOT_FOUND
+                ));
 
-        for (Long artistId : artistList) {
-            Artist artist = artistRepository.findById(artistId)
-                    .orElseThrow(() -> new CustomException("존재하지 않는 아티스트입니다. ID: " + artistId, HttpStatus.NOT_FOUND));
-
-
-            ArtistFollow artistFollow = ArtistFollow.builder()
-                    .user(user)
-                    .artist(artist)
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            artistFollowRepository.save(artistFollow);
+        // 로그인 유저 정보가 없으면 (비로그인) userId == null 일 수 있으므로
+        boolean isFollowed = false;
+        if (userId != null && userRepository.findById(userId) != null) {
+            isFollowed = artistFollowRepository
+                    .existsByUser_IdAndArtist_ArtistId(userId, artistId);
         }
+
+        return ArtistDetailDTO.of(artist, isFollowed);
     }
 
     @Override
@@ -83,40 +92,6 @@ public class ArtistServiceImpl implements ArtistService {
                     return ArtistDTO.fromEntity(artist, cnt);
                 })
                 .toList();
-    }
-
-    @Override
-    public void followArtist(Long userId, Long artistId) {
-        // 1) 사용자 존재 확인 (커스텀 findById → User or null)
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
-        }
-
-        // 2) 이미 팔로우했는지 검사
-        if (artistFollowRepository.existsByUser_IdAndArtist_ArtistId(userId, artistId)) {
-            throw new CustomException("이미 팔로우한 아티스트입니다.", HttpStatus.BAD_REQUEST);
-        }
-
-        // 3) 아티스트 존재 확인
-        Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() ->
-                        new CustomException("해당 아티스트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
-                );
-
-        // 4) 팔로우 엔티티 생성 및 저장
-        ArtistFollow af = ArtistFollow.builder()
-                .user(user)
-                .artist(artist)
-                .createdAt(LocalDateTime.now())
-                .build();
-        artistFollowRepository.save(af);
-    }
-
-    @Override
-    public Artist findById(Long artistId) {
-        return artistRepository.findByArtistId(artistId)
-                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
     }
 
 }
