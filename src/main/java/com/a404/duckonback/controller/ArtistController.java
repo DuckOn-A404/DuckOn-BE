@@ -71,7 +71,7 @@ public class ArtistController {
     // 아티스트 팔로우 추가
     @PostMapping("/{artistId}/follow")
     public ResponseEntity<?> followArtist(
-            @PathVariable Integer artistId,
+            @PathVariable Long artistId,
             @AuthenticationPrincipal User user) {
 
         // 1) user: 이미 인증된 User 객체가 들어옵니다.

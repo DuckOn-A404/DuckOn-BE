@@ -7,12 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface ArtistRepository extends JpaRepository<Artist, Integer> {
+public interface ArtistRepository extends JpaRepository<Artist, Long> {
 
     @Query("SELECT af.artist.artistId FROM ArtistFollow af WHERE af.user.id = :id")
-    List<Integer> findAllArtistIdByUserId(@Param("id") Long id);
+    List<Long> findAllArtistIdByUserId(@Param("id") Long id);
 
     @Query("""
         SELECT a FROM Artist a 
@@ -27,5 +28,8 @@ public interface ArtistRepository extends JpaRepository<Artist, Integer> {
             nativeQuery = true
     )
     List<Artist> findRandomArtists(@Param("size") int size);
+
+    Optional<Artist> findByArtistId(Long artistId);
+
 
 }
