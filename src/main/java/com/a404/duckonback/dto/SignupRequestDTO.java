@@ -16,6 +16,6 @@ public class SignupRequestDTO {
     private String password;
     private String nickname;
     private String language;
-    private List<Integer> artistList;
+    private List<Long> artistList;
     private MultipartFile profileImg;
 }
