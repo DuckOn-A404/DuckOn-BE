@@ -1,8 +1,10 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -53,5 +55,21 @@ public class RedisServiceImpl implements RedisService {
                 .isPlaying((boolean) map.get("isPlaying"))
                 .lastUpdated((long) map.get("lastUpdated"))
                 .build();
+    }
+
+    public void deleteRoomInfo(Long artistId, Long roomId) {
+        String roomKey = "room:" + roomId + ":info";
+        String artistRoomsKey = "artist:" + artistId + ":rooms";
+
+        Boolean deleted = redisTemplate.delete(roomKey);
+        Long removed = redisTemplate.opsForSet().remove(artistRoomsKey, roomId.toString());
+
+        if (deleted != null && deleted == false) {
+            throw new CustomException("roomId에 대한 방이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        if (removed == 0) {
+            throw new CustomException("해당 아티스트의 방 목록에 해당 roomId가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
+        }
     }
 }
