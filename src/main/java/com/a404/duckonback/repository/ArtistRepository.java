@@ -9,10 +9,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ArtistRepository extends JpaRepository<Artist, Integer> {
+public interface ArtistRepository extends JpaRepository<Artist, Long> {
 
     @Query("SELECT af.artist.artistId FROM ArtistFollow af WHERE af.user.id = :id")
-    List<Integer> findAllArtistIdByUserId(@Param("id") Long id);
+    List<Long> findAllArtistIdByUserId(@Param("id") Long id);
 
     @Query("""
         SELECT a FROM Artist a 

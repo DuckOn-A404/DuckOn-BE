@@ -9,5 +9,5 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class ArtistFollowId implements Serializable {
     private Long user;       // User.id
-    private Integer artist;    // Artist.artistId
+    private Long artist;    // Artist.artistId
 }
