@@ -31,6 +31,12 @@ public class ArtistServiceImpl implements ArtistService {
     private final ArtistFollowRepository artistFollowRepository;
 
     @Override
+    public Artist findById(Long artistId) {
+        return artistRepository.findByArtistId(artistId)
+                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
+    }
+
+    @Override
     public List<Long> findAllArtistIdByUserId(Long id){
         return artistRepository.findAllArtistIdByUserId(id);
     }
