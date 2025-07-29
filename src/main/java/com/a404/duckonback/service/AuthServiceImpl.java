@@ -30,8 +30,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserService userService;
     private final ArtistService artistService;
-
-    private final UserRepository userRepository;
+    private final ArtistFollowService artistFollowService;
 
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
@@ -128,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
         userService.save(user);
 
         if (dto.getArtistList() != null && !dto.getArtistList().isEmpty()) {
-            artistService.followArtists(user.getId(), dto.getArtistList());
+            artistFollowService.followArtists(user.getId(), dto.getArtistList());
         }
 
         return ResponseEntity.ok().body("회원가입이 성공적으로 완료되었습니다!");
