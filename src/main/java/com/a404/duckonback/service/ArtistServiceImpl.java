@@ -27,15 +27,15 @@ public class ArtistServiceImpl implements ArtistService {
     private final ArtistFollowRepository artistFollowRepository;
 
     @Override
-    public List<Integer> findAllArtistIdByUserId(Long id){
+    public List<Long> findAllArtistIdByUserId(Long id){
         return artistRepository.findAllArtistIdByUserId(id);
     }
 
     @Override
-    public void followArtists(Long id, List<Integer> artistList){
+    public void followArtists(Long id, List<Long> artistList){
         User user = userRepository.findById(id);
 
-        for (Integer artistId : artistList) {
+        for (Long artistId : artistList) {
             Artist artist = artistRepository.findById(artistId)
                     .orElseThrow(() -> new CustomException("존재하지 않는 아티스트입니다. ID: " + artistId, HttpStatus.NOT_FOUND));
 
@@ -86,7 +86,7 @@ public class ArtistServiceImpl implements ArtistService {
     }
 
     @Override
-    public void followArtist(Long userId, Integer artistId) {
+    public void followArtist(Long userId, Long artistId) {
         // 1) 사용자 존재 확인 (커스텀 findById → User or null)
         User user = userRepository.findById(userId);
         if (user == null) {
