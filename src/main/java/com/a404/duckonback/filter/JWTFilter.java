@@ -48,16 +48,15 @@ public class JWTFilter extends OncePerRequestFilter {
                 Claims claims = jwtUtil.getClaims(token);
                 String userId = claims.getSubject();
 
-                // 4. DB에서 유저 조회
-                User user = userRepository.findByUserId(userId);
 
+                User user = userRepository.findByUserId(userId);
                 if (user != null) {
-                    // 5. 인증 객체 생성 및 등록
+                    CustomUserDetails userDetails = new CustomUserDetails(user);
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
-                                    user,
+                                    userDetails,
                                     null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                                    userDetails.getAuthorities()
                             );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
