@@ -8,6 +8,7 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -113,5 +114,29 @@ public class ArtistServiceImpl implements ArtistService {
         artistFollowRepository.save(af);
     }
 
+    @Override
+    @Transactional
+    public void unfollowArtist(Long userId, Long artistId) {
+        // 1) 사용자 존재 확인
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
+        }
+
+        // 2) 아티스트 존재 확인
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() ->
+                        new CustomException("해당 아티스트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
+                );
+
+        // 3) 팔로우 중인지 확인
+        boolean following = artistFollowRepository.existsByUser_IdAndArtist_ArtistId(userId, artistId);
+        if (!following) {
+            throw new CustomException("팔로우한 아티스트가 아닙니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 4) 삭제 (트랜잭션 안에서 실행되어야 함)
+        artistFollowRepository.deleteByUser_IdAndArtist_ArtistId(userId, artistId);
+    }
 
 }

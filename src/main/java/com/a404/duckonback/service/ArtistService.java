@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ArtistService {
+
     List<Long> findAllArtistIdByUserId(Long id);
     void followArtists(Long id, List<Long> artistList);
 
@@ -16,4 +17,6 @@ public interface ArtistService {
     List<ArtistDTO> getRandomArtists(int size);
 
     void followArtist(Long userId, Long artistId);
+    void unfollowArtist(Long userId, Long artistId);
+
 }

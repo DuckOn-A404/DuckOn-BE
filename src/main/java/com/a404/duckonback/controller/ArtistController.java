@@ -81,6 +81,17 @@ public class ArtistController {
                 .body(Map.of("message", "아티스트를 팔로우했습니다."));
     }
 
+    // 아티스트 팔로우 취소
+    @DeleteMapping("/{artistId}/follow")
+    public ResponseEntity<?> unfollowArtist(
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal.getUser().getId();
+        artistService.unfollowArtist(userId, artistId);
+        return ResponseEntity
+                .ok(Map.of("message", "아티스트 팔로우를 취소했습니다."));
+    }
 
 
 }
