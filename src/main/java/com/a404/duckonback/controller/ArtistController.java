@@ -1,6 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ArtistDTO;
+import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.dto.FollowedArtistDTO;
 import com.a404.duckonback.dto.UpdateArtistFollowRequestDTO;
 import com.a404.duckonback.entity.Artist;
@@ -32,6 +33,19 @@ public class ArtistController {
 
     private final ArtistService artistService;
     private final ArtistFollowService artistFollowService;
+
+    // 단일 아티스트 상세 조회
+    @GetMapping("/{artistId}")
+    public ResponseEntity<?> getArtist(
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long userId = principal != null
+                ? principal.getUser().getId()
+                : null;
+        ArtistDetailDTO dto = artistService.getArtistDetail(userId, artistId);
+        return ResponseEntity.ok(dto);
+    }
 
     // 전체 아티스트 페이징 조회
     @GetMapping
@@ -71,6 +85,7 @@ public class ArtistController {
         return ResponseEntity.ok(Map.of("artistList", list));
     }
 
+    // 내가 팔로우한 아티스트 조회
     @GetMapping("/me")
     public ResponseEntity<?> getMyFollowedArtists(
             @RequestParam(defaultValue = "1") int page,

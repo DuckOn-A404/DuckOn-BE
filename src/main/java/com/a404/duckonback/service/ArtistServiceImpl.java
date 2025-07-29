@@ -1,6 +1,7 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.ArtistDTO;
+import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.ArtistFollow;
 import com.a404.duckonback.entity.User;
@@ -32,6 +33,24 @@ public class ArtistServiceImpl implements ArtistService {
     @Override
     public List<Long> findAllArtistIdByUserId(Long id){
         return artistRepository.findAllArtistIdByUserId(id);
+    }
+
+    @Override
+    public ArtistDetailDTO getArtistDetail(Long userId, Long artistId) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new CustomException(
+                        "해당 아티스트를 찾을 수 없습니다. ID: " + artistId,
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // 로그인 유저 정보가 없으면 (비로그인) userId == null 일 수 있으므로
+        boolean isFollowed = false;
+        if (userId != null && userRepository.findById(userId) != null) {
+            isFollowed = artistFollowRepository
+                    .existsByUser_IdAndArtist_ArtistId(userId, artistId);
+        }
+
+        return ArtistDetailDTO.of(artist, isFollowed);
     }
 
     @Override
