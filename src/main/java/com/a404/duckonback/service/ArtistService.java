@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface ArtistService {
 
+    Artist findById(Long artistId);
     List<Long> findAllArtistIdByUserId(Long id);
 
     ArtistDetailDTO getArtistDetail(Long userId, Long artistId);
