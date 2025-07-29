@@ -60,7 +60,6 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
         return artistFollowRepository.existsByUser_IdAndArtist_ArtistId(id, artistId);
     }
 
-
     @Override
     public void followArtists(Long id, List<Long> artistList){
         User user = userRepository.findById(id);
