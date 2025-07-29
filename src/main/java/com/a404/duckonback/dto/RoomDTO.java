@@ -16,7 +16,7 @@ public class RoomDTO {
     private String imgUrl;
     private LocalDateTime createdAt;
     private String creatorId;
-    private int artistId;
+    private Long artistId;
 
     public static RoomDTO fromEntity(Room room) {
         return RoomDTO.builder()

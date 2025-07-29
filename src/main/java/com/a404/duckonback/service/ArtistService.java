@@ -8,12 +8,12 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ArtistService {
-    List<Integer> findAllArtistIdByUserId(Long id);
-    void followArtists(Long id, List<Integer> artistList);
+    List<Long> findAllArtistIdByUserId(Long id);
+    void followArtists(Long id, List<Long> artistList);
 
     Page<ArtistDTO> getArtists(Pageable pageable);
     List<ArtistDTO> searchArtists(String keyword);
     List<ArtistDTO> getRandomArtists(int size);
 
-    void followArtist(Long userId, Integer artistId);
+    void followArtist(Long userId, Long artistId);
 }

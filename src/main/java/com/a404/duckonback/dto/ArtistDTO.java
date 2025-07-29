@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class ArtistDTO {
-    private Integer artistId;
+    private Long artistId;
     private String nameEn;
     private String nameKr;
     private LocalDate debutDate;
