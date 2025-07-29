@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ArtistRepository extends JpaRepository<Artist, Long> {
@@ -27,5 +28,8 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
             nativeQuery = true
     )
     List<Artist> findRandomArtists(@Param("size") int size);
+
+    Optional<Artist> findByArtistId(Long artistId);
+
 
 }
