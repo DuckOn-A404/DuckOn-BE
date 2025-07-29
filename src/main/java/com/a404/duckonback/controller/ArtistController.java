@@ -1,6 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ArtistDTO;
+import com.a404.duckonback.dto.FollowedArtistDTO;
 import com.a404.duckonback.dto.UpdateArtistFollowRequestDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.User;
@@ -70,6 +71,31 @@ public class ArtistController {
         return ResponseEntity.ok(Map.of("artistList", list));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyFollowedArtists(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserPrincipal principal) {
+
+        if (page < 1 || size < 1) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<FollowedArtistDTO> dtoPage = artistFollowService.getFollowedArtists(
+                principal.getUser().getId(), pageable);
+
+        return ResponseEntity.ok(Map.of(
+                "artistList", dtoPage.getContent(),
+                "page", page,
+                "size", size,
+                "totalPages", dtoPage.getTotalPages(),
+                "totalElements", dtoPage.getTotalElements()
+        ));
+    }
+
     // 아티스트 팔로우 추가
     @PostMapping("/{artistId}/follow")
     public ResponseEntity<?> followArtist(
@@ -105,7 +131,7 @@ public class ArtistController {
         artistFollowService.updateArtistFollows(userId, req.getArtistList());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(Map.of("message", "아티스트팔로우 목록을 수정했습니다."));
+                .body(Map.of("message", "아티스트 팔로우 목록을 수정했습니다."));
     }
 
 }

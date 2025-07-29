@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.FollowedArtistDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.ArtistFollow;
 import com.a404.duckonback.entity.ArtistFollowId;
@@ -10,6 +11,8 @@ import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -75,6 +78,23 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
 
             artistFollowRepository.save(artistFollow);
         }
+    }
+
+    @Override
+    public Page<FollowedArtistDTO> getFollowedArtists(Long userId, Pageable pageable) {
+        // 사용자 존재 확인
+        if (userRepository.findById(userId) == null) {
+            throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
+        }
+        // 페이징 조회 후 DTO로 매핑
+        return artistFollowRepository.findByUser_Id(userId, pageable)
+                .map(af -> new FollowedArtistDTO(
+                        af.getArtist().getArtistId(),
+                        af.getArtist().getNameEn(),
+                        af.getArtist().getNameKr(),
+                        af.getArtist().getDebutDate(),
+                        af.getArtist().getImgUrl()
+                ));
     }
 
     @Override
