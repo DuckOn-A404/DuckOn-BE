@@ -1,5 +1,6 @@
 package com.a404.duckonback.controller;
 
+import com.a404.duckonback.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.dto.UserInfoResponseDTO;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.UserService;
@@ -25,6 +26,16 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(userService.getUserDetailInfo(principal.getUser().getUserId()));
+    }
+
+    @Operation(summary = "내 정보 수정", description = "로그인한 사용자의 정보를 수정합니다.")
+    @PutMapping("/me")
+    public ResponseEntity<?> updateMyInfo(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody UpdateProfileRequestDTO newUserInfo
+    ) {
+        userService.updateUserInfo(principal.getUser().getUserId(), newUserInfo);
+        return ResponseEntity.ok(Map.of("message", "회원 정보가 수정되었습니다."));
     }
 
     @Operation(summary = "회원 탈퇴", description = "로그인한 사용자의 계정을 삭제합니다.")
