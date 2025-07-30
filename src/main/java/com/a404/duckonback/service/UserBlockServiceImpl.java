@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.BlockedUserDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.entity.UserBlock;
 import com.a404.duckonback.entity.UserBlockId;
@@ -115,4 +116,24 @@ public class UserBlockServiceImpl implements UserBlockService {
         return userBlockRepository.existsByBlocker_IdAndBlocked_Id(blockerId, blocked.getId());
     }
 
+    @Override
+    public List<BlockedUserDTO> getUserBlockList(Long blockerId) {
+        // 1) 차단 요청자 검증
+        User blocker = userRepository.findById(blockerId);
+        if (blocker == null) {
+            throw new CustomException("차단 요청 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        // 2) 차단 리스트 조회 & DTO 매핑
+        return userBlockRepository.findByBlocker_Id(blockerId).stream()
+                .map(ub -> {
+                    User b = ub.getBlocked();
+                    return new BlockedUserDTO(
+                            b.getUserId(),
+                            b.getNickname(),
+                            b.getImgUrl()
+                    );
+                })
+                .toList();
+    }
 }

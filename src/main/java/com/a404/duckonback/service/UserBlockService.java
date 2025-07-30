@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.BlockedUserDTO;
 import com.a404.duckonback.entity.UserBlock;
 
 import java.util.List;
@@ -34,4 +35,11 @@ public interface UserBlockService {
      * @return 차단 여부 (boolean)
      */
     boolean isUserBlocked(Long blockerId, String blockedUserId);
+
+    /**
+     * 차단 목록 조회 (DTO 반환)
+     * @param blockerId 차단 요청자 PK
+     * @return 차단된 사용자 정보 DTO 리스트
+     */
+    List<BlockedUserDTO> getUserBlockList(Long blockerId);
 }
