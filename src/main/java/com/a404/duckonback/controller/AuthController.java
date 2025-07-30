@@ -3,7 +3,7 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.LoginRequestDTO;
 import com.a404.duckonback.dto.SignupRequestDTO;
 import com.a404.duckonback.exception.CustomException;
-import com.a404.duckonback.filter.CustomUserDetails;
+import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.AuthService;
 import com.a404.duckonback.service.AuthServiceImpl;
 import com.a404.duckonback.service.UserService;
@@ -70,10 +70,10 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestHeader("X-Refresh-Token") String refreshToken) {
 
-        authService.logout(userDetails.getUser(), refreshToken);
+        authService.logout(principal.getUser(), refreshToken);
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
     }
 

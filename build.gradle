@@ -25,6 +25,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
@@ -42,6 +43,9 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5' // or jjwt-gson if you prefer Gson
 
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.1'
+
 
 }
 
