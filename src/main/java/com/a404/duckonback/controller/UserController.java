@@ -83,5 +83,15 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "사용자를 팔로우했습니다."));
     }
 
+    @Operation(summary = "사용자 언팔로우", description = "특정 사용자의 팔로우를 취소합니다.")
+    @DeleteMapping("/{userId}/follow")
+    public ResponseEntity<?> unfollowUser(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable String userId
+    ) {
+        userService.unfollowUser(principal.getUser().getUserId(), userId);
+        return ResponseEntity.ok(Map.of("message", "사용자 팔로우를 취소했습니다."));
+    }
+
 
 }

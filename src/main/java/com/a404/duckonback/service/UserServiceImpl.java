@@ -221,6 +221,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void unfollowUser(String userId, String otherUserId) {
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        User otherUser = userRepository.findByUserId(otherUserId);
+        if (otherUser == null) {
+            throw new CustomException("팔로우 취소할 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        if( userId.equals(otherUserId)) {
+            throw new CustomException("자기 자신은 팔로우 취소할 수 없습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (!followService.isFollowing(userId, otherUserId)) {
+            throw new CustomException("팔로우하지 않은 사용자입니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        followService.deleteFollow(userId, otherUserId);
+    }
+
+    @Override
+    @Transactional
     public void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {

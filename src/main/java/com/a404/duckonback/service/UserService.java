@@ -20,6 +20,8 @@ public interface UserService {
     FollowingResponseDTO getFollowing(String userId);
 
     void followUser(String myUserId, String otherUserId);
+    void unfollowUser(String userId, String otherUserId);
 
     void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo);
+
 }
