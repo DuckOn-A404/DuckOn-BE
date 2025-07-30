@@ -11,6 +11,7 @@ import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PenaltyService penaltyService;
     private final FollowService followService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User findByEmail(String email) {
@@ -215,6 +217,35 @@ public class UserServiceImpl implements UserService {
                 .build());
 
         followService.createFollow(follow);
+    }
+
+    @Override
+    @Transactional
+    public void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo) {
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        if(newUserInfo == null) {
+            throw new CustomException("새로운 사용자 정보가 제공되지 않았습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        if(newUserInfo.getNewPassword() != null && !newUserInfo.getNewPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(newUserInfo.getNewPassword()));
+        }
+
+        if(newUserInfo.getNickname() != null && !newUserInfo.getNickname().isBlank()) {
+            user.setNickname(newUserInfo.getNickname());
+        }
+
+        if(newUserInfo.getLanguage() != null && !newUserInfo.getLanguage().isBlank()) {
+            user.setLanguage(newUserInfo.getLanguage());
+        }
+
+        if(newUserInfo.getProfileImg() != null && !newUserInfo.getProfileImg().isEmpty()) {
+            // TODO : 프로필 이미지 처리 로직 추가 필요
+        }
     }
 
 }
