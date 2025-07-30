@@ -1,4 +1,4 @@
-package com.a404.duckonback.oauth.handler;
+package com.a404.duckonback.handler;
 
 import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.UserDTO;
@@ -6,13 +6,14 @@ import com.a404.duckonback.entity.User;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.ArtistService;
-import com.a404.duckonback.util.CookieUtil;
 import com.a404.duckonback.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -20,19 +21,30 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class AuthSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
     private final UserRepository userRepository;
     private final ArtistService artistService;
+    private final ObjectMapper objectMapper;
+
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
-        User user = principal.getUser();
+        // principal에는 CustomUserPrincipal (OAuth2) 또는 UserDetails (폼 로그인)가 담겨 있음
+        User user;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserPrincipal cu) {
+            user = cu.getUser();
+        } else if (principal instanceof UserDetails ud) {
+            user = userRepository.findByUserId(ud.getUsername());
+        } else {
+            throw new IllegalStateException("Unknown principal type: " + principal);
+        }
 
-        String accessToken = jwtUtil.generateAccessToken(user);
+        // 1) 토큰 생성
+        String accessToken  = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
         // TODO: refreshToken 저장/회전 로직(Redis/DB)
 
@@ -40,7 +52,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 //        CookieUtil.addHttpOnlyCookie(response, "access_token", accessToken, 900);
 //        CookieUtil.addHttpOnlyCookie(response, "refresh_token", refreshToken, 1209600);
 
-        // 사용자 정보를 DTO로 변환
+        //  2) 사용자 정보를 DTO로 변환
         UserDTO userDTO = UserDTO.builder()
                 .email(user.getEmail())
                 .userId(user.getUserId())
@@ -59,7 +71,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .user(userDTO)
                 .build();
 
+        // 3) JSON 반환
+        response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json;charset=UTF-8");
-        new ObjectMapper().writeValue(response.getWriter(), responseDTO);
+        objectMapper.writeValue(response.getWriter(), responseDTO);
     }
 }

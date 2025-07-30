@@ -18,5 +18,5 @@ public class UserDTO {
     private String role;
     private String language;
     private String imgUrl;
-    private List<Integer> artistList;
+    private List<Long> artistList;
 }
