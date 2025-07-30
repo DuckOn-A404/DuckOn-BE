@@ -1,5 +1,6 @@
 package com.a404.duckonback.controller;
 
+import com.a404.duckonback.dto.BlockedUserDTO;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -47,6 +49,16 @@ public class UserBlockController {
         Long blockerId = principal.getUser().getId();
         boolean isBlocked = userBlockService.isUserBlocked(blockerId, userId);
         return ResponseEntity.ok(Map.of("isBlocked", isBlocked));
+    }
+
+    /** 차단 목록 조회 */
+    @GetMapping("/block")
+    public ResponseEntity<?> getUserBlockList(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long blockerId = principal.getUser().getId();
+        List<BlockedUserDTO> blockedList = userBlockService.getUserBlockList(blockerId);
+        return ResponseEntity.ok(Map.of("blockedList", blockedList));
     }
 
 }
