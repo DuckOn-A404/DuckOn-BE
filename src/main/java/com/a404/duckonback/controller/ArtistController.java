@@ -4,10 +4,7 @@ import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.dto.FollowedArtistDTO;
 import com.a404.duckonback.dto.UpdateArtistFollowRequestDTO;
-import com.a404.duckonback.entity.Artist;
-import com.a404.duckonback.entity.User;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
-import com.a404.duckonback.repository.ArtistFollowRepository;
 import com.a404.duckonback.service.ArtistFollowService;
 import com.a404.duckonback.service.ArtistService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,10 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Tag(name = "아티스트 관리", description = "아티스트 정보 조회, 팔로우/언팔로우, 검색 등의 기능을 제공합니다.")
 @Slf4j
