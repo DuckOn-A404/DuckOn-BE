@@ -5,10 +5,7 @@ import com.a404.duckonback.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -29,4 +26,16 @@ public class UserBlockController {
         userBlockService.blockUser(blockerId, userId);
         return ResponseEntity.ok(Map.of("message", "사용자를 차단하였습니다."));
     }
+
+    /** 차단 해제 */
+    @DeleteMapping("/block/{userId}")
+    public ResponseEntity<?> unblockUser(
+            @PathVariable String userId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long blockerId = principal.getUser().getId();
+        userBlockService.deleteUserBlock(blockerId, userId);
+        return ResponseEntity.ok(Map.of("message", "차단을 해제하였습니다."));
+    }
+
 }
