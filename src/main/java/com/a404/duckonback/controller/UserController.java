@@ -43,18 +43,18 @@ public class UserController {
     }
 
     @GetMapping("/me/followers")
-    public ResponseEntity<?> getFollowers(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(userService.getFollowers(userDetails.getUser().getUserId()));
+    public ResponseEntity<?> getFollowers(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return ResponseEntity.ok(userService.getFollowers(principal.getUser().getUserId()));
     }
 
     @GetMapping("/me/following")
-    public ResponseEntity<?> getFollowing(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(userService.getFollowing(userDetails.getUser().getUserId()));
+    public ResponseEntity<?> getFollowing(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return ResponseEntity.ok(userService.getFollowing(principal.getUser().getUserId()));
     }
 
     @PostMapping("/{userId}/follow")
-    public ResponseEntity<?> followUser(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable String userId) {
-        userService.followUser(userDetails.getUser().getUserId(), userId);
+    public ResponseEntity<?> followUser(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable String userId) {
+        userService.followUser(principal.getUser().getUserId(), userId);
         return ResponseEntity.ok(Map.of("message", "사용자를 팔로우했습니다."));
     }
 
