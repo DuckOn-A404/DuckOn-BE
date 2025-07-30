@@ -38,4 +38,15 @@ public class UserBlockController {
         return ResponseEntity.ok(Map.of("message", "차단을 해제하였습니다."));
     }
 
+    /** 차단 여부 확인 */
+    @GetMapping("/block/{userId}")
+    public ResponseEntity<?> isUserBlocked(
+            @PathVariable String userId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        Long blockerId = principal.getUser().getId();
+        boolean isBlocked = userBlockService.isUserBlocked(blockerId, userId);
+        return ResponseEntity.ok(Map.of("isBlocked", isBlocked));
+    }
+
 }

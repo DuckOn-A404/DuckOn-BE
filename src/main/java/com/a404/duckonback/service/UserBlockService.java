@@ -27,4 +27,11 @@ public interface UserBlockService {
      */
     void deleteUserBlock(Long blockerId, String blockedUserId);
 
+    /**
+     * 차단 여부 확인
+     * @param blockerId 차단 요청자 PK (Long)
+     * @param blockedUserId 차단 대상자의 userId (String)
+     * @return 차단 여부 (boolean)
+     */
+    boolean isUserBlocked(Long blockerId, String blockedUserId);
 }
