@@ -18,8 +18,8 @@ public class Penalty {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+    @Column(name = "penalty_id", nullable = false)
+    private Long penaltyId;
 
     @Column(name = "start_at")
     private LocalDateTime startAt;
