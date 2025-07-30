@@ -82,4 +82,21 @@ public class UserBlockServiceImpl implements UserBlockService {
         userBlockRepository.save(block);
     }
 
+    @Override
+    @Transactional
+    public void deleteUserBlock(Long blockerId, String blockedUserId) {
+        // 1) 차단 요청자 검증
+        User blocker = userRepository.findById(blockerId);
+        if (blocker == null) {
+            throw new CustomException("차단 요청 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+        // 2) 차단 해제 대상자 검증
+        User blocked = userRepository.findByUserId(blockedUserId);
+        if (blocked == null) {
+            throw new CustomException("차단 해제 대상 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+        // 3) 삭제
+        userBlockRepository.deleteByBlocker_IdAndBlocked_Id(blockerId, blocked.getId());
+    }
+
 }

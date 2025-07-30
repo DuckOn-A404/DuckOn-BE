@@ -19,4 +19,12 @@ public interface UserBlockService {
      * @param blockedUserId  차단 대상자의 userId (String)
      */
     void blockUser(Long blockerId, String blockedUserId);
+
+    /**
+     * 차단 해제
+     * @param blockerId 차단 요청자 PK (Long)
+     * @param blockedUserId 차단 해제 대상자의 userId (String)
+     */
+    void deleteUserBlock(Long blockerId, String blockedUserId);
+
 }
