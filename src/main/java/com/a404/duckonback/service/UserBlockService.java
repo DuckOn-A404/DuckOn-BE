@@ -12,4 +12,11 @@ public interface UserBlockService {
     List<UserBlock> getBlocksByBlocked(Long blockedId);
     boolean isUserBlocked(Long blockerId, Long blockedId);
     void deleteUserBlock(Long blockerId, Long blockedId);
+
+    /**
+     * 다른 사용자를 차단
+     * @param blockerId   차단 요청자 PK (Long)
+     * @param blockedUserId  차단 대상자의 userId (String)
+     */
+    void blockUser(Long blockerId, String blockedUserId);
 }
