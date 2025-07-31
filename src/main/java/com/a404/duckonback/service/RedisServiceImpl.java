@@ -73,9 +73,11 @@ public class RedisServiceImpl implements RedisService {
     public void deleteRoomInfo(Long artistId, Long roomId) {
         String roomKey = "room:" + roomId + ":info";
         String artistRoomsKey = "artist:" + artistId + ":rooms";
+        String roomUsersKey = "room:" + roomId + ":users";
 
         Boolean deleted = redisTemplate.delete(roomKey);
         Long removed = redisTemplate.opsForSet().remove(artistRoomsKey, roomId.toString());
+        Boolean deletedUsers = redisTemplate.delete(roomUsersKey);
 
         if (deleted != null && deleted == false) {
             throw new CustomException("roomId에 대한 방이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
