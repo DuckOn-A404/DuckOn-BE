@@ -21,4 +21,7 @@ public class LiveRoomDTO {
     private double currentTime;
     private boolean isPlaying;
     private long lastUpdated;
+    private boolean isLocked;
+    private String entryQuestion;
+    private String entryAnswer;
 }
