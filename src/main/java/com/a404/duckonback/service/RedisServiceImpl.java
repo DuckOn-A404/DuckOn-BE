@@ -47,7 +47,9 @@ public class RedisServiceImpl implements RedisService {
         String key = "room:" + roomId + ":info";
         Map<Object, Object> map = redisTemplate.opsForHash().entries(key);
 
-        if (map.isEmpty()) return null;
+        if (map.isEmpty()) {
+            throw new CustomException("Redis에 해당 roomId의 방 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
+        }
 
 
         return LiveRoomDTO.builder()
