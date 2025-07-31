@@ -60,8 +60,8 @@ public class LiveRoomServiceImpl implements LiveRoomService {
     }
 
 
-    public LiveRoomDTO getRoom(String roomId) {
-        return redisService.getRoomInfo(roomId);
+    public LiveRoomDTO getRoom(Long roomId) {
+        return redisService.getRoomInfo(roomId.toString());
     }
 
 

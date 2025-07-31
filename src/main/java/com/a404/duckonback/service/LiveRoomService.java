@@ -5,5 +5,5 @@ import com.a404.duckonback.dto.LiveRoomDTO;
 
 public interface LiveRoomService {
     LiveRoomDTO createRoom(CreateRoomRequestDTO req);
-    LiveRoomDTO getRoom(String roomId);
+    LiveRoomDTO getRoom(Long roomId);
 }
