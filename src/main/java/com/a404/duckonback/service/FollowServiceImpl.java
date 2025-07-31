@@ -41,6 +41,11 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
+    public void deleteFollow(String followerUserId, String followingUserId) {
+        followRepository.deleteByFollower_UserIdAndFollowing_UserId(followerUserId, followingUserId);
+    }
+
+    @Override
     public boolean isFollowing(Long followerId, Long followingId) {
         return followRepository.existsByFollower_IdAndFollowing_Id(followerId, followingId);
     }
