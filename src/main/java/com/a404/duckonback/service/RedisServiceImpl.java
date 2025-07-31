@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,16 +20,19 @@ public class RedisServiceImpl implements RedisService {
     public void saveRoomInfo(String roomId, LiveRoomDTO room) {
         String key = "room:" + roomId + ":info";
 
-        Map<String, Object> map = Map.of(
-                "title", room.getTitle(),
-                "hostId", room.getHostId(),
-                "imgUrl", room.getImgUrl(),
-                "playlist", room.getPlaylist(),
-                "currentVideoIndex", room.getCurrentVideoIndex(),
-                "currentTime", room.getCurrentTime(),
-                "isPlaying", room.isPlaying(),
-                "lastUpdated", room.getLastUpdated()
-        );
+        Map<String, Object> map = new HashMap<>();
+        map.put("title", room.getTitle());
+        map.put("hostId", room.getHostId());
+        map.put("imgUrl", room.getImgUrl());
+        map.put("playlist", room.getPlaylist());
+        map.put("currentVideoIndex", room.getCurrentVideoIndex());
+        map.put("currentTime", room.getCurrentTime());
+        map.put("isPlaying", room.isPlaying());
+        map.put("lastUpdated", room.getLastUpdated());
+        map.put("isLocked", room.isLocked());
+        map.put("entryQuestion", room.getEntryQuestion());
+        map.put("entryAnswer", room.getEntryAnswer());
+
 
         redisTemplate.opsForHash().putAll(key, map);
         redisTemplate.expire(key, Duration.ofHours(6));
@@ -45,6 +49,7 @@ public class RedisServiceImpl implements RedisService {
 
         if (map.isEmpty()) return null;
 
+
         return LiveRoomDTO.builder()
                 .title((String) map.get("title"))
                 .hostId((String) map.get("hostId"))
@@ -54,8 +59,13 @@ public class RedisServiceImpl implements RedisService {
                 .currentTime((double) map.get("currentTime"))
                 .isPlaying((boolean) map.get("isPlaying"))
                 .lastUpdated((long) map.get("lastUpdated"))
+                .isLocked(Boolean.parseBoolean(map.getOrDefault("isLocked", "false").toString()))
+                .entryQuestion((String) map.getOrDefault("entryQuestion", null))
+                .entryAnswer((String) map.getOrDefault("entryAnswer", null))
                 .build();
     }
+
+
 
     public void deleteRoomInfo(Long artistId, Long roomId) {
         String roomKey = "room:" + roomId + ":info";

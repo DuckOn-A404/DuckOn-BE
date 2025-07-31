@@ -9,4 +9,8 @@ public class CreateRoomRequestDTO {
     private String title;
     private String hostId;
     private MultipartFile thumbnailImg;
+
+    private boolean isLocked;
+    private String entryQuestion;
+    private String entryAnswer;
 }

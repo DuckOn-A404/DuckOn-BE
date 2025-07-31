@@ -51,6 +51,9 @@ public class LiveRoomServiceImpl implements LiveRoomService {
                 .currentTime(0.0)
                 .isPlaying(false)
                 .lastUpdated(System.currentTimeMillis())
+                .isLocked(req.isLocked())
+                .entryQuestion(req.getEntryQuestion())
+                .entryAnswer(req.getEntryAnswer())
                 .build();
 
         redisService.addRoomToArtist(req.getArtistId().toString(), roomId.toString());
