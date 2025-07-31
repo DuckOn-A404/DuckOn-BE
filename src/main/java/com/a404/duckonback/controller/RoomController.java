@@ -2,7 +2,6 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
-import com.a404.duckonback.dto.RoomEnterRequestDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
@@ -57,7 +56,7 @@ public class RoomController {
     @PostMapping("/{roomId}/enter")
     public ResponseEntity<LiveRoomDTO> enterRoom(
             @PathVariable Long roomId,
-            @RequestParam(required = false) String answer,
+            @RequestParam(required = false) String entryAnswer,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
@@ -68,7 +67,7 @@ public class RoomController {
 
         if (room.isLocked()) {
 
-            if (answer == null) {
+            if (entryAnswer == null) {
                 throw new CustomException(
                         "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
                         HttpStatus.UNAUTHORIZED,
@@ -76,7 +75,7 @@ public class RoomController {
                 );
             }
 
-            if (!answer.equals(room.getEntryAnswer())) {
+            if (!entryAnswer.equals(room.getEntryAnswer())) {
                 throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
             }
         }
