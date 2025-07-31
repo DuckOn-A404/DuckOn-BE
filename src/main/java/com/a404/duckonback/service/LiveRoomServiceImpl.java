@@ -9,6 +9,7 @@ import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -21,10 +22,15 @@ public class LiveRoomServiceImpl implements LiveRoomService {
     private final UserService userService;
     private final RoomService roomService;
     private final ArtistService artistService;
-//    private final S3Uploader s3Uploader;
+    private final S3Service s3Service;
 
     public LiveRoomDTO createRoom(CreateRoomRequestDTO req) {
-        String imgUrl = "";
+
+        MultipartFile file = req.getThumbnailImg();
+        String imgUrl = null;
+        if (file != null && !file.isEmpty()) {
+            imgUrl = s3Service.uploadFile(file);
+        }
 
         User user = userService.findByUserId(req.getHostId());
 
