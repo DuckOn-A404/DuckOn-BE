@@ -1,6 +1,7 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -83,5 +84,14 @@ public class RedisServiceImpl implements RedisService {
         if (removed == 0) {
             throw new CustomException("해당 아티스트의 방 목록에 해당 roomId가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
         }
+    }
+
+    @Override
+    public void addUserToRoom(String roomId, User user) {
+        String key = "room:" + roomId + ":users";
+        String userInfo = user.getUserId();
+
+        redisTemplate.opsForSet().add(key, userInfo);
+        redisTemplate.expire(key, Duration.ofHours(6));
     }
 }

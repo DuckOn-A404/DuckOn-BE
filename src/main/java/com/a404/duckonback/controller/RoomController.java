@@ -2,14 +2,21 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.RoomEnterRequestDTO;
+import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
 @RestController
@@ -43,4 +50,55 @@ public class RoomController {
         redisService.deleteRoomInfo(artistId, roomId);
         return ResponseEntity.ok("방이 삭제되었습니다.");
     }
+
+//    @GetMapping("/{roomId}/enter")
+//    public ResponseEntity<LiveRoomDTO> enterRoom(
+//            @PathVariable Long roomId,
+//            @AuthenticationPrincipal CustomUserPrincipal principal // 로그인 안 한 경우 null
+//    ) {
+//        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+//
+//        // 로그인한 사용자만 참여자 목록에 추가
+//        if (principal != null) {
+//            redisService.addUserToRoom(roomId.toString(), principal.getUser());
+//        }
+//
+//        return ResponseEntity.ok(room);
+//    }
+
+    @PostMapping("/{roomId}/enter")
+    public ResponseEntity<LiveRoomDTO> enterRoom(
+            @PathVariable Long roomId,
+            @RequestParam(required = false) String answer,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+
+        if (room == null) {
+            throw new CustomException("존재하지 않는 방입니다", HttpStatus.NOT_FOUND);
+        }
+
+        if (room.isLocked()) {
+
+            if (answer == null) {
+                throw new CustomException(
+                        "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
+                        HttpStatus.UNAUTHORIZED,
+                        Map.of("entryQuestion", room.getEntryQuestion())
+                );
+            }
+
+            if (!answer.equals(room.getEntryAnswer())) {
+                throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
+            }
+        }
+
+        // 로그인 사용자인 경우 참여자 목록에 추가
+        if (principal != null) {
+            redisService.addUserToRoom(roomId.toString(), principal.getUser());
+        }
+
+        return ResponseEntity.ok(room);
+    }
+
 }
