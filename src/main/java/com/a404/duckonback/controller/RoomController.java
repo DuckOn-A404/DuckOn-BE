@@ -51,21 +51,9 @@ public class RoomController {
         return ResponseEntity.ok("방이 삭제되었습니다.");
     }
 
-//    @GetMapping("/{roomId}/enter")
-//    public ResponseEntity<LiveRoomDTO> enterRoom(
-//            @PathVariable Long roomId,
-//            @AuthenticationPrincipal CustomUserPrincipal principal // 로그인 안 한 경우 null
-//    ) {
-//        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
-//
-//        // 로그인한 사용자만 참여자 목록에 추가
-//        if (principal != null) {
-//            redisService.addUserToRoom(roomId.toString(), principal.getUser());
-//        }
-//
-//        return ResponseEntity.ok(room);
-//    }
-
+    @Operation(summary ="방 입장",
+            description = "특정 방을 입장합니다. 로그인한 유저, 로그인하지 않은 유저 모두 입장 가능합니다.\n"
+                            + "잠겨있는 경우 에러 반환(입장질문 포함)하며 정답을 포함하여 재요청을 수행하면 됩니다.")
     @PostMapping("/{roomId}/enter")
     public ResponseEntity<LiveRoomDTO> enterRoom(
             @PathVariable Long roomId,
