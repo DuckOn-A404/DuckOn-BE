@@ -38,6 +38,12 @@ public class LiveRoomServiceImpl implements LiveRoomService {
                 .artist(artist)
                 .build();
 
+        if (req.isLocked()) {
+            if (isNullOrBlank(req.getEntryQuestion()) || isNullOrBlank(req.getEntryAnswer())) {
+                throw new CustomException("잠금 방을 생성할 때는 입장 질문과 정답을 모두 입력해야 합니다.", HttpStatus.BAD_REQUEST);
+            }
+        }
+
         roomEntity = roomService.createRoom(roomEntity);
         Long roomId = roomEntity.getRoomId(); // JPA가 생성한 DB id
 
@@ -65,6 +71,10 @@ public class LiveRoomServiceImpl implements LiveRoomService {
 
     public LiveRoomDTO getRoom(Long roomId) {
         return redisService.getRoomInfo(roomId.toString());
+    }
+
+    private boolean isNullOrBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
 
