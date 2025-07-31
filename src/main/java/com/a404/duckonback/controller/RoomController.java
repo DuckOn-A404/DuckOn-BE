@@ -25,7 +25,7 @@ public class RoomController {
     }
 
     @GetMapping("/{roomId}")
-    public ResponseEntity<LiveRoomDTO> getRoom(@PathVariable String roomId) {
+    public ResponseEntity<LiveRoomDTO> getRoom(@PathVariable Long roomId) {
         LiveRoomDTO room = liveRoomService.getRoom(roomId);
         return ResponseEntity.ok(room);
     }
