@@ -3,16 +3,15 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.Follow;
 import com.a404.duckonback.entity.Penalty;
-import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
-import com.a404.duckonback.repository.RoomRepository;
 import com.a404.duckonback.repository.UserRepository;
-import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +24,9 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PenaltyService penaltyService;
     private final FollowService followService;
+    private final S3Service s3Service;
+
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User findByEmail(String email) {
@@ -215,6 +217,62 @@ public class UserServiceImpl implements UserService {
                 .build());
 
         followService.createFollow(follow);
+    }
+
+    @Override
+    @Transactional
+    public void unfollowUser(String userId, String otherUserId) {
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        User otherUser = userRepository.findByUserId(otherUserId);
+        if (otherUser == null) {
+            throw new CustomException("팔로우 취소할 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        if( userId.equals(otherUserId)) {
+            throw new CustomException("자기 자신은 팔로우 취소할 수 없습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (!followService.isFollowing(userId, otherUserId)) {
+            throw new CustomException("팔로우하지 않은 사용자입니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        followService.deleteFollow(userId, otherUserId);
+    }
+
+    @Override
+    @Transactional
+    public void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo) {
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        if(newUserInfo == null) {
+            throw new CustomException("새로운 사용자 정보가 제공되지 않았습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        if(newUserInfo.getNewPassword() != null && !newUserInfo.getNewPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(newUserInfo.getNewPassword()));
+        }
+
+        if(newUserInfo.getNickname() != null && !newUserInfo.getNickname().isBlank()) {
+            user.setNickname(newUserInfo.getNickname());
+        }
+
+        if(newUserInfo.getLanguage() != null && !newUserInfo.getLanguage().isBlank()) {
+            user.setLanguage(newUserInfo.getLanguage());
+        }
+
+        MultipartFile file = newUserInfo.getProfileImg();
+        if (file != null && !file.isEmpty()) {
+            // 이전 이미지를 지우고 싶으면 s3Service.deleteFile(user.getImgUrl());
+            String newImgUrl = s3Service.uploadFile(file);
+            user.setImgUrl(newImgUrl);
+        }
     }
 
 }

@@ -31,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
     private final ArtistService artistService;
     private final ArtistFollowService artistFollowService;
+    private final S3Service s3Service;
 
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
@@ -106,11 +107,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseEntity<?> signup(SignupRequestDTO dto){
+    public ResponseEntity<?> signup(SignupRequestDTO dto) {
         MultipartFile file = dto.getProfileImg();
         String imgUrl = null;
         if (file != null && !file.isEmpty()) {
-            //이미지 저장
+            imgUrl = s3Service.uploadFile(file);
         }
 
         User user = User.builder()
