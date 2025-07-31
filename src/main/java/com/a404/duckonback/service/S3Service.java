@@ -23,33 +23,33 @@ public class S3Service {
     private String bucketName;
 
     /**
-     * 1) 기본 업로드 (루트에 바로)
+     * 1) 기본 업로드: 파일 타입(image/audio/…)에 따라
+     *    image 파일이면 image/, audio 파일이면 audio/… 폴더에 저장
      */
     public String uploadFile(MultipartFile file) {
-        return uploadFile(file, "");
+        String fileType = determineFileType(file);
+        return uploadFile(file, fileType);
     }
 
     /**
-     * 2) 폴더(prefix) 지정 업로드
-     *    ex) uploadFile(file, "users/123"), uploadFile(file, "profile/image")
+     * 2) prefix 지정 업로드
      */
     public String uploadFile(MultipartFile file, String prefix) {
         String uuidPart = UUID.randomUUID().toString();
-        String filename = file.getOriginalFilename();
-        String key = (prefix.isBlank() ? "" : prefix + "/")
-                + uuidPart + "_" + filename;
+        String original = file.getOriginalFilename();
+        String key = (prefix == null || prefix.isBlank() ? "" : prefix + "/")
+                + uuidPart + "_" + original;
 
         try {
             PutObjectRequest por = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
                     .contentType(file.getContentType())
-                    .acl(ObjectCannedACL.PUBLIC_READ)
+//                    .acl(ObjectCannedACL.PUBLIC_READ)
                     .build();
 
             s3Client.putObject(por, RequestBody.fromBytes(file.getBytes()));
 
-            // 퍼블릭 URL 반환
             return s3Client.utilities()
                     .getUrl(b -> b.bucket(bucketName).key(key))
                     .toExternalForm();
@@ -60,8 +60,7 @@ public class S3Service {
     }
 
     /**
-     * 3) profile/{userId}/{fileType} 구조로 업로드
-     *    ex) uploadProfileFile(file, "user123", "image")
+     * 3) 프로필 전용 업로드: profile/{userId}/{fileType}
      */
     public String uploadProfileFile(MultipartFile file, String userId, String fileType) {
         String prefix = String.format("profile/%s/%s", userId, fileType);
@@ -69,15 +68,15 @@ public class S3Service {
     }
 
     /**
-     * URL에서 key만 뽑아서 삭제
+     * URL에서 S3 key만 추출해서 삭제
      */
     public void deleteFile(String fileUrl) {
         try {
             URI uri = new URI(fileUrl);
-            // e.g. "/profile/user123/image/uuid_file.jpg"
-            String path = uri.getPath();
-            // 맨 앞의 "/" 제거
-            String key = path.startsWith("/") ? path.substring(1) : path;
+            String path = uri.getPath();              // ex) "/image/uuid_파일명.png"
+            String key = path.startsWith("/")
+                    ? path.substring(1)
+                    : path;
 
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucketName)
@@ -87,5 +86,18 @@ public class S3Service {
         } catch (URISyntaxException e) {
             throw new RuntimeException("잘못된 파일 URL", e);
         }
+    }
+
+    /**
+     * 파일의 Content-Type 으로 타입 결정 (image, audio, video, application 등)
+     */
+    private String determineFileType(MultipartFile file) {
+        String ct = file.getContentType();
+        if (ct == null) return "others";
+        if (ct.startsWith("image"))       return "image";
+        if (ct.startsWith("audio"))       return "audio";
+        if (ct.startsWith("video"))       return "video";
+        if (ct.startsWith("application")) return "application";
+        return "others";
     }
 }
