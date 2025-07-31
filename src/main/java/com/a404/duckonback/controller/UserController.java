@@ -93,5 +93,17 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "사용자 팔로우를 취소했습니다."));
     }
 
+    @Operation(summary = "비밀번호 확인", description = "입력한 비밀번호가 현재 사용자의 비밀번호와 일치하는지 확인합니다.")
+    @PostMapping("/me/verify-password")
+    public ResponseEntity<?> verifyPassword(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody Map<String, String> request
+    ) {
+        String inputPassword = request.get("password");
+        boolean isValid = userService.verifyPassword(principal.getUser().getUserId(), inputPassword);
+        return ResponseEntity.ok(Map.of("valid", isValid));
+    }
+
+
 
 }

@@ -24,4 +24,5 @@ public interface UserService {
 
     void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo);
 
+    boolean verifyPassword(String userId, String inputPassword);
 }

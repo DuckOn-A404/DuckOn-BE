@@ -274,5 +274,15 @@ public class UserServiceImpl implements UserService {
             user.setImgUrl(newImgUrl);
         }
     }
+    @Override
+    public boolean verifyPassword(String userId, String inputPassword){
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        return passwordEncoder.matches(inputPassword, user.getPassword());
+    }
+
 
 }
