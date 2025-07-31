@@ -25,4 +25,6 @@ public class ServiceProperties {
 
     @Value("${SPRING_DATASOURCE_PASSWORD}")
     private String dbPassword;
+
+
 }
