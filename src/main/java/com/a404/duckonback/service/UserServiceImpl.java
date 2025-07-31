@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +24,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PenaltyService penaltyService;
     private final FollowService followService;
+    private final S3Service s3Service;
+
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -264,8 +267,11 @@ public class UserServiceImpl implements UserService {
             user.setLanguage(newUserInfo.getLanguage());
         }
 
-        if(newUserInfo.getProfileImg() != null && !newUserInfo.getProfileImg().isEmpty()) {
-            // TODO : 프로필 이미지 처리 로직 추가 필요
+        MultipartFile file = newUserInfo.getProfileImg();
+        if (file != null && !file.isEmpty()) {
+            // 이전 이미지를 지우고 싶으면 s3Service.deleteFile(user.getImgUrl());
+            String newImgUrl = s3Service.uploadFile(file);
+            user.setImgUrl(newImgUrl);
         }
     }
 
