@@ -54,6 +54,7 @@ public class RedisServiceImpl implements RedisService {
 
 
         return LiveRoomDTO.builder()
+                .roomId(Long.valueOf((roomId)))
                 .title((String) map.get("title"))
                 .hostId((String) map.get("hostId"))
                 .imgUrl((String) map.get("imgUrl"))
