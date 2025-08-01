@@ -96,4 +96,23 @@ public class RedisServiceImpl implements RedisService {
         redisTemplate.opsForSet().add(key, userInfo);
         redisTemplate.expire(key, Duration.ofHours(6));
     }
+
+    @Override
+    public void removeUserFromRoom(String artistId, String roomId, User user){
+        String userSetKey = "room:" + roomId + ":users";
+        String roomInfoKey = "room:" + roomId + ":info";
+        String artistRoomsKey = "artist:" + artistId + ":rooms";
+
+        String userInfo = user.getUserId();
+
+        redisTemplate.opsForSet().remove(userSetKey, userInfo);
+
+        Long size = redisTemplate.opsForSet().size(userSetKey);
+
+        if (size != null && size == 0L) {
+            redisTemplate.delete(userSetKey);                    // 접속 유저 목록 제거
+            redisTemplate.delete(roomInfoKey);                   // 방 정보 제거
+            redisTemplate.opsForSet().remove(artistRoomsKey, roomId); // 아티스트 방 목록에서 제거
+        }
+    }
 }

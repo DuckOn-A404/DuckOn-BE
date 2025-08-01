@@ -88,4 +88,22 @@ public class RoomController {
         return ResponseEntity.ok(room);
     }
 
+    @Operation(summary = "방 퇴장", description = "현재 로그인한 사용자가 방에서 퇴장합니다.")
+    @PostMapping("/{roomId}/exit")
+    public ResponseEntity<?> exitRoom(
+            @PathVariable Long roomId,
+            @RequestParam Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
+
+        return ResponseEntity.ok("방에서 퇴장하였습니다.");
+    }
+
+
+
 }

@@ -9,4 +9,5 @@ public interface RedisService {
     LiveRoomDTO getRoomInfo(String roomId);
     void deleteRoomInfo(Long artistId, Long roomId);
     void addUserToRoom(String roomId, User user);
+    void removeUserFromRoom(String artistId, String roomId,User user);
 }
