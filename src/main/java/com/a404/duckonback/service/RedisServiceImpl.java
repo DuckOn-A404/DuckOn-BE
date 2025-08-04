@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -105,16 +106,52 @@ public class RedisServiceImpl implements RedisService {
 
         String userInfo = user.getUserId();
 
+        Set<String> userSetBeforeRemoval = redisTemplate.opsForSet()
+                .members(userSetKey)
+                .stream().map(Object::toString).collect(Collectors.toSet());
+
+        Map<Object, Object> backupRoomInfo = redisTemplate.opsForHash().entries(roomInfoKey);
+        boolean wasInArtistRooms = redisTemplate.opsForSet().isMember(artistRoomsKey, roomId);
+
+        // 유저 제거
         redisTemplate.opsForSet().remove(userSetKey, userInfo);
 
         Long size = redisTemplate.opsForSet().size(userSetKey);
-
         if (size != null && size == 0L) {
-            redisTemplate.delete(userSetKey);                    // 접속 유저 목록 제거
-            redisTemplate.delete(roomInfoKey);                   // 방 정보 제거
-            redisTemplate.opsForSet().remove(artistRoomsKey, roomId); // 아티스트 방 목록에서 제거
+
+            Boolean deleted = redisTemplate.delete(userSetKey);
+
+            if (deleted == null) {
+                throw new CustomException("접속 유저 목록 삭제 중 오류", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            boolean deletedRoomInfo = redisTemplate.delete(roomInfoKey);
+            if (!deletedRoomInfo) {
+                // 롤백
+                if (!userSetBeforeRemoval.isEmpty()) {
+                    redisTemplate.opsForSet().add(userSetKey, userSetBeforeRemoval.toArray());
+                }
+                throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            Long removed = redisTemplate.opsForSet().remove(artistRoomsKey, roomId);
+            if (removed == null || removed == 0) {
+                // 롤백
+                if (!userSetBeforeRemoval.isEmpty()) {
+                    redisTemplate.opsForSet().add(userSetKey, userSetBeforeRemoval.toArray());
+                }
+                if (!backupRoomInfo.isEmpty()) {
+                    redisTemplate.opsForHash().putAll(roomInfoKey, backupRoomInfo);
+                }
+                if (wasInArtistRooms) {
+                    redisTemplate.opsForSet().add(artistRoomsKey, roomId);
+                }
+                throw new CustomException("아티스트 방 목록에서 제거 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
     }
+
+
 
 
     @Override
