@@ -2,8 +2,12 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSummaryDTO;
+
+import java.util.List;
 
 public interface LiveRoomService {
     LiveRoomDTO createRoom(CreateRoomRequestDTO req);
     LiveRoomDTO getRoom(Long roomId);
+
 }
