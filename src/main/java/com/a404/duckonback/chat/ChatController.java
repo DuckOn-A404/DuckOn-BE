@@ -35,10 +35,10 @@ public class ChatController {
 
     /**
      * 클라이언트가 주기적으로 채팅 내역을 조회할 때 호출
-     * GET /api/chat/artist/{artistId}/history
+     * GET /api/chat/artist/{artistId}/message
      */
-    @GetMapping("/artist/{artistId}/history")
-    public ResponseEntity<List<ChatMessage>> getHistory(
+    @GetMapping("/artist/{artistId}/message")
+    public ResponseEntity<List<ChatMessage>> getMessage(
             @PathVariable String artistId,
             @RequestParam(required = false) LocalDateTime since  // ▲ 옵션: 이후 메시지만 조회
     ) {
@@ -47,4 +47,5 @@ public class ChatController {
                 : chatService.getHistorySince(artistId, since);
         return ResponseEntity.ok(history);
     }
+
 }
