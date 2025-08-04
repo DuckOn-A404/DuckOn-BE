@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -108,9 +109,13 @@ public class RoomController {
 
     @Operation(summary = "방 목록 조회", description = "현재 존재하는 모든 방 목록을 조회합니다.")
     @GetMapping
-    public ResponseEntity<List<LiveRoomSummaryDTO>> getAllRoomSummaries(@RequestParam Long artistId) {
+    public ResponseEntity<Map<String, Object>> getAllRoomSummaries(@RequestParam Long artistId) {
         List<LiveRoomSummaryDTO> rooms = redisService.getAllRoomSummaries(artistId);
-        return ResponseEntity.ok(rooms);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomInfoList", rooms);
+
+        return ResponseEntity.ok(response);
     }
 
 
