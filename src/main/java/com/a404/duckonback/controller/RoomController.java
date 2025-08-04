@@ -2,6 +2,7 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
@@ -102,6 +104,13 @@ public class RoomController {
         redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
 
         return ResponseEntity.ok("방에서 퇴장하였습니다.");
+    }
+
+    @Operation(summary = "방 목록 조회", description = "현재 존재하는 모든 방 목록을 조회합니다.")
+    @GetMapping
+    public ResponseEntity<List<LiveRoomSummaryDTO>> getAllRoomSummaries(@RequestParam Long artistId) {
+        List<LiveRoomSummaryDTO> rooms = redisService.getAllRoomSummaries(artistId);
+        return ResponseEntity.ok(rooms);
     }
 
 

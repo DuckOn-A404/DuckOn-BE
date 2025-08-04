@@ -1,6 +1,7 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -116,4 +115,40 @@ public class RedisServiceImpl implements RedisService {
             redisTemplate.opsForSet().remove(artistRoomsKey, roomId); // 아티스트 방 목록에서 제거
         }
     }
+
+
+    @Override
+    public List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId) {
+        String artistRoomsKey = "artist:" + artistId + ":rooms";
+
+        Set<Object> roomIds = redisTemplate.opsForSet().members(artistRoomsKey);
+        if (roomIds == null || roomIds.isEmpty()) {
+            return List.of();
+        }
+
+        return roomIds.stream()
+                .map(Object::toString)
+                .map(roomId -> {
+                    String roomInfoKey = "room:" + roomId + ":info";
+                    Map<Object, Object> roomMap = redisTemplate.opsForHash().entries(roomInfoKey);
+
+                    if (roomMap.isEmpty()) return null;
+
+                    String userSetKey = "room:" + roomId + ":users";
+                    Long userCount = redisTemplate.opsForSet().size(userSetKey);
+                    int participantCount = userCount != null ? userCount.intValue() : 0;
+
+                    return LiveRoomSummaryDTO.builder()
+                            .roomId(Long.valueOf(roomId))
+                            .title((String) roomMap.get("title"))
+                            .hostId((String) roomMap.get("hostId"))
+                            .imgUrl((String) roomMap.get("imgUrl"))
+                            .participantCount(participantCount)
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+
 }
