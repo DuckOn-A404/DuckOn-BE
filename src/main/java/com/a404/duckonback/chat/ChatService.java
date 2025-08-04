@@ -25,4 +25,9 @@ public class ChatService {
     public List<ChatMessage> getHistory(String artistId) {
         return repo.findByArtistIdOrderBySentAtAsc(artistId);
     }
+
+    // 이후 메시지만 가져오고 싶다면
+    public List<ChatMessage> getHistorySince(String artistId, LocalDateTime since) {
+        return repo.findByArtistIdAndSentAtAfterOrderBySentAtAsc(artistId, since);
+    }
 }
