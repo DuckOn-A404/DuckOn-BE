@@ -92,14 +92,15 @@ public class SecurityConfig {
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
                                 .requestMatchers("/api/artists/me").authenticated()
-                                .requestMatchers(HttpMethod.POST,   "/api/artists/*/follow").authenticated()
-                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated()
-                                .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated()
-
+                                .requestMatchers(HttpMethod.POST,   "/api/artists/*/follow").authenticated() // 팔로우
+                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated() // 팔로우/언팔로우
+                                .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글
+                                .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated() // 채팅 메시지 전송
                                 // 2) 누구나 볼 수 있는 조회 API
                                 .requestMatchers(HttpMethod.GET, "/api/artists").permitAll()           // 페이징 조회 & 키워드
                                 .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
                                 .requestMatchers(HttpMethod.GET, "/api/artists/*").permitAll()         // 단일 상세
+                                .requestMatchers(HttpMethod.GET, "/api/chat/artist/**").permitAll() // 채팅 내역 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()

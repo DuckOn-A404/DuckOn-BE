@@ -1,34 +1,50 @@
 package com.a404.duckonback.chat;
 
+import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.handler.annotation.*;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/chat")
 @RequiredArgsConstructor
 public class ChatController {
     private final ChatService chatService;
-    private final SimpMessagingTemplate template;
 
-    // 클라이언트가 /app/chat/artist.send 로 메시지 보냄
-    @MessageMapping("/chat/artist.send")
-    public void onMessage(@Payload ChatMessageDTO dto) {
-        // 1) MongoDB에 저장
+    /**
+     * 클라이언트가 메시지를 보낼 때 호출하는 엔드포인트
+     * POST /api/chat/artist/{artistId}/message
+     */
+    @PostMapping("/artist/{artistId}/message")
+    public ResponseEntity<ChatMessage> sendMessage(
+            @PathVariable String artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody ChatMessageDTO dto
+    ) {
+        // 유저 인증 정보가 필요 없으면 @AuthenticationPrincipal 은 생략 가능
+        dto.setArtistId(artistId);
+        dto.setSenderId(principal.getUser().getId());
+        dto.setSenderName(principal.getUser().getNickname());
         ChatMessage saved = chatService.save(dto);
-
-        // 2) 같은 아티스트 페이지 구독자들에게 전송
-        template.convertAndSend(
-                "/topic/artist/" + dto.getArtistId(),
-                saved
-        );
+        return ResponseEntity.ok(saved);
     }
 
-    // 과거 대화 불러오기용 API (선택)
-    @GetMapping("/api/chat/artist/{artistId}/history")
-    public List<ChatMessage> history(@PathVariable String artistId) {
-        return chatService.getHistory(artistId);
+    /**
+     * 클라이언트가 주기적으로 채팅 내역을 조회할 때 호출
+     * GET /api/chat/artist/{artistId}/history
+     */
+    @GetMapping("/artist/{artistId}/history")
+    public ResponseEntity<List<ChatMessage>> getHistory(
+            @PathVariable String artistId,
+            @RequestParam(required = false) LocalDateTime since  // ▲ 옵션: 이후 메시지만 조회
+    ) {
+        List<ChatMessage> history = (since == null)
+                ? chatService.getHistory(artistId)
+                : chatService.getHistorySince(artistId, since);
+        return ResponseEntity.ok(history);
     }
 }
