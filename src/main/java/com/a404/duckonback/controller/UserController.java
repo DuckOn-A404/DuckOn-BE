@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,10 +30,13 @@ public class UserController {
     }
 
     @Operation(summary = "내 정보 수정", description = "로그인한 사용자의 정보를 수정합니다.")
-    @PutMapping("/me")
+    @PatchMapping(
+            value = "/me",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<?> updateMyInfo(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestBody UpdateProfileRequestDTO newUserInfo
+            @ModelAttribute UpdateProfileRequestDTO newUserInfo
     ) {
         userService.updateUserInfo(principal.getUser().getUserId(), newUserInfo);
         return ResponseEntity.ok(Map.of("message", "회원 정보가 수정되었습니다."));
