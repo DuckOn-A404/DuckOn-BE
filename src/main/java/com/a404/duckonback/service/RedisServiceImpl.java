@@ -148,8 +148,21 @@ public class RedisServiceImpl implements RedisService {
                 }
                 throw new CustomException("아티스트 방 목록에서 제거 실패", HttpStatus.INTERNAL_SERVER_ERROR);
             }
+        }else if (size != null && size > 0L) {
+            String newHostId = redisTemplate.opsForSet().members(userSetKey)
+                    .stream()
+                    .map(Object::toString)
+                    .findFirst()
+                    .orElse(null);
+
+            if (newHostId != null) {
+                redisTemplate.opsForHash().put(roomInfoKey, "hostId", newHostId);
+            }
+
         }
     }
+
+
 
 
 
