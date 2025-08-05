@@ -88,6 +88,7 @@ public class SecurityConfig {
                                         "/swagger-resources/**",
                                         "/webjars/**",
                                         "/api/rooms/{roomId}/enter"
+//                                        "/ws-chat/**"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
