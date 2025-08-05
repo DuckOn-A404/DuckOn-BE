@@ -2,6 +2,7 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
@@ -29,7 +32,16 @@ public class RoomController {
     @Operation(summary = "방 생성",
             description = "새로운 라이브 방송 방을 생성합니다. 프로필 사진과 배경 이미지를 포함할 수 있습니다.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<LiveRoomDTO> createRoom(@ModelAttribute CreateRoomRequestDTO req) {
+    public ResponseEntity<LiveRoomDTO> createRoom(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @ModelAttribute CreateRoomRequestDTO req)
+    {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        req.setHostId(principal.getUser().getUserId());
+
         LiveRoomDTO room = liveRoomService.createRoom(req);
         return ResponseEntity.ok(room);
     }
@@ -102,6 +114,17 @@ public class RoomController {
         redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
 
         return ResponseEntity.ok("방에서 퇴장하였습니다.");
+    }
+
+    @Operation(summary = "방 목록 조회", description = "현재 존재하는 모든 방 목록을 조회합니다.")
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getAllRoomSummaries(@RequestParam Long artistId) {
+        List<LiveRoomSummaryDTO> rooms = redisService.getAllRoomSummaries(artistId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("roomInfoList", rooms);
+
+        return ResponseEntity.ok(response);
     }
 
 
