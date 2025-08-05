@@ -25,11 +25,8 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody ChatMessageDTO dto
     ) {
-        // 유저 인증 정보가 필요 없으면 @AuthenticationPrincipal 은 생략 가능
-        dto.setArtistId(artistId);
-        dto.setSenderId(principal.getUser().getId());
-        dto.setSenderName(principal.getUser().getNickname());
-        ChatMessage saved = chatService.save(dto);
+        Long userId = principal.getUser().getId();
+        ChatMessage saved = chatService.sendMessage(userId, artistId, dto);
         return ResponseEntity.ok(saved);
     }
 
