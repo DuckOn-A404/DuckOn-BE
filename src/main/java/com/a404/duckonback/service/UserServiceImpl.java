@@ -275,6 +275,8 @@ public class UserServiceImpl implements UserService {
             }
             String newImgUrl = s3Service.uploadFile(file);
             user.setImgUrl(newImgUrl);
+        } else {
+            user.setImgUrl(null);
         }
     }
     @Override

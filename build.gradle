@@ -52,7 +52,7 @@ dependencies {
     implementation 'software.amazon.awssdk:auth:2.32.10' // AWS SDK for authentication
 
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 
 }
 
