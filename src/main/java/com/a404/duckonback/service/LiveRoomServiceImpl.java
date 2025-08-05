@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.User;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Service

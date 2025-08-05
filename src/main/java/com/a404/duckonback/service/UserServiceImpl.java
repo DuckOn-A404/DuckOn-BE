@@ -269,7 +269,10 @@ public class UserServiceImpl implements UserService {
 
         MultipartFile file = newUserInfo.getProfileImg();
         if (file != null && !file.isEmpty()) {
-            // 이전 이미지를 지우고 싶으면 s3Service.deleteFile(user.getImgUrl());
+            // 이전 이미지 삭제
+            if(user.getImgUrl() != null && !user.getImgUrl().isBlank()) {
+                s3Service.deleteFile(user.getImgUrl());
+            }
             String newImgUrl = s3Service.uploadFile(file);
             user.setImgUrl(newImgUrl);
         }

@@ -1,6 +1,7 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -106,14 +106,99 @@ public class RedisServiceImpl implements RedisService {
 
         String userInfo = user.getUserId();
 
+        Set<String> userSetBeforeRemoval = redisTemplate.opsForSet()
+                .members(userSetKey)
+                .stream().map(Object::toString).collect(Collectors.toSet());
+
+        Map<Object, Object> backupRoomInfo = redisTemplate.opsForHash().entries(roomInfoKey);
+        boolean wasInArtistRooms = redisTemplate.opsForSet().isMember(artistRoomsKey, roomId);
+
+        // 유저 제거
         redisTemplate.opsForSet().remove(userSetKey, userInfo);
 
         Long size = redisTemplate.opsForSet().size(userSetKey);
-
         if (size != null && size == 0L) {
-            redisTemplate.delete(userSetKey);                    // 접속 유저 목록 제거
-            redisTemplate.delete(roomInfoKey);                   // 방 정보 제거
-            redisTemplate.opsForSet().remove(artistRoomsKey, roomId); // 아티스트 방 목록에서 제거
+
+            Boolean deleted = redisTemplate.delete(userSetKey);
+
+            if (deleted == null) {
+                throw new CustomException("접속 유저 목록 삭제 중 오류", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            boolean deletedRoomInfo = redisTemplate.delete(roomInfoKey);
+            if (!deletedRoomInfo) {
+                // 롤백
+                if (!userSetBeforeRemoval.isEmpty()) {
+                    redisTemplate.opsForSet().add(userSetKey, userSetBeforeRemoval.toArray());
+                }
+                throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            Long removed = redisTemplate.opsForSet().remove(artistRoomsKey, roomId);
+            if (removed == null || removed == 0) {
+                // 롤백
+                if (!userSetBeforeRemoval.isEmpty()) {
+                    redisTemplate.opsForSet().add(userSetKey, userSetBeforeRemoval.toArray());
+                }
+                if (!backupRoomInfo.isEmpty()) {
+                    redisTemplate.opsForHash().putAll(roomInfoKey, backupRoomInfo);
+                }
+                if (wasInArtistRooms) {
+                    redisTemplate.opsForSet().add(artistRoomsKey, roomId);
+                }
+                throw new CustomException("아티스트 방 목록에서 제거 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }else if (size != null && size > 0L) {
+            String newHostId = redisTemplate.opsForSet().members(userSetKey)
+                    .stream()
+                    .map(Object::toString)
+                    .findFirst()
+                    .orElse(null);
+
+            if (newHostId != null) {
+                redisTemplate.opsForHash().put(roomInfoKey, "hostId", newHostId);
+            }
+
         }
     }
+
+
+
+
+
+
+    @Override
+    public List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId) {
+        String artistRoomsKey = "artist:" + artistId + ":rooms";
+
+        Set<Object> roomIds = redisTemplate.opsForSet().members(artistRoomsKey);
+        if (roomIds == null || roomIds.isEmpty()) {
+            return List.of();
+        }
+
+        return roomIds.stream()
+                .map(Object::toString)
+                .map(roomId -> {
+                    String roomInfoKey = "room:" + roomId + ":info";
+                    Map<Object, Object> roomMap = redisTemplate.opsForHash().entries(roomInfoKey);
+
+                    if (roomMap.isEmpty()) return null;
+
+                    String userSetKey = "room:" + roomId + ":users";
+                    Long userCount = redisTemplate.opsForSet().size(userSetKey);
+                    int participantCount = userCount != null ? userCount.intValue() : 0;
+
+                    return LiveRoomSummaryDTO.builder()
+                            .roomId(Long.valueOf(roomId))
+                            .title((String) roomMap.get("title"))
+                            .hostId((String) roomMap.get("hostId"))
+                            .imgUrl((String) roomMap.get("imgUrl"))
+                            .participantCount(participantCount)
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+
 }
