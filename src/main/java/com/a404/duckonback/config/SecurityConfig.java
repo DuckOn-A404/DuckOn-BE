@@ -106,6 +106,9 @@ public class SecurityConfig {
                                 .requestMatchers("/api/auth/logout").authenticated()
                                 .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
 
+                                // 관리자 전용 API
+                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
 //                        .requestMatchers("/").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )

@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.entity.Artist;
@@ -17,5 +18,7 @@ public interface ArtistService {
     Page<ArtistDTO> getArtists(Pageable pageable);
     List<ArtistDTO> searchArtists(String keyword);
     List<ArtistDTO> getRandomArtists(int size);
+
+    Artist createArtist(AdminArtistRequestDTO dto);
 
 }
