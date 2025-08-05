@@ -32,6 +32,7 @@ public class ArtistServiceImpl implements ArtistService {
 
     private final ArtistRepository artistRepository;
     private final UserRepository userRepository;
+    private final ArtistFollowService artistFollowService;
     private final ArtistFollowRepository artistFollowRepository;
     private final S3Service s3Service;
 
@@ -56,12 +57,17 @@ public class ArtistServiceImpl implements ArtistService {
 
         // 로그인 유저 정보가 없으면 (비로그인) userId == null 일 수 있으므로
         boolean isFollowed = false;
+        LocalDateTime followedAt = null;
+
         if (userId != null && userRepository.findById(userId) != null) {
-            isFollowed = artistFollowRepository
-                    .existsByUser_IdAndArtist_ArtistId(userId, artistId);
+            Optional<ArtistFollow> followOpt = artistFollowService.getArtistFollow(userId, artistId);
+            if (followOpt.isPresent()) {
+                isFollowed = true;
+                followedAt = followOpt.get().getCreatedAt();
+            }
         }
 
-        return ArtistDetailDTO.of(artist, isFollowed);
+        return ArtistDetailDTO.of(artist, isFollowed, followedAt);
     }
 
     @Override
