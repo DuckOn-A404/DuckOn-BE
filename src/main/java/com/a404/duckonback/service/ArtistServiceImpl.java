@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.dto.ArtistDetailDTO;
@@ -128,5 +129,88 @@ public class ArtistServiceImpl implements ArtistService {
                 .build();
         return artistRepository.save(artist);
     }
+
+    @Override
+    public Artist updateArtist(Long artistId, AdminArtistRequestDTO dto) {
+        // 1) 기존 아티스트 조회
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
+                        HttpStatus.NOT_FOUND));
+
+        // 2) 이름 중복 검사 (다른 레코드에 같은 영문/한글명이 있는지)
+        Optional<Artist> conflict = artistRepository
+                .findByNameEnOrNameKr(dto.getNameEn(), dto.getNameKr())
+                .filter(a -> !a.getArtistId().equals(artistId));
+        if (conflict.isPresent()) {
+            throw new CustomException("이미 존재하는 아티스트 이름입니다.", HttpStatus.CONFLICT);
+        }
+
+        // 3) debutDate 갱신
+        LocalDate debut = dto.getDebutDate() != null
+                ? dto.getDebutDate()
+                : artist.getDebutDate();
+        artist.setDebutDate(debut);
+
+        // 4) 이름 갱신
+        artist.setNameEn(dto.getNameEn());
+        artist.setNameKr(dto.getNameKr());
+
+        // 5) 이미지 파일 처리
+        MultipartFile file = dto.getImage();
+        if (file != null && !file.isEmpty()) {
+            // 기존 이미지가 있으면 삭제
+            if (artist.getImgUrl() != null) {
+                s3Service.deleteFile(artist.getImgUrl());
+            }
+            // 새로 업로드 (artist/{nameEn}/... 경로)
+            String prefix = String.format("artist/%s", dto.getNameEn());
+            String newUrl = s3Service.uploadFile(file, prefix);
+            artist.setImgUrl(newUrl);
+        }
+
+        // 6) 저장
+        return artistRepository.save(artist);
+    }
+
+    @Override
+    public Artist patchArtist(Long artistId, AdminArtistPatchDTO dto) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
+                        HttpStatus.NOT_FOUND));
+
+        // 이름 중복 검사 (값이 들어왔을 때만)
+        if (dto.getNameEn() != null || dto.getNameKr() != null) {
+            Optional<Artist> conflict = artistRepository.findByNameEnOrNameKr(
+                    dto.getNameEn() != null ? dto.getNameEn() : artist.getNameEn(),
+                    dto.getNameKr() != null ? dto.getNameKr() : artist.getNameKr()
+            ).filter(a -> !a.getArtistId().equals(artistId));
+            if (conflict.isPresent()) {
+                throw new CustomException("이미 존재하는 아티스트 이름입니다.", HttpStatus.CONFLICT);
+            }
+        }
+
+        // 각 필드별 patch
+        if (dto.getDebutDate() != null) {
+            artist.setDebutDate(dto.getDebutDate());
+        }
+        if (dto.getNameEn() != null) {
+            artist.setNameEn(dto.getNameEn());
+        }
+        if (dto.getNameKr() != null) {
+            artist.setNameKr(dto.getNameKr());
+        }
+        if (dto.getImage() != null && !dto.getImage().isEmpty()) {
+            // 기존 이미지 삭제
+            if (artist.getImgUrl() != null) {
+                s3Service.deleteFile(artist.getImgUrl());
+            }
+            String prefix = String.format("artist/%s", artist.getNameEn());
+            String newUrl = s3Service.uploadFile(dto.getImage(), prefix);
+            artist.setImgUrl(newUrl);
+        }
+
+        return artistRepository.save(artist);
+    }
+
 
 }
