@@ -1,5 +1,6 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.entity.Artist;
@@ -15,7 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +32,7 @@ public class ArtistServiceImpl implements ArtistService {
     private final ArtistRepository artistRepository;
     private final UserRepository userRepository;
     private final ArtistFollowRepository artistFollowRepository;
+    private final S3Service s3Service;
 
     @Override
     public Artist findById(Long artistId) {
@@ -92,6 +96,37 @@ public class ArtistServiceImpl implements ArtistService {
                     return ArtistDTO.fromEntity(artist, cnt);
                 })
                 .toList();
+    }
+
+    @Override
+    public Artist createArtist(AdminArtistRequestDTO dto) {
+        // 1) 중복 검사
+        if (artistRepository.existsByNameEnOrNameKr(dto.getNameEn(), dto.getNameKr())) {
+            throw new CustomException("이미 존재하는 아티스트입니다.", HttpStatus.CONFLICT);
+        }
+
+        // 2) debutDate 기본값
+        LocalDate debut = dto.getDebutDate() != null
+                ? dto.getDebutDate()
+                : LocalDate.now();
+
+        // 3) 이미지 업로드 (선택)
+        String imgUrl = null;
+        MultipartFile file = dto.getImage();
+        if (file != null && !file.isEmpty()) {
+            // artist/{nameEn}/... 경로 아래 저장
+            String prefix = String.format("artist/%s", dto.getNameEn());
+            imgUrl = s3Service.uploadFile(file, prefix);
+        }
+
+        // 4) 엔티티 생성 및 저장
+        Artist artist = Artist.builder()
+                .nameEn(dto.getNameEn())
+                .nameKr(dto.getNameKr())
+                .debutDate(debut)
+                .imgUrl(imgUrl)
+                .build();
+        return artistRepository.save(artist);
     }
 
 }
