@@ -1,5 +1,6 @@
-package com.a404.duckonback.chat;
+package com.a404.duckonback.repository;
 
+import com.a404.duckonback.entity.ChatMessage;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.time.LocalDateTime;

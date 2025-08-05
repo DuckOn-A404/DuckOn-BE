@@ -1,5 +1,9 @@
-package com.a404.duckonback.chat;
+package com.a404.duckonback.controller;
 
+import com.a404.duckonback.dto.ChatMessageRequestDTO;
+import com.a404.duckonback.dto.ChatMessageResponseDTO;
+import com.a404.duckonback.entity.ChatMessage;
+import com.a404.duckonback.service.ChatService;
 import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,14 +24,17 @@ public class ChatController {
      * POST /api/chat/artist/{artistId}/message
      */
     @PostMapping("/artist/{artistId}/message")
-    public ResponseEntity<ChatMessage> sendMessage(
+    public ResponseEntity<ChatMessageResponseDTO> sendMessage(
             @PathVariable String artistId,
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestBody ChatMessageDTO dto
+            @RequestBody ChatMessageRequestDTO dto
     ) {
-        Long userId = principal.getUser().getId();
-        ChatMessage saved = chatService.sendMessage(userId, artistId, dto);
-        return ResponseEntity.ok(saved);
+        ChatMessage saved = chatService.sendMessage(
+                principal.getUser().getId(),
+                artistId,
+                dto
+        );
+        return ResponseEntity.ok(ChatMessageResponseDTO.fromEntity(saved));
     }
 
     /**
@@ -35,11 +42,11 @@ public class ChatController {
      * GET /api/chat/artist/{artistId}/message
      */
     @GetMapping("/artist/{artistId}/message")
-    public ResponseEntity<List<ChatMessage>> getMessage(
+    public ResponseEntity<List<ChatMessageResponseDTO>> getMessage(
             @PathVariable String artistId,
-            @RequestParam(required = false) LocalDateTime since  // ▲ 옵션: 이후 메시지만 조회
+            @RequestParam(required = false) LocalDateTime since
     ) {
-        List<ChatMessage> history = (since == null)
+        List<ChatMessageResponseDTO> history = (since == null)
                 ? chatService.getHistory(artistId)
                 : chatService.getHistorySince(artistId, since);
         return ResponseEntity.ok(history);
