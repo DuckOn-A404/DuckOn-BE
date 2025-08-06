@@ -3,6 +3,7 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
+import com.a404.duckonback.dto.TrendingRoomDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
@@ -127,6 +128,20 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "트렌딩 방 조회",
+            description = "참여자 수가 많은 전체 방 중 상위 size개를 조회합니다.")
+    @GetMapping("/trending")
+    public ResponseEntity<Map<String,Object>> getTrendingRooms(
+            @RequestParam(defaultValue = "3") int size
+    ) {
+        if (size < 1) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("message", "size는 1 이상의 정수여야 합니다."));
+        }
+        List<TrendingRoomDTO> list = redisService.getTrendingRooms(size);
+        return ResponseEntity.ok(Map.of("roomInfoList", list));
+    }
 
 
 }
