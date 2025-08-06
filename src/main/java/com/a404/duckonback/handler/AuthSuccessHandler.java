@@ -1,5 +1,6 @@
 package com.a404.duckonback.handler;
 
+import com.a404.duckonback.config.ServiceProperties;
 import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
@@ -16,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -27,12 +29,13 @@ public class AuthSuccessHandler implements AuthenticationSuccessHandler {
     private final UserRepository userRepository;
     private final ArtistService artistService;
     private final ObjectMapper objectMapper;
-
+    private final ServiceProperties serviceProperties;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-        // principal에는 CustomUserPrincipal (OAuth2) 또는 UserDetails (폼 로그인)가 담겨 있음
+        // 1) Principal 에서 User 꺼내기
         User user;
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserPrincipal cu) {
@@ -40,40 +43,25 @@ public class AuthSuccessHandler implements AuthenticationSuccessHandler {
         } else if (principal instanceof UserDetails ud) {
             user = userRepository.findByUserId(ud.getUsername());
         } else {
-            throw new IllegalStateException("Unknown principal type: " + principal);
+            throw new IllegalStateException("Unknown principal: " + principal);
         }
 
-        // 1) 토큰 생성
+        // 2) JWT 생성
         String accessToken  = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
-        // TODO: refreshToken 저장/회전 로직(Redis/DB)
+        // TODO: refreshToken 저장/회전 로직
 
-//        // 쿠키로 내려주거나, 프론트 리다이렉트 URL에 심볼릭 코드만 붙인 뒤 프론트가 토큰 요청하도록 유도
-//        CookieUtil.addHttpOnlyCookie(response, "access_token", accessToken, 900);
-//        CookieUtil.addHttpOnlyCookie(response, "refresh_token", refreshToken, 1209600);
+        // 3) 성공 리다이렉트 URI 조합
+        String redirectUri = UriComponentsBuilder
+                .fromUriString(serviceProperties.getOauth2SuccessUrl())
+                .queryParam("accessToken",  accessToken)
+                .queryParam("refreshToken", refreshToken)
+                .build()
+                .toUriString();
 
-        //  2) 사용자 정보를 DTO로 변환
-        UserDTO userDTO = UserDTO.builder()
-                .email(user.getEmail())
-                .userId(user.getUserId())
-                .nickname(user.getNickname())
-                .createdAt(user.getCreatedAt())
-                .role(user.getRole().name())
-                .language(user.getLanguage())
-                .imgUrl(user.getImgUrl())
-                .artistList(artistService.findAllArtistIdByUserId(user.getId()))
-                .build();
-
-        // 사용자 정보와 토큰을 포함한 응답 DTO 생성
-        LoginResponseDTO responseDTO = LoginResponseDTO.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .user(userDTO)
-                .build();
-
-        // 3) JSON 반환
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType("application/json;charset=UTF-8");
-        objectMapper.writeValue(response.getWriter(), responseDTO);
+        // 4) 리다이렉트 (React 쪽 /oauth2/success 로 넘어감)
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        response.sendRedirect(redirectUri);
     }
+
 }
