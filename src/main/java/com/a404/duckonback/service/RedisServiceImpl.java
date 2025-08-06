@@ -4,6 +4,7 @@ import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RedisServiceImpl implements RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
+    private final UserRepository userRepository;
 
     public void saveRoomInfo(String roomId, LiveRoomDTO room) {
         String key = "room:" + roomId + ":info";
@@ -162,15 +164,9 @@ public class RedisServiceImpl implements RedisService {
         }
     }
 
-
-
-
-
-
     @Override
     public List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId) {
         String artistRoomsKey = "artist:" + artistId + ":rooms";
-
         Set<Object> roomIds = redisTemplate.opsForSet().members(artistRoomsKey);
         if (roomIds == null || roomIds.isEmpty()) {
             return List.of();
@@ -181,18 +177,28 @@ public class RedisServiceImpl implements RedisService {
                 .map(roomId -> {
                     String roomInfoKey = "room:" + roomId + ":info";
                     Map<Object, Object> roomMap = redisTemplate.opsForHash().entries(roomInfoKey);
-
                     if (roomMap.isEmpty()) return null;
 
-                    String userSetKey = "room:" + roomId + ":users";
-                    Long userCount = redisTemplate.opsForSet().size(userSetKey);
+                    // 참가자 수 조회
+                    Long userCount = redisTemplate.opsForSet().size("room:" + roomId + ":users");
                     int participantCount = userCount != null ? userCount.intValue() : 0;
+
+                    String hostUserId = (String) roomMap.get("hostId");
+                    String title      = (String) roomMap.get("title");
+                    String imgUrl     = (String) roomMap.get("imgUrl");
+
+                    // hostId로 User 조회 (null 체크)
+                    User host = userRepository.findByUserId(hostUserId);
+                    String hostNickname     = host != null ? host.getNickname() : null;
+                    String hostProfileImage = host != null ? host.getImgUrl()    : null;
 
                     return LiveRoomSummaryDTO.builder()
                             .roomId(Long.valueOf(roomId))
-                            .title((String) roomMap.get("title"))
-                            .hostId((String) roomMap.get("hostId"))
-                            .imgUrl((String) roomMap.get("imgUrl"))
+                            .title(title)
+                            .hostId(hostUserId)
+                            .hostNickname(hostNickname)
+                            .hostProfileImgUrl(hostProfileImage)
+                            .imgUrl(imgUrl)
                             .participantCount(participantCount)
                             .build();
                 })
