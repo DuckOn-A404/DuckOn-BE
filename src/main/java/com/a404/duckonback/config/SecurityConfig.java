@@ -1,13 +1,10 @@
 package com.a404.duckonback.config;
 
-import com.a404.duckonback.entity.User;
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
 import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.AuthFailureHandler;
 import com.a404.duckonback.handler.AuthSuccessHandler;
-import com.a404.duckonback.oauth.service.CustomOAuth2UserService;
-import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,8 +13,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -65,7 +60,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           CustomOAuth2UserService oauth2UserService,
+                                           CustomJsonUsernamePasswordAuthenticationFilter.CustomOAuth2UserService oauth2UserService,
                                            AuthenticationManager authManager) throws Exception {
         // JSON 로그인 필터에도 AuthenticationManager 주입
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =

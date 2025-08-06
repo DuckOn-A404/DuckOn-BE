@@ -4,7 +4,7 @@ import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.exception.CustomException;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;

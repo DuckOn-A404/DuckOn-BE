@@ -3,7 +3,7 @@ package com.a404.duckonback.handler;
 import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.util.JWTUtil;
@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
