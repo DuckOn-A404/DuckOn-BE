@@ -3,6 +3,7 @@ package com.a404.duckonback.config;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
 import com.a404.duckonback.filter.CustomUserDetailsService;
+
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.AuthFailureHandler;
 import com.a404.duckonback.handler.AuthSuccessHandler;
