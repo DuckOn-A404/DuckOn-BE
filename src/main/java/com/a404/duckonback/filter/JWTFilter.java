@@ -24,7 +24,7 @@ import java.util.List;
 public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
-//    private final JWTTokenService jwtTokenService; // 블랙리스트 검증용
+    //    private final JWTTokenService jwtTokenService; // 블랙리스트 검증용
 //    private final UserServiceImpl userServiceImpl;
     private final UserRepository userRepository;
 
