@@ -1,0 +1,41 @@
+### [1] JWT 로그인 요청 (accessToken 발급)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "userId": "wnsqja7545",
+  "password": "1234"
+}
+> {% client.global.set("accessToken", response.body.accessToken); %}
+
+
+### [2] WebSocket: STOMP 연결 (⚠️ null 문자 전송 안됨 — 참고용)
+WEBSOCKET ws://localhost:8080/ws-chat/websocket
+Authorization: Bearer {{accessToken}}
+
+CONNECT
+accept-version:1.2
+heart-beat:10000,10000
+
+<--- 이 부분은 실제 null 문자가 들어가야 함 (IntelliJ에서는 불가능)
+
+
+### [3] WebSocket: 채팅방 구독 (roomId = 1)
+SUBSCRIBE
+id:sub-0
+destination:/topic/chat/1
+
+<--- 이 부분도 null 문자 필요
+
+
+### [4] WebSocket: 채팅 메시지 전송
+SEND
+destination:/app/room/chat
+content-type:application/json
+
+{
+  "roomId": 1,
+  "message": "안녕하세요 IntelliJ!"
+}
+
+<--- 이 부분도 null 문자 필요
