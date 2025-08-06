@@ -26,5 +26,7 @@ public class ServiceProperties {
     @Value("${SPRING_DATASOURCE_PASSWORD}")
     private String dbPassword;
 
+    @Value("${app.frontend.oauth2-success-url}")
+    private String oauth2SuccessUrl;
 
 }
