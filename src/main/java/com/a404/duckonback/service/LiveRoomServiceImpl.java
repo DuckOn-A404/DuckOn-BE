@@ -58,6 +58,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
         LiveRoomDTO room = LiveRoomDTO.builder()
                 .roomId(roomId)
                 .title(req.getTitle())
+                .artistId(req.getArtistId())
                 .hostId(req.getHostId())
                 .imgUrl(imgUrl)
                 .playlist(Collections.emptyList())
