@@ -29,4 +29,7 @@ public class ServiceProperties {
     @Value("${app.frontend.oauth2-success-url}")
     private String oauth2SuccessUrl;
 
+    @Value("${app.frontend.oauth2-failure-url}")
+    private String oauth2FailureUrl;
+
 }
