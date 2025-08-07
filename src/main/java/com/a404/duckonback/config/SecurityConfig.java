@@ -102,6 +102,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
                                 .requestMatchers(HttpMethod.GET, "/api/artists/*").permitAll()         // 단일 상세
                                 .requestMatchers(HttpMethod.GET, "/api/chat/artist/**").permitAll() // 채팅 내역 조회
+                                .requestMatchers(HttpMethod.GET, "/api/rooms/trending").permitAll() // 인기 방 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()
