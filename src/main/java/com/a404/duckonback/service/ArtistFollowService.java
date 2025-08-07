@@ -24,4 +24,5 @@ public interface ArtistFollowService {
     void unfollowArtist(Long userId, Long artistId);
     void updateArtistFollows(Long userId, List<Long> artistIds);
 
+
 }

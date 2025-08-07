@@ -1,7 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.BlockedUserDTO;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.UserBlockService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

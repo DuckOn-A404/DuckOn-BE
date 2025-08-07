@@ -2,6 +2,7 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ChatMessageDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
+import com.a404.duckonback.dto.LiveRoomSyncDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class RoomSocketController {
 
     // 영상 동기화 메시지
     @MessageMapping("/room/update")
-    public void updateRoom(@Payload LiveRoomDTO dto,
+    public void updateRoom(@Payload LiveRoomSyncDTO dto,
                            StompHeaderAccessor accessor) {
 
         User user = (User) accessor.getSessionAttributes().get("user");

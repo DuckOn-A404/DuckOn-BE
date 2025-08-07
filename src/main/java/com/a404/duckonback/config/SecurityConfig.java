@@ -1,11 +1,10 @@
 package com.a404.duckonback.config;
 
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
+import com.a404.duckonback.filter.CustomOAuth2UserService;
 import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
-import com.a404.duckonback.handler.AuthFailureHandler;
-import com.a404.duckonback.handler.AuthSuccessHandler;
-import com.a404.duckonback.oauth.service.CustomOAuth2UserService;
+import com.a404.duckonback.handler.*;
 import com.a404.duckonback.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,10 +29,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
+//    private final CustomUserDetailsService userDetailsService; // 자동 주입되어서 사용하지 않음
     private final JWTFilter jwtFilter;
-    private final AuthSuccessHandler successHandler;
-    private final AuthFailureHandler failureHandler;
+    private final JsonAuthSuccessHandler    jsonSuccessHandler;
+    private final JsonAuthFailureHandler jsonFailureHandler;
+    private final OAuth2AuthSuccessHandler  oauth2SuccessHandler;
+    private final OAuth2AuthFailureHandler  oauth2FailureHandler;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
@@ -66,11 +67,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            CustomOAuth2UserService oauth2UserService,
                                            AuthenticationManager authManager, TokenBlacklistService tokenBlacklistService) throws Exception {
-        // JSON 로그인 필터에도 AuthenticationManager 주입
+        // JSON 로그인 필터
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
                 new CustomJsonUsernamePasswordAuthenticationFilter(authManager);
-        jsonFilter.setAuthenticationSuccessHandler(successHandler);
-        jsonFilter.setAuthenticationFailureHandler(failureHandler);
+        jsonFilter.setAuthenticationSuccessHandler(jsonSuccessHandler);
+        jsonFilter.setAuthenticationFailureHandler(jsonFailureHandler);
 
 
         http
@@ -86,8 +87,8 @@ public class SecurityConfig {
                                         "/v3/api-docs/**",
                                         "/swagger-resources/**",
                                         "/webjars/**",
-                                        "/api/rooms/{roomId}/enter"
-//                                        "/ws-chat/**"
+                                        "/api/rooms/{roomId}/enter",
+                                        "/ws-chat/**"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
@@ -96,7 +97,6 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated() // 팔로우/언팔로우
                                 .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글
                                 .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated() // 채팅 메시지 전송
-
                                 // 2) 누구나 볼 수 있는 조회 API
                                 .requestMatchers(HttpMethod.GET, "/api/artists").permitAll()           // 페이징 조회 & 키워드
                                 .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
@@ -104,13 +104,14 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/chat/artist/**").permitAll() // 채팅 내역 조회
                                 .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll() // 방 목록 조회
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // 방 상세 조회
+                                .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()
                                 .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
 
 //                        .requestMatchers("/").hasAnyRole("USER", "ADMIN")
-                        .anyRequest().authenticated()
+                                .anyRequest().authenticated()
                 )
 
                 // 기존 formLogin 대신 jsonFilter 사용
@@ -118,8 +119,8 @@ public class SecurityConfig {
                 // 2) OAuth2 로그인 설정
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(ui -> ui.userService(oauth2UserService))
-                        .successHandler(successHandler)
-                        .failureHandler(failureHandler)
+                        .successHandler(oauth2SuccessHandler)
+                        .failureHandler(oauth2FailureHandler)
                 )// JWT 검사 필터
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)// 3. 예외 처리: 인증/인가 실패 시 진입점 지정
                 .exceptionHandling(ex -> ex
@@ -135,8 +136,6 @@ public class SecurityConfig {
                         )
                 );
 
-        // 3) JWT 검사 필터
-//        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

@@ -1,4 +1,4 @@
-package com.a404.duckonback.oauth.principal;
+package com.a404.duckonback.filter;
 
 import com.a404.duckonback.entity.User;
 import org.springframework.security.core.GrantedAuthority;
