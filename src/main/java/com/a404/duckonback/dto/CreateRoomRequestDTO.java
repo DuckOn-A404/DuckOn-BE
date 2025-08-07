@@ -9,7 +9,7 @@ public class CreateRoomRequestDTO {
     private String title;
     private String hostId;
     private MultipartFile thumbnailImg;
-
+    private String videoId;
     private boolean isLocked;
     private String entryQuestion;
     private String entryAnswer;

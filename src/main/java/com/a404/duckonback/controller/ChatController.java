@@ -4,7 +4,7 @@ import com.a404.duckonback.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.dto.ChatMessageResponseDTO;
 import com.a404.duckonback.entity.ChatMessage;
 import com.a404.duckonback.service.ChatService;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

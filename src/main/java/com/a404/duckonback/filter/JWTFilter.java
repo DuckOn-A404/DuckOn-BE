@@ -2,7 +2,6 @@ package com.a404.duckonback.filter;
 
 import com.a404.duckonback.config.JwtAuthenticationEntryPoint;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.TokenBlacklistService;
 import com.a404.duckonback.util.JWTUtil;
@@ -25,7 +24,7 @@ import java.io.IOException;
 public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
-//    private final JWTTokenService jwtTokenService; // 블랙리스트 검증용
+    //    private final JWTTokenService jwtTokenService; // 블랙리스트 검증용
 //    private final UserServiceImpl userServiceImpl;
     private final UserRepository userRepository;
     private final TokenBlacklistService blacklistService;

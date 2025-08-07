@@ -1,8 +1,7 @@
-package com.a404.duckonback.oauth.service;
+package com.a404.duckonback.filter;
 
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.UserRole;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.oauth.userinfo.OAuth2UserInfo;
 import com.a404.duckonback.oauth.userinfo.OAuth2UserInfoFactory;
 import com.a404.duckonback.repository.UserRepository;

@@ -1,7 +1,6 @@
 package com.a404.duckonback.filter;
 
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
