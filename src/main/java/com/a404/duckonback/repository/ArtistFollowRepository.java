@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ArtistFollowRepository extends JpaRepository<ArtistFollow, ArtistFollowId> {
@@ -19,7 +20,9 @@ public interface ArtistFollowRepository extends JpaRepository<ArtistFollow, Arti
     List<ArtistFollow> findByArtist_ArtistId(Long artistId);
     boolean existsByUser_IdAndArtist_ArtistId(Long id, Long artistId);
     void deleteByUser_IdAndArtist_ArtistId(Long id, Long artistId);
-    
+
+    Optional<ArtistFollow> findByUser_IdAndArtist_ArtistId(Long userId, Long artistId);
+
     // 특정 아티스트 팔로워 수 조회
     long countByArtist_ArtistId(Long artistId);
     // 페이징을 위한 쿼리 메서드 추가

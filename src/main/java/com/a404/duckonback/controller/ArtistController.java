@@ -4,7 +4,7 @@ import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.dto.FollowedArtistDTO;
 import com.a404.duckonback.dto.UpdateArtistFollowRequestDTO;
-import com.a404.duckonback.filter.CustomUserDetailsService;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.ArtistFollowService;
 import com.a404.duckonback.service.ArtistService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ public class ArtistController {
     @GetMapping("/{artistId}")
     public ResponseEntity<?> getArtist(
             @PathVariable Long artistId,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long userId = principal != null
                 ? principal.getUser().getId()
@@ -97,7 +97,7 @@ public class ArtistController {
     public ResponseEntity<?> getMyFollowedArtists(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal) {
+            @AuthenticationPrincipal CustomUserPrincipal principal) {
 
         if (page < 1 || size < 1) {
             return ResponseEntity
@@ -124,7 +124,7 @@ public class ArtistController {
     @PostMapping("/{artistId}/follow")
     public ResponseEntity<?> followArtist(
             @PathVariable Long artistId,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long userId = principal.getUser().getId();
         artistFollowService.followArtist(userId, artistId);
@@ -139,7 +139,7 @@ public class ArtistController {
     @DeleteMapping("/{artistId}/follow")
     public ResponseEntity<?> unfollowArtist(
             @PathVariable Long artistId,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long userId = principal.getUser().getId();
         artistFollowService.unfollowArtist(userId, artistId);
@@ -153,7 +153,7 @@ public class ArtistController {
     @PutMapping("/follow")
     public ResponseEntity<?> updateFollows(
             @RequestBody UpdateArtistFollowRequestDTO req,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long userId = principal.getUser().getId();
         artistFollowService.updateArtistFollows(userId, req.getArtistList());

@@ -49,7 +49,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
                 User user = userRepository.findByUserId(userId);
                 if (user != null) {
-                    CustomUserDetailsService.CustomUserPrincipal principal = new CustomUserDetailsService.CustomUserPrincipal(user);
+                    CustomUserPrincipal principal = new CustomUserPrincipal(user);
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     principal,
