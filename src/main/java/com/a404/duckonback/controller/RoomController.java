@@ -5,7 +5,7 @@ import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.dto.TrendingRoomDTO;
 import com.a404.duckonback.exception.CustomException;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
+import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +34,7 @@ public class RoomController {
             description = "새로운 라이브 방송 방을 생성합니다. 프로필 사진과 배경 이미지를 포함할 수 있습니다.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<LiveRoomDTO> createRoom(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
             @ModelAttribute CreateRoomRequestDTO req)
     {
         if (principal == null) {
@@ -70,7 +70,7 @@ public class RoomController {
     public ResponseEntity<LiveRoomDTO> enterRoom(
             @PathVariable Long roomId,
             @RequestParam(required = false) String entryAnswer,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
 
@@ -106,7 +106,7 @@ public class RoomController {
     public ResponseEntity<?> exitRoom(
             @PathVariable Long roomId,
             @RequestParam Long artistId,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
     ) {
         if (principal == null) {
             throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
