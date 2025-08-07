@@ -1,23 +1,21 @@
 package com.a404.duckonback.config;
 
-import com.a404.duckonback.entity.User;
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
 import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.AuthFailureHandler;
 import com.a404.duckonback.handler.AuthSuccessHandler;
 import com.a404.duckonback.oauth.service.CustomOAuth2UserService;
-import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -36,6 +34,7 @@ public class SecurityConfig {
     private final JWTFilter jwtFilter;
     private final AuthSuccessHandler successHandler;
     private final AuthFailureHandler failureHandler;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -66,7 +65,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            CustomOAuth2UserService oauth2UserService,
-                                           AuthenticationManager authManager) throws Exception {
+                                           AuthenticationManager authManager, TokenBlacklistService tokenBlacklistService) throws Exception {
         // JSON 로그인 필터에도 AuthenticationManager 주입
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
                 new CustomJsonUsernamePasswordAuthenticationFilter(authManager);
@@ -121,10 +120,23 @@ public class SecurityConfig {
                         .userInfoEndpoint(ui -> ui.userService(oauth2UserService))
                         .successHandler(successHandler)
                         .failureHandler(failureHandler)
+                )// JWT 검사 필터
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)// 3. 예외 처리: 인증/인가 실패 시 진입점 지정
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)     // 유효하지 않은 토큰 등
+                        .accessDeniedHandler(                                      // 권한 부족 시
+                                (request, response, accessDeniedException) -> {
+                                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                                    response.setContentType("application/json");
+                                    response
+                                            .getWriter()
+                                            .write("{\"error\":\"Access Denied\"}");
+                                }
+                        )
                 );
 
         // 3) JWT 검사 필터
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
