@@ -59,10 +59,19 @@ public class RedisServiceImpl implements RedisService {
             throw new CustomException("Redis에 해당 roomId의 방 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
         }
 
+        // artistId 꺼내서 Long으로 변환
+        Object artistIdObj = map.get("artistId");
+        Long artistId = null;
+        if (artistIdObj != null) {
+            // Redis에 저장된 값이 "\"123\"" 같은 형태일 수 있으니, toString() 후 숫자만 파싱
+            String artistIdStr = artistIdObj.toString().replace("\"", "");
+            artistId = Long.valueOf(artistIdStr);
+        }
 
         return LiveRoomDTO.builder()
                 .roomId(Long.valueOf((roomId)))
                 .title((String) map.get("title"))
+                .artistId(artistId)
                 .hostId((String) map.get("hostId"))
                 .imgUrl((String) map.get("imgUrl"))
                 .playlist((List<String>) map.get("playlist"))
