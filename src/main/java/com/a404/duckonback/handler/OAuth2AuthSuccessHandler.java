@@ -2,7 +2,7 @@ package com.a404.duckonback.handler;
 
 import com.a404.duckonback.config.ServiceProperties;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.filter.CustomUserDetailsService;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.util.JWTUtil;
@@ -33,7 +33,7 @@ public class OAuth2AuthSuccessHandler implements AuthenticationSuccessHandler {
         // OAuth2User (CustomUserPrincipal) 또는 UserDetails 에서 User 조회
         User user;
         Object principal = auth.getPrincipal();
-        if (principal instanceof CustomUserDetailsService.CustomUserPrincipal cu) {
+        if (principal instanceof CustomUserPrincipal cu) {
             user = cu.getUser();
         } else {
             String username = ((UserDetails) principal).getUsername();
