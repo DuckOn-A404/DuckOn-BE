@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -55,13 +56,15 @@ public class LiveRoomServiceImpl implements LiveRoomService {
         roomEntity = roomService.createRoom(roomEntity);
         Long roomId = roomEntity.getRoomId(); // JPA가 생성한 DB id
 
+        List<String> playList = new ArrayList<>();
+        playList.add(req.getVideoId());
+
         LiveRoomDTO room = LiveRoomDTO.builder()
                 .roomId(roomId)
                 .title(req.getTitle())
-                .artistId(req.getArtistId())
                 .hostId(req.getHostId())
                 .imgUrl(imgUrl)
-                .playlist(Collections.emptyList())
+                .playlist(playList)
                 .currentVideoIndex(0)
                 .currentTime(0.0)
                 .isPlaying(false)
