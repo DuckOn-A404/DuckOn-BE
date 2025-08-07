@@ -1,7 +1,6 @@
 package com.a404.duckonback.filter;
 
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.oauth.principal.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.util.JWTUtil;
 import io.jsonwebtoken.Claims;
@@ -11,13 +10,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -52,7 +49,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
                 User user = userRepository.findByUserId(userId);
                 if (user != null) {
-                    CustomUserPrincipal principal = new CustomUserPrincipal(user);
+                    CustomUserDetailsService.CustomUserPrincipal principal = new CustomUserDetailsService.CustomUserPrincipal(user);
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     principal,

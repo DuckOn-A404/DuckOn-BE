@@ -1,13 +1,9 @@
 package com.a404.duckonback.config;
 
-import com.a404.duckonback.entity.User;
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
 import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
-import com.a404.duckonback.handler.AuthFailureHandler;
-import com.a404.duckonback.handler.AuthSuccessHandler;
-import com.a404.duckonback.oauth.service.CustomOAuth2UserService;
-import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.handler.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,8 +12,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -32,10 +26,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
+//    private final CustomUserDetailsService userDetailsService; // 자동 주입되어서 사용하지 않음
     private final JWTFilter jwtFilter;
-    private final AuthSuccessHandler successHandler;
-    private final AuthFailureHandler failureHandler;
+    private final JsonAuthSuccessHandler    jsonSuccessHandler;
+    private final JsonAuthFailureHandler jsonFailureHandler;
+    private final OAuth2AuthSuccessHandler  oauth2SuccessHandler;
+    private final OAuth2AuthFailureHandler  oauth2FailureHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -65,13 +61,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           CustomOAuth2UserService oauth2UserService,
+                                           CustomUserDetailsService.CustomOAuth2UserService oauth2UserService,
                                            AuthenticationManager authManager) throws Exception {
-        // JSON 로그인 필터에도 AuthenticationManager 주입
+        // JSON 폼 로그인 필터
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
                 new CustomJsonUsernamePasswordAuthenticationFilter(authManager);
-        jsonFilter.setAuthenticationSuccessHandler(successHandler);
-        jsonFilter.setAuthenticationFailureHandler(failureHandler);
+        jsonFilter.setAuthenticationSuccessHandler(jsonSuccessHandler);
+        jsonFilter.setAuthenticationFailureHandler(jsonFailureHandler);
 
 
         http
@@ -117,8 +113,8 @@ public class SecurityConfig {
                 // 2) OAuth2 로그인 설정
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(ui -> ui.userService(oauth2UserService))
-                        .successHandler(successHandler)
-                        .failureHandler(failureHandler)
+                        .successHandler(oauth2SuccessHandler)
+                        .failureHandler(oauth2FailureHandler)
                 );
 
         // 3) JWT 검사 필터
