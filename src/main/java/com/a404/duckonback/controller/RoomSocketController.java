@@ -47,7 +47,8 @@ public class RoomSocketController {
         System.out.println("채팅 메세지 수신 ");
         User user = (User) accessor.getSessionAttributes().get("user");
         if (user != null) {
-            message.setSender(user.getNickname()); // 또는 userId
+            message.setSenderNickName(user.getNickname()); // 또는 userId
+            message.setSenderId(user.getUserId());
         } else {
             System.out.println("use null");
             throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);
