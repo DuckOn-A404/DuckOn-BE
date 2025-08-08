@@ -24,7 +24,6 @@ public class RedisServiceImpl implements RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
-    private final RedisService redisService;
 
     public void saveRoomInfo(String roomId, LiveRoomDTO room) {
         String key = "room:" + roomId + ":info";
@@ -49,7 +48,7 @@ public class RedisServiceImpl implements RedisService {
     }
 
     public void updateRoomInfo(LiveRoomSyncDTO dto){
-        LiveRoomDTO room = redisService.getRoomInfo(dto.getRoomId().toString());
+        LiveRoomDTO room = getRoomInfo(dto.getRoomId().toString());
         if (room == null) {
             throw new CustomException("Redis에 저장된 방 정보가 없습니다.", HttpStatus.NOT_FOUND);
         }
@@ -61,7 +60,7 @@ public class RedisServiceImpl implements RedisService {
         room.setPlaying(dto.isPlaying());
         room.setLastUpdated(dto.getLastUpdated());
 
-        redisService.saveRoomInfo(dto.getRoomId().toString(), room);
+        saveRoomInfo(dto.getRoomId().toString(), room);
     }
 
     public void addRoomToArtist(String artistId, String roomId) {
