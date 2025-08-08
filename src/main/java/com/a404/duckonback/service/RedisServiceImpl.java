@@ -94,7 +94,7 @@ public class RedisServiceImpl implements RedisService {
                 .playlist((List<String>) map.get("playlist"))
                 .currentVideoIndex((int) map.get("currentVideoIndex"))
                 .currentTime((double) map.get("currentTime"))
-                .playing((boolean) map.get("Playing"))
+                .playing((boolean) map.get("playing"))
                 .lastUpdated((long) map.get("lastUpdated"))
                 .isLocked(Boolean.parseBoolean(map.getOrDefault("isLocked", "false").toString()))
                 .entryQuestion((String) map.getOrDefault("entryQuestion", null))
