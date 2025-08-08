@@ -1,5 +1,6 @@
 package com.a404.duckonback.controller;
 
+import com.a404.duckonback.dto.RecommendUsersResponseDTO;
 import com.a404.duckonback.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.dto.UserInfoResponseDTO;
 import com.a404.duckonback.filter.CustomUserPrincipal;
@@ -108,6 +109,17 @@ public class UserController {
         return ResponseEntity.ok(Map.of("valid", isValid));
     }
 
+    @Operation(summary = "사용자 추천", description = "현재 사용자에게 어울리는 다른 사용자를 추천합니다.")
+    @GetMapping("/recommendations")
+    public ResponseEntity<?> recommendUsers(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam(required = false) Long artistId,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "true") boolean includeReasons
+    ) {
+        RecommendUsersResponseDTO res = userService.recommendUsers(principal.getUser().getUserId(), artistId, size, includeReasons);
+        return ResponseEntity.ok(res);
+    }
 
 
 }

@@ -25,4 +25,6 @@ public interface UserService {
     void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo);
 
     boolean verifyPassword(String userId, String inputPassword);
+
+    RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
 }
