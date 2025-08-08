@@ -103,6 +103,7 @@ package com.a404.duckonback.util;
 
 import com.a404.duckonback.config.ServiceProperties;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.TokenStatus;
 import com.a404.duckonback.exception.CustomException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -210,10 +211,15 @@ public class JWTUtil {
         if (token == null || token.isBlank()) {
             throw new CustomException("토큰이 비어 있습니다.", HttpStatus.UNAUTHORIZED);
         }
-        if (!validateToken(token)) {
+
+        try {
+            Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(token);
+            return token;
+        } catch (ExpiredJwtException e) {
+            throw new CustomException("토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED);
+        } catch (JwtException | IllegalArgumentException e) {
             throw new CustomException("유효하지 않은 토큰입니다.", HttpStatus.UNAUTHORIZED);
         }
-        return token;
     }
 
 
@@ -226,5 +232,17 @@ public class JWTUtil {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
+
+
+    public TokenStatus getTokenValidationStatus(String token) {
+        try {
+            Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(token);
+            return TokenStatus.VALID;
+        } catch (ExpiredJwtException e) {
+            return TokenStatus.EXPIRED;
+        } catch (JwtException | IllegalArgumentException e) {
+            return TokenStatus.INVALID;
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.a404.duckonback.filter;
 
 import com.a404.duckonback.config.JWTAuthenticationEntryPoint;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.TokenStatus;
+import com.a404.duckonback.exception.JwtAuthenticationException;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.TokenBlacklistService;
 import com.a404.duckonback.util.JWTUtil;
@@ -30,6 +32,52 @@ public class JWTFilter extends OncePerRequestFilter {
     private final TokenBlacklistService blacklistService;
     private final JWTAuthenticationEntryPoint entryPoint;
 
+//    @Override
+//    protected void doFilterInternal(HttpServletRequest request,
+//                                    HttpServletResponse response,
+//                                    FilterChain filterChain)
+//            throws ServletException, IOException {
+//
+//        String authHeader = request.getHeader("Authorization");
+//
+//        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+//            String token = authHeader.substring(7).trim();
+//
+//            // 1) JWT 구조/서명 유효성 체크
+//            if (!jwtUtil.validateToken(token)) {
+//                entryPoint.commence(request, response,
+//                        new InsufficientAuthenticationException("유효하지 않은 토큰입니다."));
+//                return;
+//            }
+//
+//            // 2) 블랙리스트에 등록된 토큰인지 체크
+//            if (blacklistService.isBlacklisted(token)) {
+//                entryPoint.commence(request, response,
+//                        new InsufficientAuthenticationException("이미 로그아웃된 토큰입니다."));
+//                return;
+//            }
+//            // denied handler class 구현하기
+//
+//            // 3) 토큰에서 클레임(poi) 추출 후 Authentication 세팅
+//            Claims claims = jwtUtil.getClaims(token);
+//            String userId = claims.getSubject();
+//            User user = userRepository.findByUserIdAndDeletedFalse(userId);
+//
+//            if (user != null) {
+//                com.a404.duckonback.filter.CustomUserPrincipal principal = new com.a404.duckonback.filter.CustomUserPrincipal(user);
+//                UsernamePasswordAuthenticationToken auth =
+//                        new UsernamePasswordAuthenticationToken(
+//                                principal, null, principal.getAuthorities()
+//                        );
+//                SecurityContextHolder.getContext().setAuthentication(auth);
+//            }
+//
+//        }
+//
+//        // 6. 다음 필터로 이동
+//        filterChain.doFilter(request, response);
+//    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -41,38 +89,43 @@ public class JWTFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7).trim();
 
-            // 1) JWT 구조/서명 유효성 체크
-            if (!jwtUtil.validateToken(token)) {
+            // 1) JWT 상태 확인 (EXPIRED, INVALID, VALID 등)
+            TokenStatus status = jwtUtil.getTokenValidationStatus(token);
+
+            if (status == TokenStatus.EXPIRED) {
                 entryPoint.commence(request, response,
-                        new InsufficientAuthenticationException("유효하지 않은 토큰입니다."));
+                        new JwtAuthenticationException("토큰이 만료되었습니다.", "EXPIRED"));
                 return;
             }
 
-            // 2) 블랙리스트에 등록된 토큰인지 체크
+            if (status == TokenStatus.INVALID) {
+                entryPoint.commence(request, response,
+                        new JwtAuthenticationException("유효하지 않은 토큰입니다.", "INVALID"));
+                return;
+            }
+
+            // 2) 블랙리스트 확인
             if (blacklistService.isBlacklisted(token)) {
                 entryPoint.commence(request, response,
-                        new InsufficientAuthenticationException("이미 로그아웃된 토큰입니다."));
+                        new JwtAuthenticationException("이미 로그아웃된 토큰입니다.", "REVOKED"));
                 return;
             }
-            // denied handler class 구현하기
 
-            // 3) 토큰에서 클레임(poi) 추출 후 Authentication 세팅
+            // 3) 토큰에서 유저 정보 추출 및 인증 객체 세팅
             Claims claims = jwtUtil.getClaims(token);
             String userId = claims.getSubject();
             User user = userRepository.findByUserIdAndDeletedFalse(userId);
 
             if (user != null) {
-                com.a404.duckonback.filter.CustomUserPrincipal principal = new com.a404.duckonback.filter.CustomUserPrincipal(user);
+                CustomUserPrincipal principal = new CustomUserPrincipal(user);
                 UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                principal, null, principal.getAuthorities()
-                        );
+                        new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
-
         }
 
-        // 6. 다음 필터로 이동
+        // 4. 다음 필터로 이동
         filterChain.doFilter(request, response);
     }
+
 }
