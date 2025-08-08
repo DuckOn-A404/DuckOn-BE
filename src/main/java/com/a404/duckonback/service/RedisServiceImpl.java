@@ -219,7 +219,7 @@ public class RedisServiceImpl implements RedisService {
                     String imgUrl     = (String) roomMap.get("imgUrl");
 
                     // hostId로 User 조회 (null 체크)
-                    User host = userRepository.findByUserId(hostUserId);
+                    User host = userRepository.findByUserIdAndDeletedFalse(hostUserId);
                     String hostNickname     = host != null ? host.getNickname() : null;
                     String hostProfileImage = host != null ? host.getImgUrl()    : null;
 
@@ -278,7 +278,7 @@ public class RedisServiceImpl implements RedisService {
                     String hostUid= (String) m.get("hostId");
 
                     // 4) host 정보
-                    User host = userRepository.findByUserId(hostUid);
+                    User host = userRepository.findByUserIdAndDeletedFalse(hostUid);
                     String hostNickname   = host != null ? host.getNickname() : null;
                     String hostProfileImg = host != null ? host.getImgUrl()    : null;
 
