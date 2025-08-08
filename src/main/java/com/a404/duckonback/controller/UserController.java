@@ -2,7 +2,7 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.dto.UserInfoResponseDTO;
-import com.a404.duckonback.filter.CustomUserDetailsService;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,7 +25,7 @@ public class UserController {
 
     @Operation(summary = "내 정보 조회", description = "로그인한 사용자의 상세 정보를 조회합니다.")
     @GetMapping("/me")
-    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal) {
+    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(userService.getUserDetailInfo(principal.getUser().getUserId()));
     }
 
@@ -35,7 +35,7 @@ public class UserController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<?> updateMyInfo(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @ModelAttribute UpdateProfileRequestDTO newUserInfo
     ) {
         userService.updateUserInfo(principal.getUser().getUserId(), newUserInfo);
@@ -45,7 +45,7 @@ public class UserController {
     @Operation(summary = "회원 탈퇴", description = "로그인한 사용자의 계정을 삭제합니다.")
     @DeleteMapping("/me")
     public ResponseEntity<?> deleteUser(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestHeader("X-Refresh-Token") String refreshTokenHeader
     ) {
 
@@ -61,7 +61,7 @@ public class UserController {
                     required = true,
                     example = "user5@example.com"
             )
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable String userId
     ) {
         UserInfoResponseDTO userInfo = userService.getUserInfo(principal.getUser().getUserId(), userId);
@@ -70,19 +70,19 @@ public class UserController {
 
     @Operation(summary = "내 팔로워 조회", description = "로그인한 사용자의 팔로워 목록을 조회합니다.")
     @GetMapping("/me/followers")
-    public ResponseEntity<?> getFollowers(@AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal) {
+    public ResponseEntity<?> getFollowers(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(userService.getFollowers(principal.getUser().getUserId()));
     }
 
     @Operation(summary = "내 팔로잉 조회", description = "로그인한 사용자의 팔로잉 목록을 조회합니다.")
     @GetMapping("/me/following")
-    public ResponseEntity<?> getFollowing(@AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal) {
+    public ResponseEntity<?> getFollowing(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ResponseEntity.ok(userService.getFollowing(principal.getUser().getUserId()));
     }
 
     @Operation(summary = "사용자 팔로우", description = "특정 사용자를 팔로우합니다.")
     @PostMapping("/{userId}/follow")
-    public ResponseEntity<?> followUser(@AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal, @PathVariable String userId) {
+    public ResponseEntity<?> followUser(@AuthenticationPrincipal CustomUserPrincipal principal, @PathVariable String userId) {
         userService.followUser(principal.getUser().getUserId(), userId);
         return ResponseEntity.ok(Map.of("message", "사용자를 팔로우했습니다."));
     }
@@ -90,7 +90,7 @@ public class UserController {
     @Operation(summary = "사용자 언팔로우", description = "특정 사용자의 팔로우를 취소합니다.")
     @DeleteMapping("/{userId}/follow")
     public ResponseEntity<?> unfollowUser(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable String userId
     ) {
         userService.unfollowUser(principal.getUser().getUserId(), userId);
@@ -100,7 +100,7 @@ public class UserController {
     @Operation(summary = "비밀번호 확인", description = "입력한 비밀번호가 현재 사용자의 비밀번호와 일치하는지 확인합니다.")
     @PostMapping("/me/verify-password")
     public ResponseEntity<?> verifyPassword(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody Map<String, String> request
     ) {
         String inputPassword = request.get("password");

@@ -1,6 +1,7 @@
 package com.a404.duckonback.config;
 
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
+import com.a404.duckonback.filter.CustomOAuth2UserService;
 import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.*;
@@ -61,7 +62,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           CustomUserDetailsService.CustomOAuth2UserService oauth2UserService,
+                                           CustomOAuth2UserService oauth2UserService,
                                            AuthenticationManager authManager) throws Exception {
         // JSON 폼 로그인 필터
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
@@ -98,7 +99,9 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
                                 .requestMatchers(HttpMethod.GET, "/api/artists/*").permitAll()         // 단일 상세
                                 .requestMatchers(HttpMethod.GET, "/api/chat/artist/**").permitAll() // 채팅 내역 조회
-                                .requestMatchers(HttpMethod.GET, "/api/rooms/trending").permitAll() // 인기 방 조회
+                                .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll() // 방 목록 조회
+                                .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // 방 상세 조회
+                                .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()

@@ -1,5 +1,7 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.AdminArtistPatchDTO;
+import com.a404.duckonback.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.dto.ArtistDTO;
 import com.a404.duckonback.dto.ArtistDetailDTO;
 import com.a404.duckonback.entity.Artist;
@@ -18,4 +20,7 @@ public interface ArtistService {
     List<ArtistDTO> searchArtists(String keyword);
     List<ArtistDTO> getRandomArtists(int size);
 
+    Artist createArtist(AdminArtistRequestDTO dto);
+    Artist updateArtist(Long artistId, AdminArtistRequestDTO dto);
+    Artist patchArtist(Long artistId, AdminArtistPatchDTO dto);
 }
