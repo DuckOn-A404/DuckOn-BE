@@ -5,12 +5,10 @@ import com.a404.duckonback.filter.CustomOAuth2UserService;
 import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.*;
-import com.a404.duckonback.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,7 +33,6 @@ public class SecurityConfig {
     private final JsonAuthFailureHandler jsonFailureHandler;
     private final OAuth2AuthSuccessHandler  oauth2SuccessHandler;
     private final OAuth2AuthFailureHandler  oauth2FailureHandler;
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -66,8 +63,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            CustomOAuth2UserService oauth2UserService,
-                                           AuthenticationManager authManager, TokenBlacklistService tokenBlacklistService) throws Exception {
-        // JSON 로그인 필터
+                                           AuthenticationManager authManager) throws Exception {
+        // JSON 폼 로그인 필터
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
                 new CustomJsonUsernamePasswordAuthenticationFilter(authManager);
         jsonFilter.setAuthenticationSuccessHandler(jsonSuccessHandler);
@@ -121,21 +118,10 @@ public class SecurityConfig {
                         .userInfoEndpoint(ui -> ui.userService(oauth2UserService))
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler(oauth2FailureHandler)
-                )// JWT 검사 필터
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)// 3. 예외 처리: 인증/인가 실패 시 진입점 지정
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)     // 유효하지 않은 토큰 등
-                        .accessDeniedHandler(                                      // 권한 부족 시
-                                (request, response, accessDeniedException) -> {
-                                    response.setStatus(HttpStatus.FORBIDDEN.value());
-                                    response.setContentType("application/json");
-                                    response
-                                            .getWriter()
-                                            .write("{\"error\":\"Access Denied\"}");
-                                }
-                        )
                 );
 
+        // 3) JWT 검사 필터
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
