@@ -450,7 +450,6 @@ public class UserServiceImpl implements UserService {
                         .userId(b.getUserId())
                         .nickname(b.getNickname())
                         .imgUrl(b.getImgUrl())
-                        .mutualFollows(0) // 라이트 버전에선 계산 X
                         .reasons(includeReasons ? new ArrayList<>(scores.get(b.getUserId()).reasons) : null)
                         .build()
                 )
@@ -486,7 +485,6 @@ public class UserServiceImpl implements UserService {
                                 .userId(b.getUserId())
                                 .nickname(b.getNickname())
                                 .imgUrl(b.getImgUrl())
-                                .mutualFollows(0)
                                 .reasons(includeReasons ? List.of("랜덤 보충") : null)
                                 .build())
                         .toList();
