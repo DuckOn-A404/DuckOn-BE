@@ -2,16 +2,21 @@ package com.a404.duckonback.repository;
 
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.SocialProvider;
+import com.a404.duckonback.repository.projection.UserBrief;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
+
     User findByEmail(String email);
     User findByUserId(String userId);
     User findById(Long id);
@@ -19,7 +24,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByUserId(String userId);
     boolean existsByNickname(String nickname);
     void deleteByUserId(String userId);
-
     User findByProviderAndProviderId(SocialProvider provider, String providerId);
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.email = :email")
@@ -29,42 +33,47 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByUserIdWithPenalties(@Param("userId") String userId);
 
     @Query("""
-    SELECT u 
-    FROM User u
-      LEFT JOIN FETCH u.artistFollows af
-      LEFT JOIN FETCH af.artist
-    WHERE u.userId = :userId
+      SELECT u 
+      FROM User u
+        LEFT JOIN FETCH u.artistFollows af
+        LEFT JOIN FETCH af.artist
+      WHERE u.userId = :userId
     """)
     Optional<User> findUserDetailWithArtistFollows(@Param("userId") String userId);
 
-    /** 같은 아티스트를 팔로우 중인 유저 */
+    /** 같은 아티스트 팔로워(가볍게 프로젝션, 정렬 = 최근 팔로우 순), LIMIT Pageable */
     @Query("""
-        select distinct u
-        from User u
-          join u.artistFollows af
-        where af.artist.artistId = :artistId
+      SELECT u.userId AS userId, u.nickname AS nickname, u.imgUrl AS imgUrl
+      FROM ArtistFollow af JOIN af.user u
+      WHERE af.artist.artistId = :artistId
+      ORDER BY af.createdAt DESC
     """)
-    List<User> findUsersFollowingArtist(@Param("artistId") Long artistId);
+    List<UserBrief> findArtistFollowersBrief(@Param("artistId") Long artistId, Pageable pageable);
 
-    /** 같은 아티스트에서 최근 방을 만든 유저(호스트) */
+    /** 같은 아티스트에서 최근 방 호스트(최근 생성 순), LIMIT Pageable */
     @Query("""
-        select c
-        from Room r
-          join r.creator c
-        where r.artist.artistId = :artistId
-        group by c
-        order by max(r.createdAt) desc
+      SELECT
+        u.userId   AS userId,
+        u.nickname AS nickname,
+        u.imgUrl   AS imgUrl,
+        MAX(r.createdAt) AS lastCreated
+      FROM Room r
+        JOIN r.creator u
+      WHERE r.artist.artistId = :artistId
+        AND r.createdAt >= :since
+      GROUP BY u.userId, u.nickname, u.imgUrl
+      ORDER BY lastCreated DESC
     """)
-    List<User> findRecentRoomCreatorsByArtist(@Param("artistId") Long artistId);
+    List<UserBrief> findRecentHostsBrief(@Param("artistId") Long artistId,
+                                         @Param("since") LocalDateTime since,
+                                         Pageable pageable);
 
-    /** 친구의 친구(2-hop). 내 팔로잉이 팔로우하는 사람들(나 자신 제외) */
+    /** 결과 집합 userId로 한번에 얇게 조회 (IN) */
     @Query("""
-        select distinct f2.following
-        from Follow f1
-          join Follow f2 on f1.following.id = f2.follower.id
-        where f1.follower.userId = :myUserId
-          and f2.following.userId <> :myUserId
+      SELECT u.userId AS userId, u.nickname AS nickname, u.imgUrl AS imgUrl
+      FROM User u
+      WHERE u.userId IN :userIds
     """)
-    List<User> findFriendsOfFriends(@Param("myUserId") String myUserId);
+    List<UserBrief> findBriefsByUserIdIn(@Param("userIds") Collection<String> userIds);
 
 }
