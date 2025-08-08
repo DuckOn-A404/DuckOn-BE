@@ -25,4 +25,6 @@ public class LiveRoomDTO {
     private boolean isLocked;
     private String entryQuestion;
     private String entryAnswer;
+
+
 }
