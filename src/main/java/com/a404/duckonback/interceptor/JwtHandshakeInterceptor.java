@@ -1,5 +1,8 @@
 package com.a404.duckonback.interceptor;
 
+import com.a404.duckonback.entity.User;
+import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.service.UserService;
 import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +11,7 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.stereotype.Component;
@@ -20,6 +24,7 @@ import java.util.Map;
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     private final JWTUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request,
@@ -51,11 +56,26 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             if (token != null && jwtUtil.validateToken(token)) {
                 Authentication authentication = jwtUtil.getAuthentication(token);
 
+//                if (authentication != null && authentication.isAuthenticated()) {
+//                    attributes.put("user", authentication.getPrincipal()); // 인증된 사용자 저장
+//                    return true;
+//                } else {
+//                    log.warn("인증 객체 생성 실패 또는 인증되지 않음");
+//                }
                 if (authentication != null && authentication.isAuthenticated()) {
-                    attributes.put("user", authentication.getPrincipal()); // 인증된 사용자 저장
+                    Object principal = authentication.getPrincipal();
+
+                    if (principal instanceof User user) {
+                        attributes.put("user", user);
+                    } else if (principal instanceof UserDetails userDetails) {
+                        // UserDetails → User로 변환
+                        User user = userRepository.findByUserId(userDetails.getUsername());
+                        attributes.put("user", user);
+                    } else {
+                        log.warn("알 수 없는 principal 타입: " + principal.getClass());
+                    }
+
                     return true;
-                } else {
-                    log.warn("인증 객체 생성 실패 또는 인증되지 않음");
                 }
             } else {
                 log.warn("유효하지 않은 JWT 토큰");
