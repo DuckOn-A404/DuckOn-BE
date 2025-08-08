@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,5 +17,6 @@ public class ChatMessageDTO {
     private String senderId;
     private String senderNickName;
     private String content;
-    private long timestamp;
+    @Builder.Default
+    private Instant sentAt = Instant.now();
 }
