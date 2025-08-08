@@ -74,8 +74,8 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestHeader("X-Refresh-Token") String refreshToken) {
-
+            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken
+    ) {
         authService.logout(principal.getUser(), refreshToken);
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
     }
