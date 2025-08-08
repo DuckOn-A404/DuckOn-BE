@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Document(collection = "artist_chats")
@@ -17,5 +18,5 @@ public class ChatMessage {
     private String senderUserId;    // 보낸 사람의 userId
     private String senderNickname;  // 보낸 사람의 nickname
     private String content;         // 텍스트 내용
-    private LocalDateTime sentAt;   // 보낸 시각
+    private Instant sentAt;   // 보낸 시각
 }
