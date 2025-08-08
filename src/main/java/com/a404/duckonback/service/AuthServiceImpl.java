@@ -9,6 +9,7 @@ import com.a404.duckonback.enums.PenaltyStatus;
 import com.a404.duckonback.enums.PenaltyType;
 import com.a404.duckonback.enums.UserRole;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.util.JWTUtil;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
-    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
@@ -160,30 +159,12 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Override
-    @Transactional
     public void logout(User user, String refreshToken) {
-        long now = System.currentTimeMillis();
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if(attrs == null) {
-            throw new CustomException("요청 정보가 없습니다.", HttpStatus.BAD_REQUEST);
-        }
-        // 요청 헤더에서 Refresh Token 추출
-        String authHeader = attrs.getRequest().getHeader("Authorization");
+        //String accessToken = jwtUtil.resolveCurrentToken(); // SecurityContext 기반으로 현재 accessToken 추출
 
-        // --- 1) 현재 Access Token 블랙리스트 등록 ---
-        // 요청 스코프의 HTTP 헤더를 직접 꺼내려면 RequestContextHolder 사용
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring(7).trim();
-            Date exp = jwtUtil.getClaims(accessToken).getExpiration();
-            long ttl = exp.getTime() - now;
-            tokenBlacklistService.blacklist(accessToken, ttl);
-        }
+        //accessToken, refreshToken 블랙리스트 중복등록 방지 +등록 필요
 
-        // --- 2) Refresh Token 블랙리스트 등록 ---
-        if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
-            Date exp = jwtUtil.getClaims(refreshToken).getExpiration();
-            long ttl = exp.getTime() - now;
-            tokenBlacklistService.blacklist(refreshToken, ttl);
-        }
+
+
     }
 }
