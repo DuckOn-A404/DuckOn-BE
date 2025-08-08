@@ -7,15 +7,15 @@ import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +27,8 @@ public class UserServiceImpl implements UserService {
     private final S3Service s3Service;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public User findByEmail(String email) {
@@ -287,6 +289,164 @@ public class UserServiceImpl implements UserService {
         }
 
         return passwordEncoder.matches(inputPassword, user.getPassword());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
+        if (size <= 0) size = 10;
+
+        User me = userRepository.findByUserId(myUserId);
+        if (me == null) {
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        // 내가 팔로우 중인 사람 id(빅인트 PK) 집합 (겹치는 팔로우 계산용)
+        var myFollowingIds = Optional.ofNullable(me.getFollowing())
+                .orElse(List.of())
+                .stream()
+                .map(f -> f.getFollowing().getId())
+                .collect(Collectors.toSet());
+
+        // 후보 점수/사유 누적
+        Map<String, Candidate> candidates = new HashMap<>();
+
+        // 1) 같은 아티스트 현재 방 참여자 (Redis)
+        if (artistId != null) {
+            String roomsKey = "artist:" + artistId + ":rooms"; // Redis 설계에 이미 존재
+            Set<Object> roomIds = redisTemplate.opsForSet().members(roomsKey);
+            if (roomIds != null) {
+                for (Object roomIdObj : roomIds) {
+                    String roomId = String.valueOf(roomIdObj);
+                    String usersKey = "room:" + roomId + ":users";
+                    Set<Object> users = redisTemplate.opsForSet().members(usersKey);
+                    if (users != null) {
+                        for (Object uidObj : users) {
+                            String uid = String.valueOf(uidObj);
+                            if (!uid.equals(myUserId)) {
+                                addScore(candidates, uid, 100, includeReasons ? "같은 아티스트 방 참여자" : null);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2) 같은 아티스트 팔로워 (MySQL)
+        if (artistId != null) {
+            for (User u : userRepository.findUsersFollowingArtist(artistId)) {
+                if (!u.getUserId().equals(myUserId)) {
+                    addScore(candidates, u.getUserId(), 50, includeReasons ? "같은 아티스트 팔로워" : null);
+                }
+            }
+        }
+
+        // 3) 같은 아티스트 최근 방 호스트 (MySQL)
+        if (artistId != null) {
+            for (User u : userRepository.findRecentRoomCreatorsByArtist(artistId)) {
+                if (!u.getUserId().equals(myUserId)) {
+                    addScore(candidates, u.getUserId(), 40, includeReasons ? "같은 아티스트 최근 방 호스트" : null);
+                }
+            }
+        }
+
+        // 4) 친구의 친구 (2-hop)
+        for (User u : userRepository.findFriendsOfFriends(myUserId)) {
+            if (!u.getUserId().equals(myUserId)) {
+                addScore(candidates, u.getUserId(), 30, includeReasons ? "친구의 친구" : null);
+            }
+        }
+
+        // 이미 팔로우한 계정/본인 제외
+        Set<String> myFollowingUserIds = Optional.ofNullable(me.getFollowing())
+                .orElse(List.of())
+                .stream()
+                .map(f -> f.getFollowing().getUserId())
+                .collect(Collectors.toSet());
+
+        // DTO 변환(+ mutualFollows 가산 점수)
+        List<RecommendedUserDTO> list = candidates.keySet().stream()
+                .filter(uid -> !uid.equals(myUserId) && !myFollowingUserIds.contains(uid))
+                .map(uid -> {
+                    User u = userRepository.findByUserId(uid);
+                    if (u == null) return null;
+
+                    // mutual follows 계산 (내 팔로잉 ∩ 상대 팔로잉)
+                    Set<Long> candidateFollowingIds = Optional.ofNullable(u.getFollowing())
+                            .orElse(List.of())
+                            .stream()
+                            .map(f -> f.getFollowing().getId())
+                            .collect(Collectors.toSet());
+
+                    int mutual = 0;
+                    for (Long id : candidateFollowingIds) {
+                        if (myFollowingIds.contains(id)) mutual++;
+                    }
+
+                    // 최종 점수 = baseScore + mutual*10
+                    Candidate c = candidates.get(uid);
+                    c.totalScore += (mutual * 10);
+
+                    return RecommendedUserDTO.builder()
+                            .userId(u.getUserId())
+                            .nickname(u.getNickname())
+                            .imgUrl(u.getImgUrl())
+                            .mutualFollows(mutual)
+                            .reasons(includeReasons ? new ArrayList<>(c.reasons) : null)
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .sorted((a, b) -> {
+                    // 점수 내림차순, 같은 점수면 닉네임 ASC
+                    int scoreA = candidates.get(a.getUserId()).totalScore;
+                    int scoreB = candidates.get(b.getUserId()).totalScore;
+                    if (scoreA != scoreB) return Integer.compare(scoreB, scoreA);
+                    return Optional.ofNullable(a.getNickname()).orElse("")
+                            .compareTo(Optional.ofNullable(b.getNickname()).orElse(""));
+                })
+                .limit(size)
+                .toList();
+
+        // 최소 3명 보장(가능하면)
+        if (list.size() < Math.min(size, 3)) {
+            int need = Math.min(size, 3) - list.size();
+
+            // 랜덤 보충: 전체 유저에서 나/이미 포함/이미 팔로우 제외
+            var page = org.springframework.data.domain.PageRequest.of(0, 200);
+            var pool = userRepository.findAll(page).getContent();
+            var exists = list.stream().map(RecommendedUserDTO::getUserId).collect(Collectors.toSet());
+            var extras = pool.stream()
+                    .filter(u -> !u.getUserId().equals(myUserId) && !exists.contains(u.getUserId()) && !myFollowingUserIds.contains(u.getUserId()))
+                    .limit(need)
+                    .map(u -> RecommendedUserDTO.builder()
+                            .userId(u.getUserId())
+                            .nickname(u.getNickname())
+                            .imgUrl(u.getImgUrl())
+                            .mutualFollows(0)
+                            .reasons(includeReasons ? List.of("랜덤 보충") : null)
+                            .build())
+                    .toList();
+
+            list = new java.util.ArrayList<>(list);
+            list.addAll(extras);
+        }
+
+        return RecommendUsersResponseDTO.builder().users(list).build();
+    }
+
+    private void addScore(Map<String, Candidate> map, String userId, int score, String reasonOrNull) {
+        Candidate c = map.get(userId);
+        if (c == null) {
+            c = new Candidate();
+            map.put(userId, c);
+        }
+        c.totalScore = Math.max(c.totalScore, 0) + score; // 누적
+        if (reasonOrNull != null) c.reasons.add(reasonOrNull);
+    }
+
+    private static class Candidate {
+        int totalScore = 0;
+        List<String> reasons = new ArrayList<>();
     }
 
 
