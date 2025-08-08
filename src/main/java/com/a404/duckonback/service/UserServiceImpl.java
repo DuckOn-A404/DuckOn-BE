@@ -372,7 +372,7 @@ public class UserServiceImpl implements UserService {
     public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
         if (size <= 0) size = SIZE_DEFAULT;
 
-        User me = userRepository.findByUserId(myUserId);
+        User me = userRepository.findByUserIdAndDeletedFalse(myUserId);
         if (me == null) throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
         // 이미 팔로우/본인 제외를 위해 내 팔로잉 userId 집합 준비
