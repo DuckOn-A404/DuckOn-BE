@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
+import com.a404.duckonback.dto.LiveRoomSyncDTO;
 import com.a404.duckonback.dto.TrendingRoomDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.User;
@@ -35,7 +36,7 @@ public class RedisServiceImpl implements RedisService {
         map.put("playlist", room.getPlaylist());
         map.put("currentVideoIndex", room.getCurrentVideoIndex());
         map.put("currentTime", room.getCurrentTime());
-        map.put("isPlaying", room.isPlaying());
+        map.put("playing", room.isPlaying());
         map.put("lastUpdated", room.getLastUpdated());
         map.put("isLocked", room.isLocked());
         map.put("entryQuestion", room.getEntryQuestion());
@@ -44,6 +45,22 @@ public class RedisServiceImpl implements RedisService {
 
         redisTemplate.opsForHash().putAll(key, map);
         redisTemplate.expire(key, Duration.ofHours(6));
+    }
+
+    public void updateRoomInfo(LiveRoomSyncDTO dto){
+        LiveRoomDTO room = getRoomInfo(dto.getRoomId().toString());
+        if (room == null) {
+            throw new CustomException("Redis에 저장된 방 정보가 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        room.setHostId(dto.getHostId());
+        room.setPlaylist(dto.getPlaylist());
+        room.setCurrentVideoIndex(dto.getCurrentVideoIndex());
+        room.setCurrentTime(dto.getCurrentTime());
+        room.setPlaying(dto.isPlaying());
+        room.setLastUpdated(dto.getLastUpdated());
+
+        saveRoomInfo(dto.getRoomId().toString(), room);
     }
 
     public void addRoomToArtist(String artistId, String roomId) {
@@ -77,7 +94,7 @@ public class RedisServiceImpl implements RedisService {
                 .playlist((List<String>) map.get("playlist"))
                 .currentVideoIndex((int) map.get("currentVideoIndex"))
                 .currentTime((double) map.get("currentTime"))
-                .isPlaying((boolean) map.get("isPlaying"))
+                .playing((boolean) map.get("playing"))
                 .lastUpdated((long) map.get("lastUpdated"))
                 .isLocked(Boolean.parseBoolean(map.getOrDefault("isLocked", "false").toString()))
                 .entryQuestion((String) map.getOrDefault("entryQuestion", null))
@@ -202,7 +219,7 @@ public class RedisServiceImpl implements RedisService {
                     String imgUrl     = (String) roomMap.get("imgUrl");
 
                     // hostId로 User 조회 (null 체크)
-                    User host = userRepository.findByUserId(hostUserId);
+                    User host = userRepository.findByUserIdAndDeletedFalse(hostUserId);
                     String hostNickname     = host != null ? host.getNickname() : null;
                     String hostProfileImage = host != null ? host.getImgUrl()    : null;
 
@@ -261,7 +278,7 @@ public class RedisServiceImpl implements RedisService {
                     String hostUid= (String) m.get("hostId");
 
                     // 4) host 정보
-                    User host = userRepository.findByUserId(hostUid);
+                    User host = userRepository.findByUserIdAndDeletedFalse(hostUid);
                     String hostNickname   = host != null ? host.getNickname() : null;
                     String hostProfileImg = host != null ? host.getImgUrl()    : null;
 

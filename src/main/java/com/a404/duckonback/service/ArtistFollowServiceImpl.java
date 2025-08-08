@@ -62,7 +62,7 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
 
     @Override
     public void followArtists(Long id, List<Long> artistList){
-        User user = userRepository.findById(id);
+        User user = userRepository.findByIdAndDeletedFalse(id);
 
         for (Long artistId : artistList) {
             Artist artist = artistRepository.findById(artistId)
@@ -82,7 +82,7 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
     @Override
     public Page<FollowedArtistDTO> getFollowedArtists(Long userId, Pageable pageable) {
         // 사용자 존재 확인
-        if (userRepository.findById(userId) == null) {
+        if (userRepository.findByIdAndDeletedFalse(userId) == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
         }
         // 페이징 조회 후 DTO로 매핑
@@ -99,7 +99,7 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
     @Override
     public void followArtist(Long userId, Long artistId) {
         // 1) 사용자 존재 확인 (커스텀 findById → User or null)
-        User user = userRepository.findById(userId);
+        User user = userRepository.findByIdAndDeletedFalse(userId);
         if (user == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
         }
@@ -128,7 +128,7 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
     @Transactional
     public void unfollowArtist(Long userId, Long artistId) {
         // 1) 사용자 존재 확인
-        User user = userRepository.findById(userId);
+        User user = userRepository.findByIdAndDeletedFalse(userId);
         if (user == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
         }
@@ -153,7 +153,7 @@ public class ArtistFollowServiceImpl implements ArtistFollowService {
     @Transactional
     public void updateArtistFollows(Long userId, List<Long> artistIds) {
         // 1) 사용자 검증
-        User user = userRepository.findById(userId);
+        User user = userRepository.findByIdAndDeletedFalse(userId);
         if (user == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
         }
