@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
+import com.a404.duckonback.dto.LiveRoomSyncDTO;
 import com.a404.duckonback.dto.TrendingRoomDTO;
 import com.a404.duckonback.entity.User;
 
@@ -16,4 +17,7 @@ public interface RedisService {
     void removeUserFromRoom(String artistId, String roomId,User user);
     List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId);
     List<TrendingRoomDTO> getTrendingRooms(int size);
+
+    void updateRoomInfo(LiveRoomSyncDTO room);
+
 }

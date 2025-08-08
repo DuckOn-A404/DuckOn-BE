@@ -14,7 +14,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class JWTAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper mapper;
 

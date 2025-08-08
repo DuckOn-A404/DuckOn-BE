@@ -68,7 +68,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
                 .playlist(playList)
                 .currentVideoIndex(0)
                 .currentTime(0.0)
-                .isPlaying(false)
+                .playing(false)
                 .lastUpdated(System.currentTimeMillis())
                 .isLocked(req.isLocked())
                 .entryQuestion(req.getEntryQuestion())

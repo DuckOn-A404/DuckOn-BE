@@ -29,13 +29,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-//    private final CustomUserDetailsService userDetailsService; // 자동 주입되어서 사용하지 않음
+    //    private final CustomUserDetailsService userDetailsService; // 자동 주입되어서 사용하지 않음
     private final JWTFilter jwtFilter;
     private final JsonAuthSuccessHandler    jsonSuccessHandler;
     private final JsonAuthFailureHandler jsonFailureHandler;
     private final OAuth2AuthSuccessHandler  oauth2SuccessHandler;
     private final OAuth2AuthFailureHandler  oauth2FailureHandler;
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {

@@ -31,7 +31,7 @@ public class ChatService {
             );
         }
         // 2) 사용자 정보 조회
-        User user = userRepository.findById(userPk);
+        User user = userRepository.findByIdAndDeletedFalse(userPk);
         if (user == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
         }
