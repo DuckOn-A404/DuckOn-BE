@@ -34,60 +34,60 @@ public class AuthServiceImpl implements AuthService {
     private final S3Service s3Service;
 
     private final PasswordEncoder passwordEncoder;
-    private final JWTUtil jwtUtil;
+    private final JWTUtil jWTUtil;
     private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
-        String email = loginRequest.getEmail();
-        String userId = loginRequest.getUserId();
+        String email  = loginRequest.getEmail()  == null ? null : loginRequest.getEmail().trim();
+        String userId = loginRequest.getUserId() == null ? null : loginRequest.getUserId().trim();
         String password = loginRequest.getPassword();
 
-        if((email != null && !email.isBlank()) && (userId != null && !userId.isBlank())){
+        if (email != null && !email.isBlank() && userId != null && !userId.isBlank()) {
             throw new CustomException("email 또는 userId 중 하나만 입력해야합니다.", HttpStatus.BAD_REQUEST);
         }
-
         if ((email == null || email.isBlank()) && (userId == null || userId.isBlank())) {
             throw new CustomException("email 또는 userId 중 하나는 필수입니다.", HttpStatus.BAD_REQUEST);
         }
-
         if (password == null || password.isBlank()) {
             throw new CustomException("비밀번호는 필수 입력입니다.", HttpStatus.BAD_REQUEST);
         }
 
-        User user = null;
-        if (email != null && !email.isBlank()) {
-            user = userService.findByEmail(email);
-        } else if (userId != null && !userId.isBlank()) {
-            user = userService.findByUserId(userId);
+        // 🔹 탈퇴(false)인 사용자만 찾는 서비스 메서드 사용
+        User user = (email != null && !email.isBlank())
+                ? userService.findActiveByEmail(email)      // 내부적으로 findByEmailAndDeletedFalse 사용
+                : userService.findActiveByUserId(userId);   // 내부적으로 findByUserIdAndDeletedFalse 사용
+
+        // (이중안전) 한 번 더 체크
+        if (user.isDeleted()) {
+            throw new CustomException("탈퇴한 계정입니다.", HttpStatus.UNAUTHORIZED);
         }
 
-        if (user == null) {
-            throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.UNAUTHORIZED);
-        }
-
-
+        // 정지 여부 체크
         LocalDateTime now = LocalDateTime.now();
-        boolean isSuspended = user.getPenalties().stream()
-                .anyMatch(p -> p.getPenaltyType() == PenaltyType.ACCOUNT_SUSPENSION
+        boolean isSuspended = user.getPenalties().stream().anyMatch(p ->
+                p.getPenaltyType() == PenaltyType.ACCOUNT_SUSPENSION
                         && (p.getStartAt() == null || !p.getStartAt().isAfter(now))
                         && (p.getEndAt() == null || p.getEndAt().isAfter(now))
-                        && (p.getStatus() == PenaltyStatus.ACTIVE));
-
+                        && p.getStatus() == PenaltyStatus.ACTIVE
+        );
         if (isSuspended) {
             throw new CustomException("계정이 정지되었습니다. 고객센터에 문의하세요.", HttpStatus.FORBIDDEN);
         }
 
-        //비밀번호 일치 확인 ( 암호화 )
+        // 소셜계정 비밀번호 로그인 차단(정책에 맞게)
+        if (Boolean.FALSE.equals(user.getHasLocalCredential())) {
+            throw new CustomException("소셜 계정은 비밀번호 로그인을 사용할 수 없습니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // 비밀번호 검증
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new CustomException("비밀번호가 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
         }
 
-        //토근 생성
-        String accessToken = jwtUtil.generateAccessToken(user);
-        String refreshToken = jwtUtil.generateRefreshToken(user);
-        
-        //(추가 필요 )redis에 저장
+        // 토큰 발급
+        String accessToken  = jWTUtil.generateAccessToken(user);
+        String refreshToken = jWTUtil.generateRefreshToken(user);
 
         UserDTO userDTO = UserDTO.builder()
                 .email(user.getEmail())
@@ -137,53 +137,53 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String refreshAccessToken(String refreshTokenHeader){
-                // Bearer 제거
+        // Bearer 제거
         if (!refreshTokenHeader.startsWith("Bearer ")) {
             throw new CustomException("잘못된 형식의 토큰입니다.", HttpStatus.BAD_REQUEST);
         }
 
         String refreshToken = refreshTokenHeader.substring(7);
 
-        if (!jwtUtil.validateToken(refreshToken)) {
+        if (!jWTUtil.validateToken(refreshToken)) {
             throw new CustomException("유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED);
         }
 
-        Claims claims = jwtUtil.getClaims(refreshToken);
+        Claims claims = jWTUtil.getClaims(refreshToken);
         String userId = claims.getSubject();
 
         // (추가 필요 ) redis에 저장된 refreshToken과 비교
 
 
         User user = userService.findByUserId(userId);
-        return jwtUtil.generateAccessToken(user);
+        return jWTUtil.generateAccessToken(user);
     }
 
 
     @Override
     @Transactional
-    public void logout(User user, String refreshToken) {
-        long now = System.currentTimeMillis();
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if(attrs == null) {
-            throw new CustomException("요청 정보가 없습니다.", HttpStatus.BAD_REQUEST);
-        }
-        // 요청 헤더에서 Refresh Token 추출
-        String authHeader = attrs.getRequest().getHeader("Authorization");
+    public void logout(User user, String refreshHeader) {
+        final long now = System.currentTimeMillis();
 
-        // --- 1) 현재 Access Token 블랙리스트 등록 ---
-        // 요청 스코프의 HTTP 헤더를 직접 꺼내려면 RequestContextHolder 사용
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring(7).trim();
-            Date exp = jwtUtil.getClaims(accessToken).getExpiration();
-            long ttl = exp.getTime() - now;
-            tokenBlacklistService.blacklist(accessToken, ttl);
+        // Access Token (Authorization)
+        ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            String authorization = attrs.getRequest().getHeader("Authorization");
+            String accessToken = jWTUtil.normalizeIfValid(authorization);
+            if (accessToken != null) {
+                Date exp = jWTUtil.getClaims(accessToken).getExpiration();
+                long ttl = exp.getTime() - now;
+                if (ttl > 0) tokenBlacklistService.blacklist(accessToken, ttl);
+            }
         }
 
-        // --- 2) Refresh Token 블랙리스트 등록 ---
-        if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
-            Date exp = jwtUtil.getClaims(refreshToken).getExpiration();
+        // Refresh Token (X-Refresh-Token) - Bearer 유무와 무관
+        String refreshToken = jWTUtil.normalizeIfValid(refreshHeader);
+        if (refreshToken != null) {
+            Date exp = jWTUtil.getClaims(refreshToken).getExpiration();
             long ttl = exp.getTime() - now;
-            tokenBlacklistService.blacklist(refreshToken, ttl);
+            if (ttl > 0) tokenBlacklistService.blacklist(refreshToken, ttl);
         }
     }
+
 }

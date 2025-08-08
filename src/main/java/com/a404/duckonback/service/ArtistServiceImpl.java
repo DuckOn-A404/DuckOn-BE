@@ -59,7 +59,7 @@ public class ArtistServiceImpl implements ArtistService {
         boolean isFollowed = false;
         LocalDateTime followedAt = null;
 
-        if (userId != null && userRepository.findById(userId) != null) {
+        if (userId != null && userRepository.findByIdAndDeletedFalse(userId) != null) {
             Optional<ArtistFollow> followOpt = artistFollowService.getArtistFollow(userId, artistId);
             if (followOpt.isPresent()) {
                 isFollowed = true;
