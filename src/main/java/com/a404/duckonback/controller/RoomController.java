@@ -1,9 +1,6 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.CreateRoomRequestDTO;
-import com.a404.duckonback.dto.LiveRoomDTO;
-import com.a404.duckonback.dto.LiveRoomSummaryDTO;
-import com.a404.duckonback.dto.TrendingRoomDTO;
+import com.a404.duckonback.dto.*;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.LiveRoomService;
@@ -69,10 +66,11 @@ public class RoomController {
     @PostMapping("/{roomId}/enter")
     public ResponseEntity<LiveRoomDTO> enterRoom(
             @PathVariable Long roomId,
-            @RequestParam(required = false) String entryAnswer,
+            @RequestBody(required = false) EntryAnswerRequestDTO request,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+        String entryAnswer = request.getEntryAnswer();
 
         if (room == null) {
             throw new CustomException("존재하지 않는 방입니다", HttpStatus.NOT_FOUND);
