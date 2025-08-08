@@ -31,5 +31,9 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
 
     Optional<Artist> findByArtistId(Long artistId);
 
+    boolean existsByNameEnOrNameKr(String nameEn, String nameKr);
+
+    // 업데이트 시 중복 체크를 위해
+    Optional<Artist> findByNameEnOrNameKr(String nameEn, String nameKr);
 
 }

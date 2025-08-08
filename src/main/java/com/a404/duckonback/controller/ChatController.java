@@ -3,8 +3,8 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.dto.ChatMessageResponseDTO;
 import com.a404.duckonback.entity.ChatMessage;
-import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.service.ChatService;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,7 +26,7 @@ public class ChatController {
     @PostMapping("/artist/{artistId}/message")
     public ResponseEntity<ChatMessageResponseDTO> sendMessage(
             @PathVariable String artistId,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody ChatMessageRequestDTO dto
     ) {
         ChatMessage saved = chatService.sendMessage(

@@ -1,7 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.BlockedUserDTO;
-import com.a404.duckonback.filter.CustomUserDetailsService;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.UserBlockService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +29,7 @@ public class UserBlockController {
     @PostMapping("/block/{userId}")
     public ResponseEntity<?> blockUser(
             @PathVariable String userId,  // 차단 대상자의 userId(String)
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long blockerId = principal.getUser().getId();  // 로그인한 사용자의 PK(Long)
         userBlockService.blockUser(blockerId, userId);
@@ -44,7 +44,7 @@ public class UserBlockController {
     @DeleteMapping("/block/{userId}")
     public ResponseEntity<?> unblockUser(
             @PathVariable String userId,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long blockerId = principal.getUser().getId();
         userBlockService.deleteUserBlock(blockerId, userId);
@@ -59,7 +59,7 @@ public class UserBlockController {
     @GetMapping("/block/{userId}")
     public ResponseEntity<?> isUserBlocked(
             @PathVariable String userId,
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long blockerId = principal.getUser().getId();
         boolean isBlocked = userBlockService.isUserBlocked(blockerId, userId);
@@ -73,7 +73,7 @@ public class UserBlockController {
     )
     @GetMapping("/block")
     public ResponseEntity<?> getUserBlockList(
-            @AuthenticationPrincipal CustomUserDetailsService.CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         Long blockerId = principal.getUser().getId();
         List<BlockedUserDTO> blockedList = userBlockService.getUserBlockList(blockerId);
