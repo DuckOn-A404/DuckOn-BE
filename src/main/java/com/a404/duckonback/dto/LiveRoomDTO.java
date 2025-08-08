@@ -20,7 +20,7 @@ public class LiveRoomDTO {
     private List<String> playlist;
     private int currentVideoIndex;
     private double currentTime;
-    private boolean isPlaying;
+    private boolean playing;
     private long lastUpdated;
     private boolean isLocked;
     private String entryQuestion;
