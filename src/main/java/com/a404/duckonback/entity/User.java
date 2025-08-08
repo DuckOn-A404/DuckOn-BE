@@ -60,6 +60,12 @@ public class User {
     @Column(name = "img_url", columnDefinition = "TEXT")
     private String imgUrl;
 
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Builder.Default
     @OneToMany(mappedBy = "reporter")
     private List<Report> reportsAsReporter = new ArrayList<>();

@@ -11,20 +11,20 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
-    User findByEmail(String email);
-    User findByUserId(String userId);
-    User findById(Long id);
-    boolean existsByEmail(String email);
-    boolean existsByUserId(String userId);
-    boolean existsByNickname(String nickname);
-    void deleteByUserId(String userId);
+    User findByIdAndDeletedFalse(Long id);
+    User findByEmailAndDeletedFalse(String email);
+    User findByUserIdAndDeletedFalse(String userId);
+
+    boolean existsByEmailAndDeletedFalse(String email);
+    boolean existsByUserIdAndDeletedFalse(String userId);
+    boolean existsByNicknameAndDeletedFalse(String nickname);
 
     User findByProviderAndProviderId(SocialProvider provider, String providerId);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.email = :email")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.email = :email AND u.deleted = false")
     Optional<User> findByEmailWithPenalties(@Param("email") String email);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.userId = :userId")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.penalties WHERE u.userId = :userId AND u.deleted = false")
     Optional<User> findByUserIdWithPenalties(@Param("userId") String userId);
 
     @Query("""
@@ -32,7 +32,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     FROM User u
       LEFT JOIN FETCH u.artistFollows af
       LEFT JOIN FETCH af.artist
-    WHERE u.userId = :userId
+    WHERE u.userId = :userId AND u.deleted = false
     """)
     Optional<User> findUserDetailWithArtistFollows(@Param("userId") String userId);
 

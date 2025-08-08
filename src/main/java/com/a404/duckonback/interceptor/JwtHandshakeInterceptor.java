@@ -69,7 +69,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                         attributes.put("user", user);
                     } else if (principal instanceof UserDetails userDetails) {
                         // UserDetails → User로 변환
-                        User user = userRepository.findByUserId(userDetails.getUsername());
+                        User user = userRepository.findByUserIdAndDeletedFalse(userDetails.getUsername());
                         attributes.put("user", user);
                     } else {
                         log.warn("알 수 없는 principal 타입: " + principal.getClass());
