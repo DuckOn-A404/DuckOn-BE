@@ -164,41 +164,26 @@ public class AuthServiceImpl implements AuthService {
     public void logout(User user, String refreshHeader) {
         final long now = System.currentTimeMillis();
 
-        // 1) Access Token: Authorization 헤더에서 안전하게 추출
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        // Access Token (Authorization)
+        ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs != null) {
-            String authHeader = attrs.getRequest().getHeader("Authorization");
-            String accessToken = stripBearer(authHeader); // "Bearer "가 있든 없든 안전 추출
-            blacklistIfValid(accessToken, now);
-        }
-
-        // 2) Refresh Token: 컨트롤러에서 전달받은 X-Refresh-Token (보통 Bearer 없음)
-        String refreshToken = stripBearer(refreshHeader);
-        blacklistIfValid(refreshToken, now);
-    }
-
-    /** "Bearer xxx" -> "xxx", null/공백 처리 포함 */
-    private String stripBearer(String header) {
-        if (header == null) return null;
-        String h = header.trim();
-        if (h.regionMatches(true, 0, "Bearer ", 0, 7)) {
-            return h.substring(7).trim();
-        }
-        return h; // 원래 Bearer가 없으면 그대로 토큰으로 간주
-    }
-
-    // 유효 토큰만 TTL 계산해서 블랙리스트 등록 (예외/음수 TTL 방지)
-    private void blacklistIfValid(String token, long now) {
-        if (token == null || token.isBlank()) return;
-        try {
-            if (!jwtUtil.validateToken(token)) return; // 만료/위조 등은 스킵
-            Date exp = jwtUtil.getClaims(token).getExpiration();
-            long ttl = exp.getTime() - now;
-            if (ttl > 0) {
-                tokenBlacklistService.blacklist(token, ttl);
+            String authorization = attrs.getRequest().getHeader("Authorization");
+            String accessToken = jwtUtil.normalizeIfValid(authorization);
+            if (accessToken != null) {
+                Date exp = jwtUtil.getClaims(accessToken).getExpiration();
+                long ttl = exp.getTime() - now;
+                if (ttl > 0) tokenBlacklistService.blacklist(accessToken, ttl);
             }
-        } catch (Exception ignore) {
-            // 파싱 실패/예외는 조용히 무시 (로그아웃은 idempotent하게)
+        }
+
+        // Refresh Token (X-Refresh-Token) - Bearer 유무와 무관
+        String refreshToken = jwtUtil.normalizeIfValid(refreshHeader);
+        if (refreshToken != null) {
+            Date exp = jwtUtil.getClaims(refreshToken).getExpiration();
+            long ttl = exp.getTime() - now;
+            if (ttl > 0) tokenBlacklistService.blacklist(refreshToken, ttl);
         }
     }
+
 }
