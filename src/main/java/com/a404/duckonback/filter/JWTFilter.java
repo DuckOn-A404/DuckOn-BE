@@ -59,7 +59,7 @@ public class JWTFilter extends OncePerRequestFilter {
             // 3) 토큰에서 클레임(poi) 추출 후 Authentication 세팅
             Claims claims = jwtUtil.getClaims(token);
             String userId = claims.getSubject();
-            User user = userRepository.findByUserId(userId);
+            User user = userRepository.findByUserIdAndDeletedFalse(userId);
 
             if (user != null) {
                 com.a404.duckonback.filter.CustomUserPrincipal principal = new com.a404.duckonback.filter.CustomUserPrincipal(user);

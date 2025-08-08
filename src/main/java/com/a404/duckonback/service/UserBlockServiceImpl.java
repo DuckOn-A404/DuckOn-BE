@@ -57,12 +57,12 @@ public class UserBlockServiceImpl implements UserBlockService {
     @Transactional
     public void blockUser(Long blockerId, String blockedUserId) {
         // 1) 차단 요청자 검증
-        User blocker = userRepository.findById(blockerId);
+        User blocker = userRepository.findByIdAndDeletedFalse(blockerId);
         if (blocker == null) {
             throw new CustomException("차단 요청 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
         // 2) 차단 대상자 검증 (userId 기준)
-        User blocked = userRepository.findByUserId(blockedUserId);
+        User blocked = userRepository.findByUserIdAndDeletedFalse(blockedUserId);
         if (blocked == null) {
             throw new CustomException("차단 대상 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
@@ -87,12 +87,12 @@ public class UserBlockServiceImpl implements UserBlockService {
     @Transactional
     public void deleteUserBlock(Long blockerId, String blockedUserId) {
         // 1) 차단 요청자 검증
-        User blocker = userRepository.findById(blockerId);
+        User blocker = userRepository.findByIdAndDeletedFalse(blockerId);
         if (blocker == null) {
             throw new CustomException("차단 요청 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
         // 2) 차단 해제 대상자 검증
-        User blocked = userRepository.findByUserId(blockedUserId);
+        User blocked = userRepository.findByUserIdAndDeletedFalse(blockedUserId);
         if (blocked == null) {
             throw new CustomException("차단 해제 대상 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
@@ -103,12 +103,12 @@ public class UserBlockServiceImpl implements UserBlockService {
     @Override
     public boolean isUserBlocked(Long blockerId, String blockedUserId) {
         // 1) 차단 요청자 검증
-        User blocker = userRepository.findById(blockerId);
+        User blocker = userRepository.findByIdAndDeletedFalse(blockerId);
         if (blocker == null) {
             throw new CustomException("차단 요청 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
         // 2) 차단 대상자 검증
-        User blocked = userRepository.findByUserId(blockedUserId);
+        User blocked = userRepository.findByUserIdAndDeletedFalse(blockedUserId);
         if (blocked == null) {
             throw new CustomException("차단 대상 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
@@ -119,7 +119,7 @@ public class UserBlockServiceImpl implements UserBlockService {
     @Override
     public List<BlockedUserDTO> getUserBlockList(Long blockerId) {
         // 1) 차단 요청자 검증
-        User blocker = userRepository.findById(blockerId);
+        User blocker = userRepository.findByIdAndDeletedFalse(blockerId);
         if (blocker == null) {
             throw new CustomException("차단 요청 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }

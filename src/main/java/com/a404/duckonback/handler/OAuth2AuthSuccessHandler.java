@@ -37,7 +37,7 @@ public class OAuth2AuthSuccessHandler implements AuthenticationSuccessHandler {
             user = cu.getUser();
         } else {
             String username = ((UserDetails) principal).getUsername();
-            user = userRepository.findByUserId(username);
+            user = userRepository.findByUserIdAndDeletedFalse(username);
         }
 
         // 토큰 생성

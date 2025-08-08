@@ -42,7 +42,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private User upsertUser(OAuth2UserInfo info) {
         // 1) 이메일 기준 우선 탐색 (없을 수도 있음)
-        User user = userRepository.findByEmail(info.getEmail());
+        User user = userRepository.findByEmailAndDeletedFalse(info.getEmail());
         if (user == null) {
             // 2) providerId 기준으로 탐색
             user = userRepository.findByProviderAndProviderId(info.getProvider(), info.getProviderId());
