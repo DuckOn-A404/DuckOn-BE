@@ -115,7 +115,7 @@ public class UserController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestParam(required = false) Long artistId,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "true") boolean includeReasons
+            @RequestParam(defaultValue = "false") boolean includeReasons
     ) {
         RecommendUsersResponseDTO res = userService.recommendUsers(principal.getUser().getUserId(), artistId, size, includeReasons);
         return ResponseEntity.ok(res);
