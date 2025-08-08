@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -44,7 +45,7 @@ public class ChatController {
     @GetMapping("/artist/{artistId}/message")
     public ResponseEntity<List<ChatMessageResponseDTO>> getMessage(
             @PathVariable String artistId,
-            @RequestParam(required = false) LocalDateTime since
+            @RequestParam(required = false) Instant since
     ) {
         List<ChatMessageResponseDTO> history = (since == null)
                 ? chatService.getHistory(artistId)
