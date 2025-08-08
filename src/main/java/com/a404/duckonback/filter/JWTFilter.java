@@ -1,6 +1,6 @@
 package com.a404.duckonback.filter;
 
-import com.a404.duckonback.config.JwtAuthenticationEntryPoint;
+import com.a404.duckonback.config.JWTAuthenticationEntryPoint;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.TokenBlacklistService;
@@ -28,7 +28,7 @@ public class JWTFilter extends OncePerRequestFilter {
 //    private final UserServiceImpl userServiceImpl;
     private final UserRepository userRepository;
     private final TokenBlacklistService blacklistService;
-    private final JwtAuthenticationEntryPoint entryPoint;
+    private final JWTAuthenticationEntryPoint entryPoint;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -59,10 +59,10 @@ public class JWTFilter extends OncePerRequestFilter {
             // 3) 토큰에서 클레임(poi) 추출 후 Authentication 세팅
             Claims claims = jwtUtil.getClaims(token);
             String userId = claims.getSubject();
-            User user = userRepository.findByUserId(userId);
+            User user = userRepository.findByUserIdAndDeletedFalse(userId);
 
             if (user != null) {
-                CustomUserPrincipal principal = new CustomUserPrincipal(user);
+                com.a404.duckonback.filter.CustomUserPrincipal principal = new com.a404.duckonback.filter.CustomUserPrincipal(user);
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 principal, null, principal.getAuthorities()

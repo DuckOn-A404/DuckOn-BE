@@ -5,6 +5,7 @@ import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSyncDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Controller;
 public class RoomSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final RedisService redisService;
 
     // 영상 동기화 메시지
     @MessageMapping("/room/update")
@@ -34,6 +36,7 @@ public class RoomSocketController {
             throw new CustomException("호스트만 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
         }
 
+        redisService.updateRoomInfo(dto);
         messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), dto);
     }
 
@@ -44,7 +47,8 @@ public class RoomSocketController {
         System.out.println("채팅 메세지 수신 ");
         User user = (User) accessor.getSessionAttributes().get("user");
         if (user != null) {
-            message.setSender(user.getNickname()); // 또는 userId
+            message.setSenderNickName(user.getNickname()); // 또는 userId
+            message.setSenderId(user.getUserId());
         } else {
             System.out.println("use null");
             throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);

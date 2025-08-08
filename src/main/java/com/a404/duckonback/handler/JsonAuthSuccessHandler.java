@@ -33,7 +33,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication auth) throws IOException {
         // UserDetails (폼 로그인) 에서 User 정보 조회
         String principalName = ((UserDetails) auth.getPrincipal()).getUsername();
-        User user = userRepository.findByUserId(principalName);
+        User user = userRepository.findByUserIdAndDeletedFalse(principalName);
 
         // 토큰 생성
         String access  = jwtUtil.generateAccessToken(user);

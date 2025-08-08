@@ -26,5 +26,8 @@ public interface UserService {
 
     boolean verifyPassword(String userId, String inputPassword);
 
+    User findActiveByEmail(String email);
+    User findActiveByUserId(String userId);
+
     RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
 }
