@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,7 @@ public class RoomController {
 
     private final LiveRoomService liveRoomService;
     private final RedisService redisService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Operation(summary = "방 생성",
             description = "새로운 라이브 방송 방을 생성합니다. 프로필 사진과 배경 이미지를 포함할 수 있습니다.")
@@ -94,6 +96,12 @@ public class RoomController {
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
+
+            long participantCount = redisService.getRoomUserCount(roomId.toString());
+            messagingTemplate.convertAndSend(
+                    "/topic/room/" + roomId + "/presence",
+                    new RoomPresenceDTO(roomId, participantCount)
+            );
         }
 
         return ResponseEntity.ok(room);
@@ -111,6 +119,12 @@ public class RoomController {
         }
 
         redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
+
+        long participantCount = redisService.getRoomUserCount(roomId.toString());
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId + "/presence",
+                new RoomPresenceDTO(roomId, participantCount)
+        );
 
         return ResponseEntity.ok("방에서 퇴장하였습니다.");
     }
