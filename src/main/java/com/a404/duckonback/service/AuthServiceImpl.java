@@ -23,6 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -136,26 +138,31 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String refreshAccessToken(String refreshTokenHeader){
-        // Bearer 제거
-        if (!refreshTokenHeader.startsWith("Bearer ")) {
-            throw new CustomException("잘못된 형식의 토큰입니다.", HttpStatus.BAD_REQUEST);
+    public Map<String, String> refreshJWT(String refreshHeader){
+        final long now = System.currentTimeMillis();
+
+        String refreshToken = jWTUtil.requireValidToken(refreshHeader);
+        String userId = null;
+
+        if (refreshToken != null) {
+            Claims claims = jWTUtil.getClaims(refreshToken);
+            userId = claims.getSubject();
+
+            Date exp = claims.getExpiration();
+            long ttl = exp.getTime() - now;
+            if (ttl > 0) tokenBlacklistService.blacklist(refreshToken, ttl);
         }
-
-        String refreshToken = refreshTokenHeader.substring(7);
-
-        if (!jWTUtil.validateToken(refreshToken)) {
-            throw new CustomException("유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED);
-        }
-
-        Claims claims = jWTUtil.getClaims(refreshToken);
-        String userId = claims.getSubject();
-
-        // (추가 필요 ) redis에 저장된 refreshToken과 비교
-
 
         User user = userService.findByUserId(userId);
-        return jWTUtil.generateAccessToken(user);
+
+        String newRefreshToken = jWTUtil.generateAccessToken(user);
+        String newAccessToken = jWTUtil.generateAccessToken(user);
+
+        Map<String, String> result = new HashMap<>();
+        result.put("accessToken", newAccessToken);
+        result.put("refreshToken", newRefreshToken);
+
+        return result;
     }
 
 

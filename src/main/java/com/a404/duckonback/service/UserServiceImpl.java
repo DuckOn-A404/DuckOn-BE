@@ -6,9 +6,12 @@ import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.repository.projection.UserBrief;
 import com.a404.duckonback.util.Anonymizer;
 import com.a404.duckonback.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,8 +20,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +33,22 @@ public class UserServiceImpl implements UserService {
     private final PenaltyService penaltyService;
     private final FollowService followService;
     private final S3Service s3Service;
-
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
     private final JWTUtil jWTUtil;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    // --- 가벼운 규칙 상수 ---
+    private static final int SIZE_DEFAULT = 10;
+    private static final int MIN_FALLBACK = 3;
+
+    private static final int SCORE_ROOM_USER = 100;  // 같은 아티스트 방 참여자
+    private static final int SCORE_ARTIST_FAN = 50;  // 같은 아티스트 팔로워
+    private static final int SCORE_RECENT_HOST = 40; // 최근 방 호스트
+
+    private static final int LIMIT_ARTIST_FOLLOWERS = 30;
+    private static final int LIMIT_RECENT_HOSTS = 10;
+    private static final int REDIS_SAMPLE_PER_ROOM = 20; // 방당 최대 샘플 수
 
     @Override
     public User findByEmail(String email) {
@@ -350,5 +367,146 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
+        if (size <= 0) size = SIZE_DEFAULT;
+
+        User me = userRepository.findByUserIdAndDeletedFalse(myUserId);
+        if (me == null) throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+
+        // 이미 팔로우/본인 제외를 위해 내 팔로잉 userId 집합 준비
+        Set<String> myFollowingUserIds = Optional.ofNullable(me.getFollowing())
+                .orElse(List.of())
+                .stream()
+                .map(f -> f.getFollowing().getUserId())
+                .collect(Collectors.toSet());
+
+        // 후보 점수 및 사유
+        Map<String, Candidate> scores = new HashMap<>();
+
+        // ---------- A) 같은 아티스트의 현재 방 참여자(REDIS) ----------
+        if (artistId != null) {
+            String roomsKey = "artist:" + artistId + ":rooms";
+            Set<Object> roomIds = redisTemplate.opsForSet().members(roomsKey);
+            if (roomIds != null) {
+                for (Object roomIdObj : roomIds) {
+                    String roomId = String.valueOf(roomIdObj);
+                    String usersKey = "room:" + roomId + ":users";
+
+                    // 랜덤 샘플링 (가볍게)
+                    List<Object> sampled = redisTemplate.opsForSet()
+                            .randomMembers(usersKey, REDIS_SAMPLE_PER_ROOM);
+                    if (sampled == null) continue;
+
+                    for (Object uidObj : sampled) {
+                        String uid = String.valueOf(uidObj);
+                        if (!uid.equals(myUserId)) {
+                            add(scores, uid, SCORE_ROOM_USER,
+                                    includeReasons ? "같은 아티스트 방 참여자" : null);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ---------- B) 같은 아티스트 팔로워(MySQL, 프로젝션) ----------
+        if (artistId != null) {
+            var followerBriefs = userRepository.findArtistFollowersBrief(
+                    artistId, PageRequest.of(0, LIMIT_ARTIST_FOLLOWERS));
+            for (UserBrief b : followerBriefs) {
+                if (!b.getUserId().equals(myUserId)) {
+                    add(scores, b.getUserId(), SCORE_ARTIST_FAN,
+                            includeReasons ? "같은 아티스트 팔로워" : null);
+                }
+            }
+        }
+
+        // ---------- C) 같은 아티스트 최근 방 호스트(MySQL, 프로젝션) ----------
+        if (artistId != null) {
+            LocalDateTime since = LocalDateTime.now().minusDays(7);
+            var hostBriefs = userRepository.findRecentHostsBrief(
+                    artistId, since, PageRequest.of(0, LIMIT_RECENT_HOSTS));
+            for (UserBrief b : hostBriefs) {
+                if (!b.getUserId().equals(myUserId)) {
+                    add(scores, b.getUserId(), SCORE_RECENT_HOST,
+                            includeReasons ? "같은 아티스트 최근 방 호스트" : null);
+                }
+            }
+        }
+
+        // 후보 집합 → 필터(본인/이미 팔로우) → 프로필 벌크 조회
+        List<String> candidateIds = scores.keySet().stream()
+                .filter(uid -> !uid.equals(myUserId) && !myFollowingUserIds.contains(uid))
+                .toList();
+
+        List<UserBrief> briefs = candidateIds.isEmpty()
+                ? List.of()
+                : userRepository.findBriefsByUserIdIn(candidateIds);
+
+        // 점수 기반 정렬 + DTO 변환
+        List<RecommendedUserDTO> list = briefs.stream()
+                .map(b -> RecommendedUserDTO.builder()
+                        .userId(b.getUserId())
+                        .nickname(b.getNickname())
+                        .imgUrl(b.getImgUrl())
+                        .reasons(includeReasons ? new ArrayList<>(scores.get(b.getUserId()).reasons) : null)
+                        .build()
+                )
+                .sorted((a, b) -> {
+                    int sa = scores.get(a.getUserId()).score;
+                    int sb = scores.get(b.getUserId()).score;
+                    if (sa != sb) return Integer.compare(sb, sa);
+                    return Optional.ofNullable(a.getNickname()).orElse("")
+                            .compareTo(Optional.ofNullable(b.getNickname()).orElse(""));
+                })
+                .limit(size)
+                .toList();
+
+        // 최소 3명 보장(가능하면) - 가볍게 랜덤 보충
+        if (list.size() < Math.min(size, MIN_FALLBACK)) {
+            int need = Math.min(size, MIN_FALLBACK) - list.size();
+            var page = PageRequest.of(0, 200);
+            var pool = userRepository.findAll(page).getContent();
+            Set<String> exists = list.stream().map(RecommendedUserDTO::getUserId).collect(Collectors.toSet());
+
+            var extras = pool.stream()
+                    .map(u -> u.getUserId())
+                    .filter(uid -> !uid.equals(myUserId)
+                            && !exists.contains(uid)
+                            && !myFollowingUserIds.contains(uid))
+                    .limit(need)
+                    .collect(Collectors.toSet());
+
+            if (!extras.isEmpty()) {
+                var extraBriefs = userRepository.findBriefsByUserIdIn(extras);
+                var extraDtos = extraBriefs.stream()
+                        .map(b -> RecommendedUserDTO.builder()
+                                .userId(b.getUserId())
+                                .nickname(b.getNickname())
+                                .imgUrl(b.getImgUrl())
+                                .reasons(includeReasons ? List.of("랜덤 보충") : null)
+                                .build())
+                        .toList();
+
+                var tmp = new ArrayList<>(list);
+                tmp.addAll(extraDtos);
+                list = tmp;
+            }
+        }
+
+        return RecommendUsersResponseDTO.builder().users(list).build();
+    }
+
+    private void add(Map<String, Candidate> map, String userId, int score, String reason) {
+        var c = map.computeIfAbsent(userId, k -> new Candidate());
+        c.score += score;
+        if (reason != null) c.reasons.add(reason);
+    }
+
+    private static class Candidate {
+        int score = 0;
+        List<String> reasons = new ArrayList<>();
+    }
 
 }
