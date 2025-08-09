@@ -4,6 +4,7 @@ import com.a404.duckonback.dto.ChatMessageDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSyncDTO;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.RoomSyncEventType;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.RedisService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,8 @@ public class RoomSocketController {
         if (!user.getUserId().equals(dto.getHostId())) {
             throw new CustomException("호스트만 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
         }
+
+        dto.setEventType(RoomSyncEventType.SYNC_STATE);
 
         redisService.updateRoomInfo(dto);
         messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), dto);
