@@ -309,5 +309,11 @@ public class RedisServiceImpl implements RedisService {
                 .toList();
     }
 
+    @Override
+    public Long getRoomUserCount(String roomId) {
+        String key = "room:" + roomId + ":users";
+        Long size = redisTemplate.opsForSet().size(key);
+        return size == null ? 0L : size;
+    }
 
 }

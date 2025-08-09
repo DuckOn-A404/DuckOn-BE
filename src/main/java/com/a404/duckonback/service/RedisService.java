@@ -19,5 +19,5 @@ public interface RedisService {
     List<TrendingRoomDTO> getTrendingRooms(int size);
 
     void updateRoomInfo(LiveRoomSyncDTO room);
-
+    Long getRoomUserCount(String roomId);
 }
