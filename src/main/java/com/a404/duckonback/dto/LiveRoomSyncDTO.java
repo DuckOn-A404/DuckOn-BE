@@ -1,6 +1,6 @@
-// com.a404.duckonback.dto.LiveRoomSyncDTO
 package com.a404.duckonback.dto;
 
+import com.a404.duckonback.enums.RoomSyncEventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LiveRoomSyncDTO {
+    private RoomSyncEventType eventType;
+
     private Long roomId;
     private String hostId;
     private java.util.List<String> playlist;
