@@ -63,11 +63,11 @@ public class AuthController {
         return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
     }
 
-    @Operation(summary = "액세스 토큰 갱신", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.")
+    @Operation(summary = "토큰 갱신", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰, 리프레시 토큰을 발급받습니다.")
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshAccessToken(@RequestHeader("Authorization") String refreshTokenHeader) {
-        String newAccessToken = authService.refreshAccessToken(refreshTokenHeader);
-        return ResponseEntity.ok().body(Map.of("accessToken", newAccessToken));
+    public ResponseEntity<?> refreshJWT(@RequestHeader("Authorization") String refreshTokenHeader) {
+        Map<String, String> tokenMap = authService.refreshJWT(refreshTokenHeader);
+        return ResponseEntity.ok(tokenMap);
     }
 
     @Operation(summary = "로그아웃", description = "사용자가 로그아웃합니다. 리프레시 토큰을 무효화합니다.")
