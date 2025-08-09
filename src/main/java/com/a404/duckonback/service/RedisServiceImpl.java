@@ -182,15 +182,16 @@ public class RedisServiceImpl implements RedisService {
                 throw new CustomException("아티스트 방 목록에서 제거 실패", HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }else if (size != null && size > 0L) {
-            String newHostId = redisTemplate.opsForSet().members(userSetKey)
-                    .stream()
-                    .map(Object::toString)
-                    .findFirst()
-                    .orElse(null);
-
-            if (newHostId != null) {
-                redisTemplate.opsForHash().put(roomInfoKey, "hostId", newHostId);
-            }
+            //host 변경 로직 : 프론트에서 새로 방 정보 전송하는걸로 변경
+//            String newHostId = redisTemplate.opsForSet().members(userSetKey)
+//                    .stream()
+//                    .map(Object::toString)
+//                    .findFirst()
+//                    .orElse(null);
+//
+//            if (newHostId != null) {
+//                redisTemplate.opsForHash().put(roomInfoKey, "hostId", newHostId);
+//            }
 
         }
     }
