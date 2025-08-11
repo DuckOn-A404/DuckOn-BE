@@ -56,8 +56,8 @@ public class RoomSocketController {
             throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);
         }
 
-        if(message.getContent().length() > 1000){
-            throw new CustomException("채팅은 1000자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
+        if(message.getContent().length() > 100){
+            throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
         messagingTemplate.convertAndSend("/topic/chat/" + message.getRoomId(), message);
