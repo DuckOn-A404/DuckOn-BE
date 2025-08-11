@@ -105,4 +105,8 @@ public class User {
             createdAt = LocalDateTime.now();
         }
     }
+
+    public Boolean getDeleted() { return deleted; } // 래퍼형으로도 리턴
+    public boolean isDeleted() { return deleted; }
+
 }

@@ -218,5 +218,51 @@ public class ArtistServiceImpl implements ArtistService {
         return artistRepository.save(artist);
     }
 
+    @Override
+    public String findSlugById(Long artistId) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
+                        HttpStatus.NOT_FOUND));
+
+        // 1) 엔티티에 slug 필드가 있다면 우선 사용 (null/blank 체크)
+        try {
+            var slugField = Artist.class.getDeclaredField("slug");
+            slugField.setAccessible(true);
+            Object val = slugField.get(artist);
+            if (val instanceof String s && !s.isBlank()) {
+                return s;
+            }
+        } catch (NoSuchFieldException | IllegalAccessException ignore) {
+            // slug 필드 없으면 nameEn 기반으로 생성
+        }
+
+        // 2) slug 필드가 없거나 비어있으면 nameEn으로 slugify
+        String base = artist.getNameEn() != null ? artist.getNameEn()
+                : artist.getNameKr() != null ? artist.getNameKr()
+                : String.valueOf(artistId);
+
+        return slugify(base);
+    }
+
+    /** 공백→하이픈, 괄호/특수문자 정리, 연속 하이픈 제거, 앞뒤 하이픈 제거 */
+    private String slugify(String s) {
+        String normalized = s.trim();
+
+        // 한글/영문/숫자/공백/하이픈만 남기고 나머지 제거 (괄호 등 제거)
+        normalized = normalized.replaceAll("[^0-9A-Za-z가-힣\\-\\s]", "");
+
+        // 공백 → 하이픈
+        normalized = normalized.replaceAll("\\s+", "-");
+
+        // 연속 하이픈 하나로
+        normalized = normalized.replaceAll("-{2,}", "-");
+
+        // 앞뒤 하이픈 제거
+        normalized = normalized.replaceAll("^-|-$", "");
+
+        // 필요 시 소문자/대문자 정책 선택 (여기선 원형 유지)
+        return normalized;
+    }
+
 
 }

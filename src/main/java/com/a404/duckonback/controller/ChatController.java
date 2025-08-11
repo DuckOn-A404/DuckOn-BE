@@ -3,9 +3,11 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.dto.ChatMessageResponseDTO;
 import com.a404.duckonback.entity.ChatMessage;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.ChatService;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +32,10 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody ChatMessageRequestDTO dto
     ) {
+        if(dto.getContent().length() > 100){
+            throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
+        }
+
         ChatMessage saved = chatService.sendMessage(
                 principal.getUser().getId(),
                 artistId,
