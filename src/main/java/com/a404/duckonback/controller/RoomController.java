@@ -130,6 +130,7 @@ public class RoomController {
                     "/topic/room/" + roomId + "/presence",
                     new RoomPresenceDTO(roomId, participantCount)
             );
+            room.setParticipantCount(participantCount);
         }
 
         return ResponseEntity.ok(room);
