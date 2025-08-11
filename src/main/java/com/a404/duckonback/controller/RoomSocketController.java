@@ -47,14 +47,17 @@ public class RoomSocketController {
     @MessageMapping("/room/chat")
     public void chat(@Payload ChatMessageDTO message,
                      StompHeaderAccessor accessor) {
-        System.out.println("채팅 메세지 수신 ");
+
         User user = (User) accessor.getSessionAttributes().get("user");
         if (user != null) {
             message.setSenderNickName(user.getNickname()); // 또는 userId
             message.setSenderId(user.getUserId());
         } else {
-            System.out.println("use null");
             throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);
+        }
+
+        if(message.getContent().length() > 1000){
+            throw new CustomException("채팅은 1000자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
         messagingTemplate.convertAndSend("/topic/chat/" + message.getRoomId(), message);
