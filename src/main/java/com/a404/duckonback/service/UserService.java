@@ -2,6 +2,9 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.SocialProvider;
+
+import java.util.Optional;
 
 public interface UserService {
     User findByEmail(String email);
@@ -28,6 +31,8 @@ public interface UserService {
 
     User findActiveByEmail(String email);
     User findActiveByUserId(String userId);
+
+    default Optional<User> findActiveByProviderAndProviderId(SocialProvider provider, String providerId) { return Optional.empty(); }
 
     RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
 }
