@@ -32,8 +32,8 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody ChatMessageRequestDTO dto
     ) {
-        if(dto.getContent().length() > 1000){
-            throw new CustomException("채팅은 1000자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
+        if(dto.getContent().length() > 100){
+            throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
         ChatMessage saved = chatService.sendMessage(
