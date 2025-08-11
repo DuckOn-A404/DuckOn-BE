@@ -155,7 +155,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userService.findByUserId(userId);
 
-        String newRefreshToken = jWTUtil.generateAccessToken(user);
+        String newRefreshToken = jWTUtil.generateRefreshToken(user);
         String newAccessToken = jWTUtil.generateAccessToken(user);
 
         Map<String, String> result = new HashMap<>();

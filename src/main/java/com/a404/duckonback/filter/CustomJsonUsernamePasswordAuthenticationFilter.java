@@ -90,7 +90,8 @@ public class CustomJsonUsernamePasswordAuthenticationFilter extends UsernamePass
             User user = userRepository.findByEmailAndDeletedFalse(info.getEmail());
             if (user == null) {
                 // 2) providerId 기준으로 탐색
-                user = userRepository.findByProviderAndProviderId(info.getProvider(), info.getProviderId());
+                user = userRepository.findByProviderAndProviderIdAndDeletedFalse(info.getProvider(), info.getProviderId())
+                .orElse(null);
             }
 
             if (user == null) {
