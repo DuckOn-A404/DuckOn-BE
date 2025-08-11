@@ -32,4 +32,10 @@ public class ServiceProperties {
     @Value("${app.frontend.oauth2-failure-url}")
     private String oauth2FailureUrl;
 
+    @Value("${translate.base-url}")
+    private String translateBaseUrl;
+
+    @Value("${translate.timeout-ms}")
+    private long translateTimeoutMs;
+
 }
