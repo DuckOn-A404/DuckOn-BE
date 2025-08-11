@@ -4,6 +4,7 @@ import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.Follow;
 import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.SocialProvider;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
@@ -20,7 +21,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -216,11 +216,13 @@ public class UserServiceImpl implements UserService {
 
         List<Follow> followers = Optional.ofNullable(user.getFollowers()).orElse(List.of());
         List<FollowerInfoDTO> followerDTOs = followers.stream()
-                .map(follower -> FollowerInfoDTO.builder()
-                        .userId(follower.getFollower().getUserId())
-                        .nickname(follower.getFollower().getNickname())
-                        .profileImgUrl(follower.getFollower().getImgUrl())
-                        .following(followService.isFollowing(userId, follower.getFollower().getUserId()))
+                .map(Follow::getFollower)
+                .filter(f -> f != null && !f.isDeleted())
+                .map(f -> FollowerInfoDTO.builder()
+                        .userId(f.getUserId())
+                        .nickname(f.getNickname())
+                        .profileImgUrl(f.getImgUrl())
+                        .following(followService.isFollowing(userId, f.getUserId()))
                         .build())
                 .toList();
 
@@ -242,10 +244,12 @@ public class UserServiceImpl implements UserService {
 
         List<Follow> followings = Optional.ofNullable(user.getFollowing()).orElse(List.of());
         List<FollowingInfoDTO> followingDTOs = followings.stream()
-                .map(following -> FollowingInfoDTO.builder()
-                        .userId(following.getFollowing().getUserId())
-                        .nickname(following.getFollowing().getNickname())
-                        .profileImgUrl(following.getFollowing().getImgUrl())
+                .map(Follow::getFollowing)
+                .filter(f -> f != null && !f.isDeleted())
+                .map(f -> FollowingInfoDTO.builder()
+                        .userId(f.getUserId())
+                        .nickname(f.getNickname())
+                        .profileImgUrl(f.getImgUrl())
                         .build())
                 .toList();
 
@@ -371,6 +375,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Optional<User> findActiveByProviderAndProviderId(SocialProvider provider, String providerId) {
+        return userRepository.findByProviderAndProviderIdAndDeletedFalse(provider, providerId);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
         if (size <= 0) size = SIZE_DEFAULT;
@@ -438,7 +447,7 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        // 후보 집합 → 필터(본인/이미 팔로우) → 프로필 벌크 조회
+        // 후보 집합 → 필터(본인/이미 팔로우) → 프로필 벌크 조회 (Repo에서 탈퇴 제외됨)
         List<String> candidateIds = scores.keySet().stream()
                 .filter(uid -> !uid.equals(myUserId) && !myFollowingUserIds.contains(uid))
                 .toList();
@@ -466,15 +475,15 @@ public class UserServiceImpl implements UserService {
                 .limit(size)
                 .toList();
 
-        // 최소 3명 보장(가능하면) - 가볍게 랜덤 보충
+        // 최소 3명 보장(가능하면) - 가볍게 랜덤 보충 (활성 유저만)
         if (list.size() < Math.min(size, MIN_FALLBACK)) {
             int need = Math.min(size, MIN_FALLBACK) - list.size();
             var page = PageRequest.of(0, 200);
-            var pool = userRepository.findAll(page).getContent();
+            var pool = userRepository.findAllByDeletedFalse(page).getContent(); // <<< 변경
             Set<String> exists = list.stream().map(RecommendedUserDTO::getUserId).collect(Collectors.toSet());
 
             var extras = pool.stream()
-                    .map(u -> u.getUserId())
+                    .map(User::getUserId)
                     .filter(uid -> !uid.equals(myUserId)
                             && !exists.contains(uid)
                             && !myFollowingUserIds.contains(uid))
@@ -482,7 +491,7 @@ public class UserServiceImpl implements UserService {
                     .collect(Collectors.toSet());
 
             if (!extras.isEmpty()) {
-                var extraBriefs = userRepository.findBriefsByUserIdIn(extras);
+                var extraBriefs = userRepository.findBriefsByUserIdIn(extras); // (Repo에서 탈퇴 제외)
                 var extraDtos = extraBriefs.stream()
                         .map(b -> RecommendedUserDTO.builder()
                                 .userId(b.getUserId())
