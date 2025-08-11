@@ -94,6 +94,8 @@ public class UserServiceImpl implements UserService {
             throw new CustomException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND);
         }
 
+        boolean isSocial = user.getHasLocalCredential() != null;
+
         List<Long> artistList = Optional.ofNullable(user.getArtistFollows())
                 .orElse(List.of())
                 .stream()
@@ -128,6 +130,7 @@ public class UserServiceImpl implements UserService {
                 .artistList(artistList)
                 .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
                 .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
+                .socialLogin(isSocial)
                 .penaltyList(pennaltyList)
                 .roomList(roomList)
                 .build();
