@@ -8,6 +8,7 @@ public class CreateRoomRequestDTO {
     private Long artistId;
     private String title;
     private String hostId;
+    private String hostNickname;
     private MultipartFile thumbnailImg;
     private String videoId;
     private boolean isLocked;
