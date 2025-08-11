@@ -39,3 +39,4 @@ out/
 # Environment variables
 .env
 env.properties
+prod.env
