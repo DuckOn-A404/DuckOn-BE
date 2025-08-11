@@ -16,6 +16,7 @@ public class LiveRoomDTO {
     private String title;
     private Long artistId;
     private String hostId;
+    private String hostNickname;
     private String imgUrl;
     private List<String> playlist;
     private int currentVideoIndex;
