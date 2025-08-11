@@ -103,8 +103,9 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/artists/*").permitAll()         // 단일 상세
                                 .requestMatchers(HttpMethod.GET, "/api/chat/artist/**").permitAll() // 채팅 내역 조회
                                 .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll() // 방 목록 조회
-                                .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // 방 상세 조회
+                                .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // 방 상세 조회 // 막아야하지만 프론트가 처리했다고 막지 말라고 요청하심
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
+                                .requestMatchers(HttpMethod.GET, "/api/users/recommendations").permitAll() // 추천 유저 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()
