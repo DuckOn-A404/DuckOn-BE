@@ -64,6 +64,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
                 .title(req.getTitle())
                 .artistId(req.getArtistId())
                 .hostId(req.getHostId())
+                .hostNickname(req.getHostNickname())
                 .imgUrl(imgUrl)
                 .playlist(playList)
                 .currentVideoIndex(0)

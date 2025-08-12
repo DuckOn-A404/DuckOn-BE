@@ -10,7 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "user")
+@Table(
+        name = "user",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_user_id", columnNames = {"user_id"}),
+                @UniqueConstraint(name = "uk_user_email", columnNames = {"email"}),
+                @UniqueConstraint(name = "uk_user_provider_pid", columnNames = {"provider", "provider_id"})
+        }
+)
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,7 +36,7 @@ public class User {
     private String userId;
 
     @Column(name = "password", nullable = false, length = 255)
-    private String password;
+    private String password; // OAuth 계정은 더미/랜덤 해시 보관
 
     @Column(name = "nickname", nullable = false, length = 100)
     private String nickname;
@@ -105,4 +112,8 @@ public class User {
             createdAt = LocalDateTime.now();
         }
     }
+
+    public Boolean getDeleted() { return deleted; } // 래퍼형으로도 리턴
+    public boolean isDeleted() { return deleted; }
+
 }

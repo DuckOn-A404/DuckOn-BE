@@ -6,7 +6,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TrendingRoomDTO {
+public class RoomListInfoDTO {
     private Long roomId;
     private Long artistId;
     private String artistNameEn;
