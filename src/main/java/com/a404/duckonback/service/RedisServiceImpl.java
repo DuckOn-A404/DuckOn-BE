@@ -32,6 +32,7 @@ public class RedisServiceImpl implements RedisService {
         map.put("title", room.getTitle());
         map.put("artistId", room.getArtistId());
         map.put("hostId", room.getHostId());
+        map.put("hostNickname", room.getHostNickname());
         map.put("imgUrl", room.getImgUrl());
         map.put("playlist", room.getPlaylist());
         map.put("currentVideoIndex", room.getCurrentVideoIndex());
@@ -55,6 +56,7 @@ public class RedisServiceImpl implements RedisService {
 
         room.setHostId(dto.getHostId());
         room.setHostNickname(dto.getHostNickname());
+        room.setTitle(dto.getTitle());
         room.setPlaylist(dto.getPlaylist());
         room.setCurrentVideoIndex(dto.getCurrentVideoIndex());
         room.setCurrentTime(dto.getCurrentTime());
