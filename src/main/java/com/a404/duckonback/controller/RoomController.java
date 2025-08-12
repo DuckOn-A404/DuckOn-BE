@@ -77,6 +77,7 @@ public class RoomController {
         LiveRoomSyncDTO dto = LiveRoomSyncDTO.builder()
                 .eventType(RoomSyncEventType.ROOM_DELETED)
                 .roomId(roomId)
+                .title(null)
                 .hostId(null)
                 .hostNickname(null)
                 .playlist(java.util.Collections.emptyList())
@@ -90,6 +91,48 @@ public class RoomController {
 
         return ResponseEntity.ok("방이 삭제되었습니다.");
     }
+
+    @Operation(summary = "방 제목 변경",
+            description = "특정 방의 제목을 변경합니다. 방 ID와 새로운 제목을 받아서 방 정보를 갱신합니다.")
+    @PatchMapping("/{roomId}/title")
+    public ResponseEntity<?> updateRoomTitle(@PathVariable Long roomId,
+                                             @RequestParam String title,
+                                             @AuthenticationPrincipal CustomUserPrincipal principal) {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // Redis에서 현재 방 정보 조회 (없으면 내부에서 404 throw)
+        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+
+        // 호스트만 변경 가능
+        if (!principal.getUser().getUserId().equals(room.getHostId())) {
+            throw new CustomException("호스트만 방 정보를 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        // Redis에 저장된 방 정보 갱신
+        room.setTitle(title);
+
+        // 변경 이벤트 브로드캐스트
+        LiveRoomSyncDTO dto = LiveRoomSyncDTO.builder()
+                .eventType(RoomSyncEventType.ROOM_UPDATE)
+                .roomId(roomId)
+                .title(title)
+                .hostId(room.getHostId())
+                .hostNickname(room.getHostNickname())
+                .playlist(room.getPlaylist())
+                .currentVideoIndex(room.getCurrentVideoIndex())
+                .currentTime(room.getCurrentTime())
+                .playing(room.isPlaying())
+                .lastUpdated(System.currentTimeMillis())
+                .build();
+
+        redisService.updateRoomInfo(dto);
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
+
+        return ResponseEntity.ok("방 제목이 변경되었습니다.");
+    }
+
 
     @Operation(summary ="방 입장",
             description = "특정 방을 입장합니다. 로그인한 유저, 로그인하지 않은 유저 모두 입장 가능합니다.\n"
