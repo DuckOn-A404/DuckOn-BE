@@ -384,20 +384,27 @@ public class UserServiceImpl implements UserService {
     public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
         if (size <= 0) size = SIZE_DEFAULT;
 
-        User me = userRepository.findByUserIdAndDeletedFalse(myUserId);
-        if (me == null) throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        // 1) 로그인/게스트 분기: me와 myFollowingUserIds를 '한 번만' 계산 (final)
+        final User me = (myUserId != null)
+                ? userRepository.findByUserIdAndDeletedFalse(myUserId)
+                : null;
 
-        // 이미 팔로우/본인 제외를 위해 내 팔로잉 userId 집합 준비
-        Set<String> myFollowingUserIds = Optional.ofNullable(me.getFollowing())
-                .orElse(List.of())
+        if (myUserId != null && me == null) {
+            // 로그인 상태인데 사용자 없으면 예외
+            throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+
+        final Set<String> myFollowingUserIds = (me != null)
+                ? Optional.ofNullable(me.getFollowing()).orElse(List.of())
                 .stream()
                 .map(f -> f.getFollowing().getUserId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet())
+                : Collections.emptySet();
 
-        // 후보 점수 및 사유
+        // 2) 점수 집계
         Map<String, Candidate> scores = new HashMap<>();
 
-        // ---------- A) 같은 아티스트의 현재 방 참여자(REDIS) ----------
+        // A) 같은 아티스트 현재 방 참여자 (Redis)
         if (artistId != null) {
             String roomsKey = "artist:" + artistId + ":rooms";
             Set<Object> roomIds = redisTemplate.opsForSet().members(roomsKey);
@@ -406,65 +413,62 @@ public class UserServiceImpl implements UserService {
                     String roomId = String.valueOf(roomIdObj);
                     String usersKey = "room:" + roomId + ":users";
 
-                    // 랜덤 샘플링 (가볍게)
-                    List<Object> sampled = redisTemplate.opsForSet()
-                            .randomMembers(usersKey, REDIS_SAMPLE_PER_ROOM);
+                    List<Object> sampled = redisTemplate.opsForSet().randomMembers(usersKey, REDIS_SAMPLE_PER_ROOM);
                     if (sampled == null) continue;
 
                     for (Object uidObj : sampled) {
                         String uid = String.valueOf(uidObj);
-                        if (!uid.equals(myUserId)) {
-                            add(scores, uid, SCORE_ROOM_USER,
-                                    includeReasons ? "같은 아티스트 방 참여자" : null);
+                        if (myUserId == null || !uid.equals(myUserId)) { // 게스트 허용, 로그인 시 자기 제외
+                            add(scores, uid, SCORE_ROOM_USER, includeReasons ? "같은 아티스트 방 참여자" : null);
                         }
                     }
                 }
             }
         }
 
-        // ---------- B) 같은 아티스트 팔로워(MySQL, 프로젝션) ----------
+        // B) 같은 아티스트 팔로워 (MySQL, 프로젝션)
         if (artistId != null) {
             var followerBriefs = userRepository.findArtistFollowersBrief(
                     artistId, PageRequest.of(0, LIMIT_ARTIST_FOLLOWERS));
             for (UserBrief b : followerBriefs) {
-                if (!b.getUserId().equals(myUserId)) {
-                    add(scores, b.getUserId(), SCORE_ARTIST_FAN,
-                            includeReasons ? "같은 아티스트 팔로워" : null);
+                if (myUserId == null || !b.getUserId().equals(myUserId)) {
+                    add(scores, b.getUserId(), SCORE_ARTIST_FAN, includeReasons ? "같은 아티스트 팔로워" : null);
                 }
             }
         }
 
-        // ---------- C) 같은 아티스트 최근 방 호스트(MySQL, 프로젝션) ----------
+        // C) 같은 아티스트 최근 방 호스트 (MySQL, 프로젝션)
         if (artistId != null) {
             LocalDateTime since = LocalDateTime.now().minusDays(7);
             var hostBriefs = userRepository.findRecentHostsBrief(
                     artistId, since, PageRequest.of(0, LIMIT_RECENT_HOSTS));
             for (UserBrief b : hostBriefs) {
-                if (!b.getUserId().equals(myUserId)) {
-                    add(scores, b.getUserId(), SCORE_RECENT_HOST,
-                            includeReasons ? "같은 아티스트 최근 방 호스트" : null);
+                if (myUserId == null || !b.getUserId().equals(myUserId)) {
+                    add(scores, b.getUserId(), SCORE_RECENT_HOST, includeReasons ? "같은 아티스트 최근 방 호스트" : null);
                 }
             }
         }
 
-        // 후보 집합 → 필터(본인/이미 팔로우) → 프로필 벌크 조회 (Repo에서 탈퇴 제외됨)
+        // 3) 후보 → (로그인 시) 본인/이미 팔로우 제외
         List<String> candidateIds = scores.keySet().stream()
-                .filter(uid -> !uid.equals(myUserId) && !myFollowingUserIds.contains(uid))
+                .filter(uid ->
+                        (myUserId == null || !uid.equals(myUserId)) // 게스트면 통과
+                                && !myFollowingUserIds.contains(uid)  // 게스트면 빈 Set라 영향 없음
+                )
                 .toList();
 
         List<UserBrief> briefs = candidateIds.isEmpty()
                 ? List.of()
                 : userRepository.findBriefsByUserIdIn(candidateIds);
 
-        // 점수 기반 정렬 + DTO 변환
+        // 4) 정렬 및 DTO 변환
         List<RecommendedUserDTO> list = briefs.stream()
                 .map(b -> RecommendedUserDTO.builder()
                         .userId(b.getUserId())
                         .nickname(b.getNickname())
                         .imgUrl(b.getImgUrl())
                         .reasons(includeReasons ? new ArrayList<>(scores.get(b.getUserId()).reasons) : null)
-                        .build()
-                )
+                        .build())
                 .sorted((a, b) -> {
                     int sa = scores.get(a.getUserId()).score;
                     int sb = scores.get(b.getUserId()).score;
@@ -475,23 +479,28 @@ public class UserServiceImpl implements UserService {
                 .limit(size)
                 .toList();
 
-        // 최소 3명 보장(가능하면) - 가볍게 랜덤 보충 (활성 유저만)
-        if (list.size() < Math.min(size, MIN_FALLBACK)) {
-            int need = Math.min(size, MIN_FALLBACK) - list.size();
+        // 5) 최소 3명 보장(가능하면) - 랜덤 보충 (게스트에도 동작)
+        int needMin = Math.min(size, MIN_FALLBACK);
+        if (list.size() < needMin) {
+            int need = needMin - list.size();
+
             var page = PageRequest.of(0, 200);
-            var pool = userRepository.findAllByDeletedFalse(page).getContent(); // <<< 변경
+            var pool = userRepository.findAllByDeletedFalse(page).getContent();
+
             Set<String> exists = list.stream().map(RecommendedUserDTO::getUserId).collect(Collectors.toSet());
 
-            var extras = pool.stream()
+            // myFollowingUserIds는 final이므로 람다에서 안전
+            var extrasIds = pool.stream()
                     .map(User::getUserId)
-                    .filter(uid -> !uid.equals(myUserId)
-                            && !exists.contains(uid)
-                            && !myFollowingUserIds.contains(uid))
+                    .filter(uid ->
+                            (myUserId == null || !uid.equals(myUserId)) // 게스트 허용
+                                    && !exists.contains(uid)
+                                    && !myFollowingUserIds.contains(uid))
                     .limit(need)
                     .collect(Collectors.toSet());
 
-            if (!extras.isEmpty()) {
-                var extraBriefs = userRepository.findBriefsByUserIdIn(extras); // (Repo에서 탈퇴 제외)
+            if (!extrasIds.isEmpty()) {
+                var extraBriefs = userRepository.findBriefsByUserIdIn(extrasIds);
                 var extraDtos = extraBriefs.stream()
                         .map(b -> RecommendedUserDTO.builder()
                                 .userId(b.getUserId())
