@@ -9,6 +9,9 @@ import com.a404.duckonback.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
 @RestController
@@ -170,19 +172,31 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "트렌딩 방 조회",
-            description = "참여자 수가 많은 전체 방 중 상위 size개를 조회합니다.")
+    @Operation(
+            summary = "트렌딩 방 조회(페이징)",
+            description = "참여자(시청자) 수가 많은 순으로 트렌딩 방을 페이지 단위로 조회합니다."
+    )
     @GetMapping("/trending")
-    public ResponseEntity<Map<String,Object>> getTrendingRooms(
-            @RequestParam(defaultValue = "3") int size
+    public ResponseEntity<Map<String, Object>> getTrendingRooms(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        if (size < 1) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "size는 1 이상의 정수여야 합니다."));
+        if (page < 1 || size < 1) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "page/size는 1 이상의 정수여야 합니다."));
         }
-        List<TrendingRoomDTO> list = redisService.getTrendingRooms(size);
-        return ResponseEntity.ok(Map.of("roomInfoList", list));
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<RoomListInfoDTO> dtoPage = redisService.getTrendingRooms(pageable);
+
+        return ResponseEntity.ok(Map.of(
+                "roomInfoList", dtoPage.getContent(),
+                "page", page,
+                "size", size,
+                "totalPages", dtoPage.getTotalPages(),
+                "totalElements", dtoPage.getTotalElements(),
+                "hasNext", dtoPage.hasNext()
+        ));
     }
 
 
