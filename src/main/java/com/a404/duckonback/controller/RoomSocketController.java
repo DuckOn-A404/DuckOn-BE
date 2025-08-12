@@ -60,6 +60,16 @@ public class RoomSocketController {
             throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
+        boolean allowed = redisService.increaseChatCount(
+                message.getRoomId().toString(),
+                user.getUserId()
+        );
+        if (!allowed) {
+            throw new CustomException("채팅은 5초에 10번까지만 가능합니다.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+
+
+
         messagingTemplate.convertAndSend("/topic/chat/" + message.getRoomId(), message);
     }
 }

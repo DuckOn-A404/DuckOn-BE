@@ -20,4 +20,6 @@ public interface RedisService {
 
     void updateRoomInfo(LiveRoomSyncDTO room);
     Long getRoomUserCount(String roomId);
+
+    boolean increaseChatCount(String roomId, String userId);
 }

@@ -320,4 +320,17 @@ public class RedisServiceImpl implements RedisService {
         return size == null ? 0L : size;
     }
 
+    @Override
+    public boolean increaseChatCount(String roomId, String userId) {
+        String key = "chat_limit:" + roomId + ":" + userId;
+        Long count = redisTemplate.opsForValue().increment(key);
+
+        if (count != null && count == 1) {
+            redisTemplate.expire(key, Duration.ofSeconds(5));
+        }
+
+        return count != null && count <= 10;
+    }
+
+
 }
