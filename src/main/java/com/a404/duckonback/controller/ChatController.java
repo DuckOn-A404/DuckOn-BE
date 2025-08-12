@@ -3,13 +3,17 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.dto.ChatMessageResponseDTO;
 import com.a404.duckonback.entity.ChatMessage;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.ChatService;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.util.ChatRateLimiter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatController {
     private final ChatService chatService;
+    private final ChatRateLimiter chatRateLimiter;
 
     /**
      * 클라이언트가 메시지를 보낼 때 호출하는 엔드포인트
@@ -30,6 +35,16 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody ChatMessageRequestDTO dto
     ) {
+        if(dto.getContent().length() > 100){
+            throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        String key = chatRateLimiter.userKey(principal.getUser().getUserId());
+        boolean allowed = chatRateLimiter.allow(key, 10, Duration.ofSeconds(5));
+        if (!allowed) {
+            throw new CustomException("채팅은 5초에 10번까지만 가능합니다.", HttpStatus.TOO_MANY_REQUESTS);
+        }
+
         ChatMessage saved = chatService.sendMessage(
                 principal.getUser().getId(),
                 artistId,
