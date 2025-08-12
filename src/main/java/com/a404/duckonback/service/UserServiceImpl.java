@@ -384,7 +384,7 @@ public class UserServiceImpl implements UserService {
     public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
         if (size <= 0) size = SIZE_DEFAULT;
 
-        // 1) 로그인/게스트 분기: me와 myFollowingUserIds를 '한 번만' 계산 (final)
+        // 1) 로그인/게스트 분기
         final User me = (myUserId != null)
                 ? userRepository.findByUserIdAndDeletedFalse(myUserId)
                 : null;
@@ -451,10 +451,11 @@ public class UserServiceImpl implements UserService {
 
         // 3) 후보 → (로그인 시) 본인/이미 팔로우 제외
         List<String> candidateIds = scores.keySet().stream()
-                .filter(uid ->
-                        (myUserId == null || !uid.equals(myUserId)) // 게스트면 통과
-                                && !myFollowingUserIds.contains(uid)  // 게스트면 빈 Set라 영향 없음
-                )
+                .filter(uid -> {
+                    if (myUserId != null && uid.equals(myUserId)) return false;  // 본인 제외
+                    if (myFollowingUserIds.contains(uid)) return false;          // 팔로우 제외
+                    return true;                                                 // 게스트는 전부 통과
+                })
                 .toList();
 
         List<UserBrief> briefs = candidateIds.isEmpty()
@@ -489,13 +490,14 @@ public class UserServiceImpl implements UserService {
 
             Set<String> exists = list.stream().map(RecommendedUserDTO::getUserId).collect(Collectors.toSet());
 
-            // myFollowingUserIds는 final이므로 람다에서 안전
             var extrasIds = pool.stream()
                     .map(User::getUserId)
-                    .filter(uid ->
-                            (myUserId == null || !uid.equals(myUserId)) // 게스트 허용
-                                    && !exists.contains(uid)
-                                    && !myFollowingUserIds.contains(uid))
+                    .filter(uid -> {
+                        if (myUserId != null && uid.equals(myUserId)) return false; // 본인 제외
+                        if (exists.contains(uid)) return false;                     // 이미 담긴 후보 제외
+                        if (myFollowingUserIds.contains(uid)) return false;         // 팔로잉 제외
+                        return true;                                                // 게스트는 통과
+                    })
                     .limit(need)
                     .collect(Collectors.toSet());
 
