@@ -20,7 +20,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public Optional<Room> getRoomById(Integer roomId) {
+    public Optional<Room> getRoomById(Long roomId) {
         return roomRepository.findById(roomId);
     }
 
@@ -30,7 +30,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public Room updateRoom(Integer roomId, Room updatedRoom) {
+    public Room updateRoom(Long roomId, Room updatedRoom) {
         return roomRepository.findById(roomId)
                 .map(room -> {
                     room.setTitle(updatedRoom.getTitle());
@@ -44,7 +44,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public void deleteRoom(Integer roomId) {
+    public void deleteRoom(Long roomId) {
         roomRepository.deleteById(roomId);
     }
 
@@ -54,7 +54,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public List<Room> getRoomsByArtist(Integer artistId) {
+    public List<Room> getRoomsByArtist(Long artistId) {
         return roomRepository.findByArtist_ArtistId(artistId);
     }
 }
