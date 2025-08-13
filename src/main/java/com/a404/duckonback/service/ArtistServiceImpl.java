@@ -70,14 +70,14 @@ public class ArtistServiceImpl implements ArtistService {
         return ArtistDetailDTO.of(artist, isFollowed, followedAt);
     }
 
-    @Override
-    public Page<ArtistDTO> getArtists(Pageable pageable) {
-        return artistRepository.findAll(pageable)
-                .map(artist -> {
-                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
-                    return ArtistDTO.fromEntity(artist, cnt);
-                });
-    }
+//    @Override
+//    public Page<ArtistDTO> getArtists(Pageable pageable) {
+//        return artistRepository.findAll(pageable)
+//                .map(artist -> {
+//                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
+//                    return ArtistDTO.fromEntity(artist, cnt);
+//                });
+//    }
 
     @Override
     public List<ArtistDTO> searchArtists(String keyword) {
