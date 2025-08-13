@@ -26,4 +26,6 @@ public interface ArtistService {
 
     String findSlugById(Long artistId);
 
+    Page<ArtistDTO> getArtists(Pageable pageable, String sort, String order, String keyword);
+
 }

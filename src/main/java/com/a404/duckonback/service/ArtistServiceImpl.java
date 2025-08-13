@@ -70,14 +70,14 @@ public class ArtistServiceImpl implements ArtistService {
         return ArtistDetailDTO.of(artist, isFollowed, followedAt);
     }
 
-    @Override
-    public Page<ArtistDTO> getArtists(Pageable pageable) {
-        return artistRepository.findAll(pageable)
-                .map(artist -> {
-                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
-                    return ArtistDTO.fromEntity(artist, cnt);
-                });
-    }
+//    @Override
+//    public Page<ArtistDTO> getArtists(Pageable pageable) {
+//        return artistRepository.findAll(pageable)
+//                .map(artist -> {
+//                    long cnt = artistFollowRepository.countByArtist_ArtistId(artist.getArtistId());
+//                    return ArtistDTO.fromEntity(artist, cnt);
+//                });
+//    }
 
     @Override
     public List<ArtistDTO> searchArtists(String keyword) {
@@ -264,5 +264,26 @@ public class ArtistServiceImpl implements ArtistService {
         return normalized;
     }
 
+    // 정렬/검색/페이지네이션 통합
+    @Override
+    public Page<ArtistDTO> getArtists(Pageable pageable, String sort, String order, String keyword) {
+        // 허용 목록 외의 값 보정
+        String sortKey = (sort == null) ? "followers" : sort.toLowerCase();
+        if (!List.of("followers", "name", "debut").contains(sortKey)) sortKey = "followers";
+
+        String sortOrder = (order == null) ? "desc" : order.toLowerCase();
+        if (!List.of("asc", "desc").contains(sortOrder)) sortOrder = "desc";
+
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+
+        // 핵심: Custom Repository로 N+1 없이 페이지 단위 조회
+        return artistRepository.pageArtists(pageable, sortKey, sortOrder, kw);
+    }
+
+    // (선택) 과거 호환: 기존 메서드는 기본값으로 위임
+    @Override
+    public Page<ArtistDTO> getArtists(Pageable pageable) {
+        return getArtists(pageable, "followers", "desc", null);
+    }
 
 }
