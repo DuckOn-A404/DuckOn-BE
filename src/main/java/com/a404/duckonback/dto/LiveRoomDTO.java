@@ -23,7 +23,7 @@ public class LiveRoomDTO {
     private double currentTime;
     private boolean playing;
     private long lastUpdated;
-    private boolean isLocked;
+    private boolean locked;
     private String entryQuestion;
     private String entryAnswer;
     private long participantCount;
