@@ -6,6 +6,7 @@ import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.SocialProvider;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.repository.RoomRepository;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
 import com.a404.duckonback.util.Anonymizer;
@@ -30,6 +31,8 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RoomRepository roomRepository;
+    private final RedisService redisService;
     private final PenaltyService penaltyService;
     private final FollowService followService;
     private final S3Service s3Service;
@@ -183,22 +186,28 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserInfoResponseDTO getUserInfo(String myUserId, String otherUserId) {
-        if (myUserId == null) {
-            throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
-        }
-        if (!userRepository.existsByUserIdAndDeletedFalse(otherUserId)) {
+        if (myUserId == null) throw new CustomException("사용자 ID가 제공되지 않았습니다", HttpStatus.BAD_REQUEST);
+        if (!userRepository.existsByUserIdAndDeletedFalse(otherUserId))
             throw new CustomException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
-        }
 
         User user = userRepository.findByUserIdAndDeletedFalse(otherUserId);
+
+        // 과거 히스토리
+        List<RoomDTO> roomList = roomRepository.findByCreator_Id(user.getId())
+                .stream().map(RoomDTO::fromEntity).toList();
+
+        // 현재 라이브(레디스)
+        RoomListInfoDTO active = redisService.getActiveRoomByHost(otherUserId);
 
         return UserInfoResponseDTO.builder()
                 .userId(user.getUserId())
                 .nickname(user.getNickname())
                 .imgUrl(user.getImgUrl())
-                .followingCount(user.getFollowing().size())
-                .followerCount(user.getFollowers().size())
+                .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
+                .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
                 .following(followService.isFollowing(myUserId, otherUserId))
+                .roomList(roomList)
+                .activeRoom(active)
                 .build();
     }
 
