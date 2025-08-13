@@ -71,7 +71,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
                 .currentTime(0.0)
                 .playing(false)
                 .lastUpdated(System.currentTimeMillis())
-                .isLocked(req.isLocked())
+                .locked(req.isLocked())
                 .entryQuestion(req.getEntryQuestion())
                 .entryAnswer(req.getEntryAnswer())
                 .build();

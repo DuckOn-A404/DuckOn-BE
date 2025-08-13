@@ -40,7 +40,7 @@ public class RedisServiceImpl implements RedisService {
         map.put("currentTime", room.getCurrentTime());
         map.put("playing", room.isPlaying());
         map.put("lastUpdated", room.getLastUpdated());
-        map.put("isLocked", room.isLocked());
+        map.put("locked", room.isLocked());
         map.put("entryQuestion", room.getEntryQuestion());
         map.put("entryAnswer", room.getEntryAnswer());
 
@@ -101,7 +101,7 @@ public class RedisServiceImpl implements RedisService {
                 .currentTime((double) map.get("currentTime"))
                 .playing((boolean) map.get("playing"))
                 .lastUpdated((long) map.get("lastUpdated"))
-                .isLocked(Boolean.parseBoolean(map.getOrDefault("isLocked", "false").toString()))
+                .locked(Boolean.parseBoolean(map.getOrDefault("locked", "false").toString()))
                 .entryQuestion((String) map.getOrDefault("entryQuestion", null))
                 .entryAnswer((String) map.getOrDefault("entryAnswer", null))
                 .build();
