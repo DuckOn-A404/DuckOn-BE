@@ -109,17 +109,22 @@ public class UserController {
         return ResponseEntity.ok(Map.of("valid", isValid));
     }
 
-    @Operation(summary = "사용자 추천", description = "현재 사용자에게 어울리는 다른 사용자를 추천합니다.")
+    @Operation(summary = "사용자 추천", description = "로그인/비로그인 모두 사용 가능. 현재 사용자에게 어울리는 다른 사용자를 추천합니다.")
     @GetMapping("/recommendations")
     public ResponseEntity<?> recommendUsers(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal, // null일 수 있음
             @RequestParam(required = false) Long artistId,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "false") boolean includeReasons
+            @RequestParam(defaultValue = "true") boolean includeReasons
     ) {
-        RecommendUsersResponseDTO res = userService.recommendUsers(principal.getUser().getUserId(), artistId, size, includeReasons);
+        String myUserId = (principal != null && principal.getUser() != null)
+                ? principal.getUser().getUserId()
+                : null; // 게스트면 null
+
+        RecommendUsersResponseDTO res = userService.recommendUsers(myUserId, artistId, size, includeReasons);
         return ResponseEntity.ok(res);
     }
+
 
 
 }
