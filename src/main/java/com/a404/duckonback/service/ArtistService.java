@@ -23,4 +23,7 @@ public interface ArtistService {
     Artist createArtist(AdminArtistRequestDTO dto);
     Artist updateArtist(Long artistId, AdminArtistRequestDTO dto);
     Artist patchArtist(Long artistId, AdminArtistPatchDTO dto);
+
+    String findSlugById(Long artistId);
+
 }

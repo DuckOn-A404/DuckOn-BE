@@ -10,19 +10,22 @@ public class NaverUserInfo implements OAuth2UserInfo {
 
     @Override public String getProviderId() {
         Map<String,Object> res = (Map<String,Object>) attributes.get("response");
-        return (String) res.get("id");
+        return res != null ? (String) res.get("id") : null;
     }
     @Override public String getEmail() {
         Map<String,Object> res = (Map<String,Object>) attributes.get("response");
-        return (String) res.get("email");
+        return res != null ? (String) res.get("email") : null;
     }
     @Override public String getNickname() {
         Map<String,Object> res = (Map<String,Object>) attributes.get("response");
-        return (String) res.getOrDefault("nickname", "naverUser");
+        String nick = res != null ? (String) res.get("nickname") : null;
+        return (nick != null && !nick.isBlank()) ? nick : "naverUser";
     }
     @Override public String getProfileImage() {
         Map<String,Object> res = (Map<String,Object>) attributes.get("response");
-        return (String) res.get("profile_image");
+        String url = res != null ? (String) res.get("profile_image") : null;
+        return (url != null && !url.isBlank()) ? url : null;
     }
     @Override public SocialProvider getProvider() { return SocialProvider.NAVER; }
 }
+

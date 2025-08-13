@@ -15,6 +15,8 @@ public class LiveRoomSyncDTO {
 
     private Long roomId;
     private String hostId;
+    private String hostNickname;
+    private String title;
     private java.util.List<String> playlist;
     private int currentVideoIndex;
     private double currentTime;
