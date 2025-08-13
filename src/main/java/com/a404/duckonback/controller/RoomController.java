@@ -157,13 +157,13 @@ public class RoomController {
             if (entryAnswer == null || entryAnswer.isBlank()) {
                 throw new CustomException(
                         "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
-                        HttpStatus.UNAUTHORIZED,
+                        HttpStatus.FORBIDDEN,   // 정답 미입력: 403 (FORBIDDEN)
                         Map.of("entryQuestion", room.getEntryQuestion())
                 );
             }
 
             if (!entryAnswer.equals(room.getEntryAnswer())) {
-                throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
+                throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.FORBIDDEN);  // 정답 오답: 403 (FORBIDDEN)
             }
         }
 
