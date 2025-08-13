@@ -154,7 +154,7 @@ public class RoomController {
 
         if (room.isLocked()) {
 
-            if (entryAnswer == null) {
+            if (entryAnswer == null || entryAnswer.isBlank()) {
                 throw new CustomException(
                         "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
                         HttpStatus.UNAUTHORIZED,
