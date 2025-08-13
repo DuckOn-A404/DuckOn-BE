@@ -76,7 +76,7 @@ public class ArtistController {
     // 키워드 검색
     @Operation(summary = "아티스트 검색",
             description = "아티스트 이름이나 설명을 키워드로 검색합니다. 검색 결과는 페이지 단위로 반환됩니다.")
-    @GetMapping(params = "keyword")
+    @GetMapping(params = {"keyword", "!page", "!size", "!sort", "!order"})
     public ResponseEntity<?> searchArtists(@RequestParam String keyword) {
         var list = artistService.searchArtists(keyword);
         return ResponseEntity.ok(Map.of("artistList", list));
