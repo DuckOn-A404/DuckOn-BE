@@ -3,13 +3,14 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.dto.LiveRoomSyncDTO;
-import com.a404.duckonback.dto.TrendingRoomDTO;
+import com.a404.duckonback.dto.RoomListInfoDTO;
 import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,13 +33,14 @@ public class RedisServiceImpl implements RedisService {
         map.put("title", room.getTitle());
         map.put("artistId", room.getArtistId());
         map.put("hostId", room.getHostId());
+        map.put("hostNickname", room.getHostNickname());
         map.put("imgUrl", room.getImgUrl());
         map.put("playlist", room.getPlaylist());
         map.put("currentVideoIndex", room.getCurrentVideoIndex());
         map.put("currentTime", room.getCurrentTime());
         map.put("playing", room.isPlaying());
         map.put("lastUpdated", room.getLastUpdated());
-        map.put("isLocked", room.isLocked());
+        map.put("locked", room.isLocked());
         map.put("entryQuestion", room.getEntryQuestion());
         map.put("entryAnswer", room.getEntryAnswer());
 
@@ -55,6 +57,7 @@ public class RedisServiceImpl implements RedisService {
 
         room.setHostId(dto.getHostId());
         room.setHostNickname(dto.getHostNickname());
+        room.setTitle(dto.getTitle());
         room.setPlaylist(dto.getPlaylist());
         room.setCurrentVideoIndex(dto.getCurrentVideoIndex());
         room.setCurrentTime(dto.getCurrentTime());
@@ -98,7 +101,7 @@ public class RedisServiceImpl implements RedisService {
                 .currentTime((double) map.get("currentTime"))
                 .playing((boolean) map.get("playing"))
                 .lastUpdated((long) map.get("lastUpdated"))
-                .isLocked(Boolean.parseBoolean(map.getOrDefault("isLocked", "false").toString()))
+                .locked(Boolean.parseBoolean(map.getOrDefault("locked", "false").toString()))
                 .entryQuestion((String) map.getOrDefault("entryQuestion", null))
                 .entryAnswer((String) map.getOrDefault("entryAnswer", null))
                 .build();
@@ -240,34 +243,37 @@ public class RedisServiceImpl implements RedisService {
                 .toList();
     }
 
+    @Override
+    public List<RoomListInfoDTO> getTrendingRooms(int size) {
+        Page<RoomListInfoDTO> page = getTrendingRooms(PageRequest.of(0, size));
+        return page.getContent();
+    }
+
     /** 전체 방 중 참여자 수 기준 Top-N을 TrendingRoomDTO로 반환 */
     @Override
-    public List<TrendingRoomDTO> getTrendingRooms(int size) {
+    public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
         Set<String> keys = redisTemplate.keys("room:*:info");
         if (keys == null || keys.isEmpty()) {
-            return List.of();
+            return Page.empty(pageable);
         }
 
-        return keys.stream()
+        List<RoomListInfoDTO> all = keys.stream()
                 .map(key -> {
-                    // key = "room:<roomId>:info"
+                    // key = room:{roomId}:info
                     String[] parts = key.split(":");
-                    if (parts.length < 2) return null;
+                    if (parts.length < 3) return null;
                     String roomId = parts[1];
 
                     Map<Object, Object> m = redisTemplate.opsForHash().entries(key);
-                    if (m.isEmpty()) return null;
+                    if (m == null || m.isEmpty()) return null;
 
-                    // 1) participant count
+                    // 참여자 수
                     Long cnt = redisTemplate.opsForSet().size("room:" + roomId + ":users");
                     int participantCount = cnt != null ? cnt.intValue() : 0;
 
-                    // 2) artistId guard
+                    // artistId 필수
                     Object artistIdObj = m.get("artistId");
-                    if (artistIdObj == null) {
-                        // artistId 정보가 없으면 이 방은 스킵
-                        return null;
-                    }
+                    if (artistIdObj == null) return null;
                     Long artistId;
                     try {
                         artistId = Long.valueOf(artistIdObj.toString());
@@ -275,22 +281,22 @@ public class RedisServiceImpl implements RedisService {
                         return null;
                     }
 
-                    // 3) 기본 정보
-                    String title  = (String) m.get("title");
-                    String imgUrl = (String) m.get("imgUrl");
-                    String hostUid= (String) m.get("hostId");
+                    // 기본 정보
+                    String title   = (String) m.get("title");
+                    String imgUrl  = (String) m.get("imgUrl");
+                    String hostUid = (String) m.get("hostId");
 
-                    // 4) host 정보
+                    // host 정보
                     User host = userRepository.findByUserIdAndDeletedFalse(hostUid);
                     String hostNickname   = host != null ? host.getNickname() : null;
                     String hostProfileImg = host != null ? host.getImgUrl()    : null;
 
-                    // 5) artist 정보
+                    // artist 정보
                     Artist artist = artistRepository.findById(artistId).orElse(null);
                     String artistNameEn = artist != null ? artist.getNameEn() : null;
                     String artistNameKr = artist != null ? artist.getNameKr() : null;
 
-                    return TrendingRoomDTO.builder()
+                    return RoomListInfoDTO.builder()
                             .roomId(Long.valueOf(roomId))
                             .artistId(artistId)
                             .artistNameEn(artistNameEn)
@@ -304,12 +310,17 @@ public class RedisServiceImpl implements RedisService {
                             .build();
                 })
                 .filter(Objects::nonNull)
-                // 참여자 많은 순으로 정렬
-                .sorted(Comparator.comparingInt(TrendingRoomDTO::getParticipantCount).reversed())
-                // Top-N, 방 개수가 N보다 적으면 있는 만큼만 반환
-                .limit(size)
+                .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
                 .toList();
+
+        int total = all.size();
+        int from = (int) pageable.getOffset();
+        if (from >= total) return new PageImpl<>(List.of(), pageable, total);
+        int to = Math.min(from + pageable.getPageSize(), total);
+
+        return new PageImpl<>(all.subList(from, to), pageable, total);
     }
+
 
     @Override
     public Long getRoomUserCount(String roomId) {
@@ -317,5 +328,18 @@ public class RedisServiceImpl implements RedisService {
         Long size = redisTemplate.opsForSet().size(key);
         return size == null ? 0L : size;
     }
+
+    @Override
+    public boolean increaseChatCount(String roomId, String userId) {
+        String key = "chat_limit:" + roomId + ":" + userId;
+        Long count = redisTemplate.opsForValue().increment(key);
+
+        if (count != null && count == 1) {
+            redisTemplate.expire(key, Duration.ofSeconds(5));
+        }
+
+        return count != null && count <= 10;
+    }
+
 
 }

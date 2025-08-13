@@ -106,6 +106,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // 방 상세 조회 // 막아야하지만 프론트가 처리했다고 막지 말라고 요청하심
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
                                 .requestMatchers(HttpMethod.GET, "/api/users/recommendations").permitAll() // 추천 유저 조회
+                                .requestMatchers(HttpMethod.GET, "/api/public/youtube/meta/*").permitAll() // 유튜브 메타데이터 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()

@@ -9,6 +9,9 @@ import com.a404.duckonback.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
 @RestController
@@ -77,6 +79,7 @@ public class RoomController {
         LiveRoomSyncDTO dto = LiveRoomSyncDTO.builder()
                 .eventType(RoomSyncEventType.ROOM_DELETED)
                 .roomId(roomId)
+                .title(null)
                 .hostId(null)
                 .hostNickname(null)
                 .playlist(java.util.Collections.emptyList())
@@ -90,6 +93,48 @@ public class RoomController {
 
         return ResponseEntity.ok("방이 삭제되었습니다.");
     }
+
+    @Operation(summary = "방 제목 변경",
+            description = "특정 방의 제목을 변경합니다. 방 ID와 새로운 제목을 받아서 방 정보를 갱신합니다.")
+    @PatchMapping("/{roomId}/title")
+    public ResponseEntity<?> updateRoomTitle(@PathVariable Long roomId,
+                                             @RequestParam String title,
+                                             @AuthenticationPrincipal CustomUserPrincipal principal) {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // Redis에서 현재 방 정보 조회 (없으면 내부에서 404 throw)
+        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+
+        // 호스트만 변경 가능
+        if (!principal.getUser().getUserId().equals(room.getHostId())) {
+            throw new CustomException("호스트만 방 정보를 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        // Redis에 저장된 방 정보 갱신
+        room.setTitle(title);
+
+        // 변경 이벤트 브로드캐스트
+        LiveRoomSyncDTO dto = LiveRoomSyncDTO.builder()
+                .eventType(RoomSyncEventType.ROOM_UPDATE)
+                .roomId(roomId)
+                .title(title)
+                .hostId(room.getHostId())
+                .hostNickname(room.getHostNickname())
+                .playlist(room.getPlaylist())
+                .currentVideoIndex(room.getCurrentVideoIndex())
+                .currentTime(room.getCurrentTime())
+                .playing(room.isPlaying())
+                .lastUpdated(System.currentTimeMillis())
+                .build();
+
+        redisService.updateRoomInfo(dto);
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
+
+        return ResponseEntity.ok("방 제목이 변경되었습니다.");
+    }
+
 
     @Operation(summary ="방 입장",
             description = "특정 방을 입장합니다. 로그인한 유저, 로그인하지 않은 유저 모두 입장 가능합니다.\n"
@@ -109,7 +154,7 @@ public class RoomController {
 
         if (room.isLocked()) {
 
-            if (entryAnswer == null) {
+            if (entryAnswer == null || entryAnswer.isBlank()) {
                 throw new CustomException(
                         "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
                         HttpStatus.UNAUTHORIZED,
@@ -170,19 +215,31 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "트렌딩 방 조회",
-            description = "참여자 수가 많은 전체 방 중 상위 size개를 조회합니다.")
+    @Operation(
+            summary = "트렌딩 방 조회(페이징)",
+            description = "참여자(시청자) 수가 많은 순으로 트렌딩 방을 페이지 단위로 조회합니다."
+    )
     @GetMapping("/trending")
-    public ResponseEntity<Map<String,Object>> getTrendingRooms(
-            @RequestParam(defaultValue = "3") int size
+    public ResponseEntity<Map<String, Object>> getTrendingRooms(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        if (size < 1) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "size는 1 이상의 정수여야 합니다."));
+        if (page < 1 || size < 1) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "page/size는 1 이상의 정수여야 합니다."));
         }
-        List<TrendingRoomDTO> list = redisService.getTrendingRooms(size);
-        return ResponseEntity.ok(Map.of("roomInfoList", list));
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<RoomListInfoDTO> dtoPage = redisService.getTrendingRooms(pageable);
+
+        return ResponseEntity.ok(Map.of(
+                "roomInfoList", dtoPage.getContent(),
+                "page", page,
+                "size", size,
+                "totalPages", dtoPage.getTotalPages(),
+                "totalElements", dtoPage.getTotalElements(),
+                "hasNext", dtoPage.hasNext()
+        ));
     }
 
 

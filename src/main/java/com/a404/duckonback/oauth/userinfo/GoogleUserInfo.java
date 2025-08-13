@@ -10,7 +10,14 @@ public class GoogleUserInfo implements OAuth2UserInfo {
 
     @Override public String getProviderId() { return (String) attributes.get("sub"); }
     @Override public String getEmail() { return (String) attributes.get("email"); }
-    @Override public String getNickname() { return (String) attributes.getOrDefault("name", "googleUser"); }
-    @Override public String getProfileImage() { return (String) attributes.get("picture"); }
+    @Override public String getNickname() {
+        String name = (String) attributes.getOrDefault("name", "googleUser");
+        return (name != null && !name.isBlank()) ? name : "googleUser";
+    }
+    @Override public String getProfileImage() {
+        String url = (String) attributes.get("picture");
+        return (url != null && !url.isBlank()) ? url : null;
+    }
     @Override public SocialProvider getProvider() { return SocialProvider.GOOGLE; }
 }
+

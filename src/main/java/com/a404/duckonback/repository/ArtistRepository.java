@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ArtistRepository extends JpaRepository<Artist, Long> {
+public interface ArtistRepository extends JpaRepository<Artist, Long>, ArtistRepositoryCustom {
 
     @Query("SELECT af.artist.artistId FROM ArtistFollow af WHERE af.user.id = :id")
     List<Long> findAllArtistIdByUserId(@Param("id") Long id);
@@ -23,10 +23,7 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
     List<Artist> searchByKeyword(@Param("keyword") String keyword);
 
     // size만큼 랜덤으로 아티스트 반환 (MySQL 기준)
-    @Query(
-            value = "SELECT * FROM artist ORDER BY RAND() LIMIT :size",
-            nativeQuery = true
-    )
+    @Query(value = "SELECT * FROM artist ORDER BY RAND() LIMIT :size", nativeQuery = true)
     List<Artist> findRandomArtists(@Param("size") int size);
 
     Optional<Artist> findByArtistId(Long artistId);
