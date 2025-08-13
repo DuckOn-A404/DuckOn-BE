@@ -17,6 +17,8 @@ public class RoomDTO {
     private LocalDateTime createdAt;
     private String creatorId;
     private Long artistId;
+    private String artistNameEn;
+    private String artistNameKr;
 
     public static RoomDTO fromEntity(Room room) {
         return RoomDTO.builder()
@@ -26,6 +28,8 @@ public class RoomDTO {
                 .createdAt(room.getCreatedAt())
                 .creatorId(room.getCreator().getUserId())
                 .artistId(room.getArtist().getArtistId())
+                .artistNameEn(room.getArtist().getNameEn())
+                .artistNameKr(room.getArtist().getNameKr())
                 .build();
     }
 }
