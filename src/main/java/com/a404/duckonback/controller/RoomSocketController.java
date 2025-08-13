@@ -66,9 +66,9 @@ public class RoomSocketController {
         }
 
         String key = chatRateLimiter.userKey(user.getUserId());
-        boolean allowed = chatRateLimiter.allow(key, 10, Duration.ofSeconds(5));
+        boolean allowed = chatRateLimiter.allow(key, 5, Duration.ofSeconds(5));
         if (!allowed) {
-            throw new CustomException("채팅은 5초에 10번까지만 가능합니다.", HttpStatus.TOO_MANY_REQUESTS);
+            throw new CustomException("채팅은 5초에 5번까지만 가능합니다.", HttpStatus.TOO_MANY_REQUESTS);
         }
 
 
