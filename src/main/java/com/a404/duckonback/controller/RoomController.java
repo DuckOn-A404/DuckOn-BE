@@ -135,6 +135,82 @@ public class RoomController {
         return ResponseEntity.ok("방 제목이 변경되었습니다.");
     }
 
+    // RoomController.java (일부 추가)
+    @Operation(summary = "플레이리스트 갱신(전체 교체/삭제/순서변경)",
+            description = "전체 플레이리스트와 다음 재생 인덱스를 받아 방 상태를 갱신하고 브로드캐스트합니다.")
+    @PostMapping("/{roomId}/playlist")
+    public ResponseEntity<?> updatePlaylist(
+            @PathVariable Long roomId,
+            @RequestBody PlaylistUpdateRequestDTO req,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // 현재 방 상태 조회 (없으면 내부에서 404 throw)
+        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+
+        // 호스트만 변경 가능
+        if (!principal.getUser().getUserId().equals(room.getHostId())) {
+            throw new CustomException("호스트만 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        if(req.getPlaylist().isEmpty() || req.getPlaylist() == null){
+            throw new CustomException("플레이리스트는 비어있을 수 없습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 입력 정리/검증
+        java.util.List<String> playlist = req.getPlaylist().stream()
+        .filter(java.util.Objects::nonNull)
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .toList();
+
+        int size = playlist.size();
+        int nextIndex = (req.getNextIndex() == null) ? 0 : req.getNextIndex();
+
+        if (size == 0) {
+            nextIndex = 0; // 비었으면 항상 0
+        } else {
+            if (nextIndex < 0) nextIndex = 0;
+            if (nextIndex >= size) nextIndex = size - 1;
+        }
+
+        // 재생/시간 정책:
+        // - playlist가 비면 playing=false, time=0
+        // - 비지 않으면, 기존 playing 유지 (원하면 '항상 true'로 바꿔도 됨)
+        boolean playing = size > 0 && room.isPlaying();
+        double currentTime = 0.0; // 순서변경/삭제 즉시 해당 곡 처음부터 재생
+
+        long now = System.currentTimeMillis();
+
+        LiveRoomSyncDTO dto = LiveRoomSyncDTO.builder()
+                .eventType(RoomSyncEventType.ROOM_UPDATE)
+                .roomId(roomId)
+                .hostId(room.getHostId())
+                .hostNickname(room.getHostNickname())
+                .title(room.getTitle())
+                .playlist(playlist)
+                .currentVideoIndex(nextIndex)
+                .currentTime(currentTime)
+                .playing(playing)
+                .lastUpdated(now)
+                .build();
+
+        // Redis 갱신
+        redisService.updateRoomInfo(dto);
+
+        // 브로드캐스트
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "플레이리스트가 갱신되었습니다.",
+                "lastUpdated", now
+        ));
+    }
+
+
 
     @Operation(summary ="방 입장",
             description = "특정 방을 입장합니다. 로그인한 유저, 로그인하지 않은 유저 모두 입장 가능합니다.\n"
