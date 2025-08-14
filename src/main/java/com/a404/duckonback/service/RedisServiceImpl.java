@@ -607,61 +607,122 @@ public class RedisServiceImpl implements RedisService {
         return page.getContent();
     }
 
-    @Override
-    public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
-        // room:* 값 스캔 (주의: 운영 대규모면 SCAN 커서 방식 권장)
-        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
-        if (keys == null || keys.isEmpty()) {
-            return Page.empty(pageable);
-        }
-
-        List<RoomListInfoDTO> all = keys.stream()
-                .map(key -> {
-                    // key = room:{roomId}
-                    String[] parts = key.split(":");
-                    if (parts.length < 2) return null;
-                    String roomIdStr = parts[1];
-
-                    LiveRoomDTO dto = roomTemplate.opsForValue().get(key);
-                    if (dto == null || dto.getArtistId() == null) return null;
-
-                    // 참여자 수
-                    Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
-                    int participantCount = cnt != null ? cnt.intValue() : 0;
-
-                    // host 정보
-                    User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
-                    String hostNickname   = host != null ? host.getNickname() : null;
-                    String hostProfileImg = host != null ? host.getImgUrl()    : null;
-
-                    // artist 정보
-                    Artist artist = artistRepository.findById(dto.getArtistId()).orElse(null);
-                    String artistNameEn = artist != null ? artist.getNameEn() : null;
-                    String artistNameKr = artist != null ? artist.getNameKr() : null;
-
-                    return RoomListInfoDTO.builder()
-                            .roomId(dto.getRoomId())
-                            .artistId(dto.getArtistId())
-                            .artistNameEn(artistNameEn)
-                            .artistNameKr(artistNameKr)
-                            .title(dto.getTitle())
-                            .hostId(dto.getHostId())
-                            .hostNickname(hostNickname)
-                            .hostProfileImgUrl(hostProfileImg)
-                            .imgUrl(dto.getImgUrl())
-                            .participantCount(participantCount)
-                            .build();
-                })
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
-                .toList();
-
-        int total = all.size();
-        int from = (int) pageable.getOffset();
-        if (from >= total) return new PageImpl<>(List.of(), pageable, total);
-        int to = Math.min(from + pageable.getPageSize(), total);
-        return new PageImpl<>(all.subList(from, to), pageable, total);
+//    @Override
+//    public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
+//        // room:* 값 스캔 (주의: 운영 대규모면 SCAN 커서 방식 권장)
+//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//        if (keys == null || keys.isEmpty()) {
+//            return Page.empty(pageable);
+//        }
+//
+//        List<RoomListInfoDTO> all = keys.stream()
+//                .map(key -> {
+//                    // key = room:{roomId}
+//                    String[] parts = key.split(":");
+//                    if (parts.length < 2) return null;
+//                    String roomIdStr = parts[1];
+//
+//                    LiveRoomDTO dto = roomTemplate.opsForValue().get(key);
+//                    if (dto == null || dto.getArtistId() == null) return null;
+//
+//                    // 참여자 수
+//                    Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+//                    int participantCount = cnt != null ? cnt.intValue() : 0;
+//
+//                    // host 정보
+//                    User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
+//                    String hostNickname   = host != null ? host.getNickname() : null;
+//                    String hostProfileImg = host != null ? host.getImgUrl()    : null;
+//
+//                    // artist 정보
+//                    Artist artist = artistRepository.findById(dto.getArtistId()).orElse(null);
+//                    String artistNameEn = artist != null ? artist.getNameEn() : null;
+//                    String artistNameKr = artist != null ? artist.getNameKr() : null;
+//
+//                    return RoomListInfoDTO.builder()
+//                            .roomId(dto.getRoomId())
+//                            .artistId(dto.getArtistId())
+//                            .artistNameEn(artistNameEn)
+//                            .artistNameKr(artistNameKr)
+//                            .title(dto.getTitle())
+//                            .hostId(dto.getHostId())
+//                            .hostNickname(hostNickname)
+//                            .hostProfileImgUrl(hostProfileImg)
+//                            .imgUrl(dto.getImgUrl())
+//                            .participantCount(participantCount)
+//                            .build();
+//                })
+//                .filter(Objects::nonNull)
+//                .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
+//                .toList();
+//
+//        int total = all.size();
+//        int from = (int) pageable.getOffset();
+//        if (from >= total) return new PageImpl<>(List.of(), pageable, total);
+//        int to = Math.min(from + pageable.getPageSize(), total);
+//        return new PageImpl<>(all.subList(from, to), pageable, total);
+//    }
+@Override
+public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
+    // 1) room:* 스캔
+    Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+    if (keys == null || keys.isEmpty()) {
+        return Page.empty(pageable);
     }
+
+    // 2) "room:{숫자}"만 추출 (":users", ":info" 등 제거)
+    List<String> roomIds = keys.stream()
+            .map(k -> k.substring(ROOM_KEY_PREFIX.length()))  // "{id}" 또는 "{id}:users" 등
+            .filter(rest -> rest.chars().allMatch(Character::isDigit)) // 숫자만 통과
+            .toList();
+
+    if (roomIds.isEmpty()) return Page.empty(pageable);
+
+    // 3) DTO는 항상 "room:{id}" 로 GET
+    List<RoomListInfoDTO> all = roomIds.stream()
+            .map(roomIdStr -> {
+                String rKey = roomKey(roomIdStr); // "room:{id}"
+                LiveRoomDTO dto = roomTemplate.opsForValue().get(rKey);
+                if (dto == null || dto.getArtistId() == null) return null;
+
+                // 참여자 수
+                Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+                int participantCount = cnt != null ? cnt.intValue() : 0;
+
+                // host 정보
+                User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
+                String hostNickname   = host != null ? host.getNickname() : null;
+                String hostProfileImg = host != null ? host.getImgUrl()    : null;
+
+                // artist 정보
+                Artist artist = artistRepository.findById(dto.getArtistId()).orElse(null);
+                String artistNameEn = artist != null ? artist.getNameEn() : null;
+                String artistNameKr = artist != null ? artist.getNameKr() : null;
+
+                return RoomListInfoDTO.builder()
+                        .roomId(dto.getRoomId())
+                        .artistId(dto.getArtistId())
+                        .artistNameEn(artistNameEn)
+                        .artistNameKr(artistNameKr)
+                        .title(dto.getTitle())
+                        .hostId(dto.getHostId())
+                        .hostNickname(hostNickname)
+                        .hostProfileImgUrl(hostProfileImg)
+                        .imgUrl(dto.getImgUrl())
+                        .participantCount(participantCount)
+                        .build();
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
+            .toList();
+
+    int total = all.size();
+    int from = (int) pageable.getOffset();
+    if (from >= total) return new PageImpl<>(List.of(), pageable, total);
+    int to = Math.min(from + pageable.getPageSize(), total);
+    return new PageImpl<>(all.subList(from, to), pageable, total);
+}
+
 
     // ===================== 채팅 RateLimit 카운터 =====================
 
