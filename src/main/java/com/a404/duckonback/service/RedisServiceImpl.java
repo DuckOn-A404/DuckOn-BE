@@ -413,6 +413,7 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.ArtistRepository;
 import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -427,8 +428,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RedisServiceImpl implements RedisService {
 
+    private final @Qualifier("roomTemplate")
+    RedisTemplate<String, LiveRoomDTO> roomTemplate;
     // DTO 통저장용
-    private final RedisTemplate<String, LiveRoomDTO> roomTemplate;
+//    private final RedisTemplate<String, LiveRoomDTO> roomTemplate;
 
     // 집합/문자열 카운터 등 부가기능용
     private final StringRedisTemplate stringRedisTemplate;

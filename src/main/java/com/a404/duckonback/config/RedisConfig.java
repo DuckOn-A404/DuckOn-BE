@@ -36,6 +36,7 @@ import com.a404.duckonback.dto.LiveRoomDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -44,21 +45,42 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    // 방 상태 전용: room:{roomId} -> LiveRoomDTO (단일 값)
+    /** 범용 템플릿: 다른 서비스들이 쓰는 기본 RedisTemplate<String, Object> */
     @Bean
+    @Primary
+    public RedisTemplate<String, Object> redisTemplate(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper
+    ) {
+        var template = new RedisTemplate<String, Object>();
+        template.setConnectionFactory(connectionFactory);
+
+        var stringSer = new StringRedisSerializer();
+        var valueSer  = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+
+        template.setKeySerializer(stringSer);
+        template.setHashKeySerializer(stringSer);
+        template.setValueSerializer(valueSer);
+        template.setHashValueSerializer(valueSer);
+
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @Bean(name = "roomTemplate")
     public RedisTemplate<String, LiveRoomDTO> roomTemplate(
             RedisConnectionFactory connectionFactory,
-            ObjectMapper objectMapper   // 전역 objectMapper 주입
+            ObjectMapper objectMapper
     ) {
-        var valueSer = new Jackson2JsonRedisSerializer<>(objectMapper, LiveRoomDTO.class);
-
         var template = new RedisTemplate<String, LiveRoomDTO>();
         template.setConnectionFactory(connectionFactory);
 
         var stringSer = new StringRedisSerializer();
+        var valueSer  = new Jackson2JsonRedisSerializer<>(objectMapper, LiveRoomDTO.class);
+
         template.setKeySerializer(stringSer);
-        template.setValueSerializer(valueSer);
         template.setHashKeySerializer(stringSer);
+        template.setValueSerializer(valueSer);
         template.setHashValueSerializer(valueSer);
 
         template.afterPropertiesSet();
