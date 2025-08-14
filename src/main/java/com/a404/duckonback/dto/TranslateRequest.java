@@ -1,5 +1,6 @@
 package com.a404.duckonback.dto;
 
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
