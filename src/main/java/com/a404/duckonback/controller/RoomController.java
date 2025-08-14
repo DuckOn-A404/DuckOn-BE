@@ -204,10 +204,7 @@ public class RoomController {
         // 브로드캐스트
         messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
 
-        return ResponseEntity.ok(Map.of(
-                "message", "플레이리스트가 갱신되었습니다.",
-                "lastUpdated", now
-        ));
+        return ResponseEntity.ok(dto);
     }
 
 
