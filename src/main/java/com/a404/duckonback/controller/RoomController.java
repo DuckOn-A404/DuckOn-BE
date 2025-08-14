@@ -155,15 +155,18 @@ public class RoomController {
         if (room.isLocked()) {
 
             if (entryAnswer == null || entryAnswer.isBlank()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("entryQuestion", room.getEntryQuestion());
+                map.put("hostId", room.getHostId());
                 throw new CustomException(
                         "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
-                        HttpStatus.UNAUTHORIZED,
-                        Map.of("entryQuestion", room.getEntryQuestion())
+                        HttpStatus.FORBIDDEN,   // 정답 미입력: 403 (FORBIDDEN)
+                        map
                 );
             }
 
             if (!entryAnswer.equals(room.getEntryAnswer())) {
-                throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.UNAUTHORIZED);
+                throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.FORBIDDEN);  // 정답 오답: 403 (FORBIDDEN)
             }
         }
 
