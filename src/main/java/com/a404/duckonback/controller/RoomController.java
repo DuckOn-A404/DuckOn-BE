@@ -156,7 +156,7 @@ public class RoomController {
             throw new CustomException("호스트만 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
         }
 
-        if(req.getPlaylist().isEmpty() || req.getPlaylist() == null){
+        if (req.getPlaylist() == null || req.getPlaylist().isEmpty()) {
             throw new CustomException("플레이리스트는 비어있을 수 없습니다.", HttpStatus.BAD_REQUEST);
         }
 
