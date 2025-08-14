@@ -40,7 +40,7 @@ public class RedisServiceImpl implements RedisService {
         map.put("currentTime", room.getCurrentTime());
         map.put("playing", room.isPlaying());
         map.put("lastUpdated", room.getLastUpdated());
-        map.put("isLocked", room.isLocked());
+        map.put("locked", room.isLocked());
         map.put("entryQuestion", room.getEntryQuestion());
         map.put("entryAnswer", room.getEntryAnswer());
 
@@ -101,7 +101,7 @@ public class RedisServiceImpl implements RedisService {
                 .currentTime((double) map.get("currentTime"))
                 .playing((boolean) map.get("playing"))
                 .lastUpdated((long) map.get("lastUpdated"))
-                .isLocked(Boolean.parseBoolean(map.getOrDefault("isLocked", "false").toString()))
+                .locked(Boolean.parseBoolean(map.getOrDefault("locked", "false").toString()))
                 .entryQuestion((String) map.getOrDefault("entryQuestion", null))
                 .entryAnswer((String) map.getOrDefault("entryAnswer", null))
                 .build();
@@ -340,6 +340,63 @@ public class RedisServiceImpl implements RedisService {
 
         return count != null && count <= 10;
     }
+
+    /**
+     * 특정 호스트가 현재 활성화된 방을 조회합니다.
+     * @param hostUserId 호스트의 사용자 ID
+     * @return 활성화된 방 정보, 없으면 null
+     */
+    // 키 스캔 방식 — 방 수가 많아져도 수백~수천이면 충분
+    @Override
+    public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
+        Set<String> keys = redisTemplate.keys("room:*:info");
+        if (keys == null || keys.isEmpty()) return null;
+
+        for (String key : keys) {
+            Map<Object, Object> m = redisTemplate.opsForHash().entries(key);
+            if (m == null || m.isEmpty()) continue;
+
+            String host = (String) m.get("hostId");
+            if (!Objects.equals(hostUserId, host)) continue;
+
+            String[] parts = key.split(":"); // room:{roomId}:info
+            if (parts.length < 3) continue;
+            String roomIdStr = parts[1];
+
+            Long cnt = redisTemplate.opsForSet().size("room:" + roomIdStr + ":users");
+            int participantCount = cnt != null ? cnt.intValue() : 0;
+
+            Long artistId = null;
+            Object artistIdObj = m.get("artistId");
+            if (artistIdObj != null) {
+                try { artistId = Long.valueOf(artistIdObj.toString()); } catch (NumberFormatException ignore) {}
+            }
+
+            // host/artist 보강 (있으면)
+            User hostUser = userRepository.findByUserIdAndDeletedFalse(hostUserId);
+            String hostNickname   = hostUser != null ? hostUser.getNickname() : null;
+            String hostProfileImg = hostUser != null ? hostUser.getImgUrl()    : null;
+
+            Artist artist = (artistId != null) ? artistRepository.findById(artistId).orElse(null) : null;
+            String artistNameEn = artist != null ? artist.getNameEn() : null;
+            String artistNameKr = artist != null ? artist.getNameKr() : null;
+
+            return RoomListInfoDTO.builder()
+                    .roomId(Long.valueOf(roomIdStr))
+                    .artistId(artistId)
+                    .artistNameEn(artistNameEn)
+                    .artistNameKr(artistNameKr)
+                    .title((String) m.get("title"))
+                    .hostId(hostUserId)
+                    .hostNickname(hostNickname)
+                    .hostProfileImgUrl(hostProfileImg)
+                    .imgUrl((String) m.get("imgUrl"))
+                    .participantCount(participantCount)
+                    .build();
+        }
+        return null;
+    }
+
 
 
 }

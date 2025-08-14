@@ -7,10 +7,10 @@ import java.util.Optional;
 
 public interface RoomService {
     Room createRoom(Room room);
-    Optional<Room> getRoomById(Integer roomId);
+    Optional<Room> getRoomById(Long roomId);
     List<Room> getAllRooms();
-    Room updateRoom(Integer roomId, Room updatedRoom);
-    void deleteRoom(Integer roomId);
+    Room updateRoom(Long roomId, Room updatedRoom);
+    void deleteRoom(Long roomId);
     List<Room> getRoomsByCreator(Long id);
-    List<Room> getRoomsByArtist(Integer artistId);
+    List<Room> getRoomsByArtist(Long artistId);
 }
