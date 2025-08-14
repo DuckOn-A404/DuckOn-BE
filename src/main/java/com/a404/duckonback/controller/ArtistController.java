@@ -46,21 +46,23 @@ public class ArtistController {
         return ResponseEntity.ok(dto);
     }
 
-    // 전체 아티스트 페이징 조회
-    @Operation(summary = "아티스트 목록 조회",
-            description = "전체 아티스트 목록을 페이지 단위로 조회합니다. 페이지 번호와 크기를 지정할 수 있습니다.")
+    // 전체 아티스트 목록/검색/정렬 통합
+    @Operation(summary = "아티스트 목록/검색/정렬 조회",
+            description = "페이지네이션 + 정렬(followers/name/debut) + 검색(keyword)을 지원합니다.")
     @GetMapping
     public ResponseEntity<?> getArtistList(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(defaultValue = "followers") String sort,
+            @RequestParam(defaultValue = "desc") String order,
+            @RequestParam(required = false) String keyword
+    ) {
         if (page < 1 || size < 1) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
+            return ResponseEntity.badRequest().body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
         }
 
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<ArtistDTO> dtoPage = artistService.getArtists(pageable);
+        Page<ArtistDTO> dtoPage = artistService.getArtists(pageable, sort, order, keyword);
 
         return ResponseEntity.ok(Map.of(
                 "artistList", dtoPage.getContent(),
@@ -74,7 +76,7 @@ public class ArtistController {
     // 키워드 검색
     @Operation(summary = "아티스트 검색",
             description = "아티스트 이름이나 설명을 키워드로 검색합니다. 검색 결과는 페이지 단위로 반환됩니다.")
-    @GetMapping(params = "keyword")
+    @GetMapping(params = {"keyword", "!page", "!size", "!sort", "!order"})
     public ResponseEntity<?> searchArtists(@RequestParam String keyword) {
         var list = artistService.searchArtists(keyword);
         return ResponseEntity.ok(Map.of("artistList", list));
