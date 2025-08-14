@@ -32,11 +32,8 @@
 
 package com.a404.duckonback.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.a404.duckonback.dto.LiveRoomDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -47,30 +44,22 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
+    // 방 상태 전용: room:{roomId} -> LiveRoomDTO (단일 값)
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, LiveRoomDTO> roomTemplate(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper   // 전역 objectMapper 주입
+    ) {
+        var valueSer = new Jackson2JsonRedisSerializer<>(objectMapper, LiveRoomDTO.class);
 
-        // 1) ObjectMapper 생성 (필요 모듈/옵션 추가)
-        ObjectMapper om = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .build();
-
-        // 2) setObjectMapper(...) 대신 생성자 사용 (권장 방식)
-        Jackson2JsonRedisSerializer<Object> jsonSer =
-                new Jackson2JsonRedisSerializer<>(om, Object.class);
-
-        // 3) 템플릿 설정
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        var template = new RedisTemplate<String, LiveRoomDTO>();
         template.setConnectionFactory(connectionFactory);
 
-        StringRedisSerializer stringSer = new StringRedisSerializer();
+        var stringSer = new StringRedisSerializer();
         template.setKeySerializer(stringSer);
+        template.setValueSerializer(valueSer);
         template.setHashKeySerializer(stringSer);
-
-        template.setValueSerializer(jsonSer);
-        template.setHashValueSerializer(jsonSer);
+        template.setHashValueSerializer(valueSer);
 
         template.afterPropertiesSet();
         return template;
