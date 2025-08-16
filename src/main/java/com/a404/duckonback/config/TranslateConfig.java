@@ -20,6 +20,7 @@ public class TranslateConfig {
         return RestClient.builder()
                 .baseUrl(props.getTranslateBaseUrl())
                 .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Accept", "application/json")   // octet-stream 경고 줄이기 위함
                 .requestFactory(factory)
                 .build();
     }
