@@ -4,12 +4,12 @@ import {
   MoreVertical,
   UserX,
   LockKeyhole,
-  Languages,
+  // Languages,
 } from "lucide-react";
 import { Popover, Transition } from "@headlessui/react";
 import { useUserStore } from "../../store/useUserStore";
 import type { ChatMessage } from "../../types/chat";
-import { translateMessage } from "../../api/translateService";
+// import { translateMessage } from "../../api/translateService";
 import { blockUser } from "../../api/userService";
 
 // --- 부모로부터 받아야 할 Props 타입 정의 ---
@@ -19,19 +19,19 @@ type ChatPanelProps = {
   onBlockUser: (userId: string) => void;
 };
 
-// --- 번역 상태를 관리하기 위한 타입 ---
-export type TranslateRequest = {
-  message: string;
-  language: string;
-};
+// // --- 번역 상태를 관리하기 위한 타입 ---
+// export type TranslateRequest = {
+//   message: string;
+//   language: string;
+// };
 
-// 번역 타입
-type TranslationState = {
-  loading: boolean;
-  text?: string;
-  error?: string;
-  showingTranslated?: boolean;
-};
+// // 번역 타입
+// type TranslationState = {
+//   loading: boolean;
+//   text?: string;
+//   error?: string;
+//   showingTranslated?: boolean;
+// };
 
 // --- 차단 확인 모달 컴포넌트 ---
 const ConfirmModal = ({
@@ -83,11 +83,11 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const sentByPointerRef = useRef(false);
 
-  // 번역된 메시지들을 관리하는 상태
-  // { 메시지키: { loading: false, text: "번역된 내용" } }
-  const [translations, setTranslations] = useState<
-    Record<string, TranslationState>
-  >({});
+  // // 번역된 메시지들을 관리하는 상태
+  // // { 메시지키: { loading: false, text: "번역된 내용" } }
+  // const [translations, setTranslations] = useState<
+  //   Record<string, TranslationState>
+  // >({});
 
   // 차단 확인 모달 상태
   const [blockConfirm, setBlockConfirm] = useState<{
@@ -112,56 +112,56 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
     });
   };
 
-  // 번역 API 호출 함수 (수정됨)
-  const handleTranslate = async (messageKey: string, text: string) => {
-    const current = translations[messageKey];
+  // // 번역 API 호출 함수 (수정됨)
+  // const handleTranslate = async (messageKey: string, text: string) => {
+  //   const current = translations[messageKey];
 
-    // 번역문이 이미 있다면 API 재호출 없이 토글만
-    if (current?.text && !current.loading) {
-      setTranslations((prev) => ({
-        ...prev,
-        [messageKey]: {
-          ...current,
-          showingTranslated: !current.showingTranslated,
-        },
-      }));
-      return;
-    }
+  //   // 번역문이 이미 있다면 API 재호출 없이 토글만
+  //   if (current?.text && !current.loading) {
+  //     setTranslations((prev) => ({
+  //       ...prev,
+  //       [messageKey]: {
+  //         ...current,
+  //         showingTranslated: !current.showingTranslated,
+  //       },
+  //     }));
+  //     return;
+  //   }
 
-    // 이미 로딩 중이면 무시
-    if (current?.loading) return;
+  //   // 이미 로딩 중이면 무시
+  //   if (current?.loading) return;
 
-    // 최초 번역 호출
-    setTranslations((prev) => ({
-      ...prev,
-      [messageKey]: { loading: true, showingTranslated: false },
-    }));
+  //   // 최초 번역 호출
+  //   setTranslations((prev) => ({
+  //     ...prev,
+  //     [messageKey]: { loading: true, showingTranslated: false },
+  //   }));
 
-    try {
-      const targetLang = (myUser?.language || "ko").toLowerCase();
-      console.log("[translate] target:", targetLang, "msg:", text);
-      const translated = await translateMessage(text, targetLang);
+  //   try {
+  //     const targetLang = (myUser?.language || "ko").toLowerCase();
+  //     console.log("[translate] target:", targetLang, "msg:", text);
+  //     const translated = await translateMessage(text, targetLang);
 
-      setTranslations((prev) => ({
-        ...prev,
-        [messageKey]: {
-          loading: false,
-          text: translated,
-          showingTranslated: true, // 첫 클릭 후 번역문 보여주기
-        },
-      }));
-    } catch (err) {
-      console.error("Translation error:", err);
-      setTranslations((prev) => ({
-        ...prev,
-        [messageKey]: {
-          loading: false,
-          error: "번역 실패",
-          showingTranslated: false,
-        },
-      }));
-    }
-  };
+  //     setTranslations((prev) => ({
+  //       ...prev,
+  //       [messageKey]: {
+  //         loading: false,
+  //         text: translated,
+  //         showingTranslated: true, // 첫 클릭 후 번역문 보여주기
+  //       },
+  //     }));
+  //   } catch (err) {
+  //     console.error("Translation error:", err);
+  //     setTranslations((prev) => ({
+  //       ...prev,
+  //       [messageKey]: {
+  //         loading: false,
+  //         error: "번역 실패",
+  //         showingTranslated: false,
+  //       },
+  //     }));
+  //   }
+  // };
 
   // 차단 확인 모달 열기
   const openBlockConfirm = (user: { id: string; nickname: string }) => {
@@ -210,20 +210,20 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
 
             const uniqueKey = `${msg.senderId}-${msg.sentAt || index}`;
             const isMyMessage = msg.senderId === myUser?.userId;
-            const t = translations[uniqueKey];
+            // const t = translations[uniqueKey];
 
-            const contentToShow =
-              t?.showingTranslated && t?.text ? t.text : msg.content;
+            // const contentToShow =
+            //   t?.showingTranslated && t?.text ? t.text : msg.content;
 
-            // const contentToShow = msg.content;
+            const contentToShow = msg.content;
 
-            const translateBtnLabel = t?.loading
-              ? "번역 중..."
-              : t?.text
-              ? t.showingTranslated
-                ? "되돌리기"
-                : "번역하기"
-              : "번역하기";
+            // const translateBtnLabel = t?.loading
+            //   ? "번역 중..."
+            //   : t?.text
+            //   ? t.showingTranslated
+            //     ? "되돌리기"
+            //     : "번역하기"
+            //   : "번역하기";
 
             return (
               <div
@@ -247,7 +247,7 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
                     } break-all`}
                   >
                     {/* 말풍선 내용 */}
-                    {t?.loading ? (
+                    {/* {t?.loading ? (
                       <span className="text-gray-300 italic">번역 중...</span>
                     ) : t?.error ? (
                       <span className="text-red-400">{t.error}</span>
@@ -255,11 +255,11 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
                       <span className={!isMyMessage ? "pr-5" : ""}>
                         {contentToShow}
                       </span>
-                    )}
+                    )} */}
 
-                    {/* <span className={!isMyMessage ? "pr-5" : ""}>
+                    <span className={!isMyMessage ? "pr-5" : ""}>
                       {contentToShow}
-                    </span> */}
+                    </span>
 
                     {/* 다른 사람 메시지에만 점 3개 아이콘 표시 (위치 변경됨) */}
                     {!isMyMessage && (
@@ -277,7 +277,7 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
                         >
                           <Popover.Panel className="absolute z-10 top-0 left-full ml-2 w-40 bg-gray-600 border border-gray-500 rounded-lg shadow-lg">
                             <div className="flex flex-col p-1">
-                              <button
+                              {/* <button
                                 onClick={() =>
                                   handleTranslate(uniqueKey, msg.content)
                                 }
@@ -287,7 +287,7 @@ const ChatPanel = ({ messages, sendMessage, onBlockUser }: ChatPanelProps) => {
                                 <span className="whitespace-nowrap">
                                   {translateBtnLabel}
                                 </span>
-                              </button>
+                              </button> */}
                               <button
                                 onClick={() =>
                                   openBlockConfirm({
