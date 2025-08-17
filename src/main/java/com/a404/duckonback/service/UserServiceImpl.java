@@ -569,10 +569,13 @@ import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
 import com.a404.duckonback.util.Anonymizer;
 import com.a404.duckonback.util.JWTUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions; // >>> CHANGED
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -615,6 +618,7 @@ public class UserServiceImpl implements UserService {
 
     // >>> CHANGED: room 키 프리픽스(현재 Redis 스키마에 맞춤)
     private static final String ROOM_KEY_PREFIX = "room:";
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public User findByEmail(String email) {
@@ -985,20 +989,38 @@ public class UserServiceImpl implements UserService {
             Set<String> roomIds = findRoomIdsByArtist(artistId); // >>> CHANGED
 
             for (String roomId : roomIds) {
-                String usersKey = roomUsersKey(roomId); // >>> CHANGED: 키 헬퍼 사용
+                String usersKey = roomUsersKey(roomId);
 
-                List<Object> sampledRaw = redisTemplate.opsForSet().randomMembers(usersKey, REDIS_SAMPLE_PER_ROOM);
-                if (sampledRaw == null) continue;
+                // [수정] 기본 JSON 번역기(Serializer)를 우회하여 원본 데이터 직접 가져오기
+                List<String> sampledUsers = redisTemplate.execute((RedisCallback<List<String>>) connection -> {
+                    RedisSerializer<String> keySerializer = (RedisSerializer<String>) redisTemplate.getKeySerializer();
+                    byte[] keyBytes = keySerializer.serialize(usersKey);
+                    // SRANDMEMBER: Set에서 무작위 멤버를 가져오는 Redis 원본 명령어
+                    List<byte[]> resultBytes = connection.setCommands().sRandMember(keyBytes, REDIS_SAMPLE_PER_ROOM);
+                    List<String> results = new ArrayList<>();
+                    if (resultBytes != null) {
+                        for (byte[] bytes : resultBytes) {
+                            if (bytes != null) results.add(new String(bytes, StandardCharsets.UTF_8));
+                        }
+                    }
+                    return results;
+                });
 
-                // randomMembers 중복 제거 + 문자열화
-                List<String> sampled = sampledRaw.stream()
-                        .filter(Objects::nonNull)
-                        .map(String::valueOf)
-                        .distinct()
-                        .toList();
+                if (sampledUsers == null) continue;
 
-                for (String uid : sampled) {
-                    if (myUserId == null || !uid.equals(myUserId)) { // 게스트 허용, 로그인 시 자기 제외
+                for (String uidStr : sampledUsers) {
+                    String uid = null;
+                    // 이제 안전하게 가져온 문자열이 JSON인지 일반 텍스트인지 우리 코드에서 직접 판별
+                    if (uidStr.trim().startsWith("{")) {
+                        try {
+                            Map<String, Object> m = objectMapper.readValue(uidStr, Map.class);
+                            uid = (String) m.get("userId");
+                        } catch (Exception ignore) {}
+                    } else {
+                        uid = uidStr; // 옛날 데이터 형식
+                    }
+
+                    if (uid != null && (myUserId == null || !uid.equals(myUserId))) {
                         add(scores, uid, SCORE_ROOM_USER, includeReasons ? "같은 아티스트 방 참여자" : null);
                     }
                 }
@@ -1136,44 +1158,53 @@ public class UserServiceImpl implements UserService {
         var cf = redisTemplate.getConnectionFactory();
         if (cf == null) return roomIds;
 
-        var conn = cf.getConnection();
-        try (var cursor = conn.scan(
-                ScanOptions.scanOptions()
-                        .match(ROOM_KEY_PREFIX + "*")
-                        .count(1000)
-                        .build())) {
+        try (var conn = cf.getConnection();
+            var cursor = conn.scan(ScanOptions.scanOptions().match(ROOM_KEY_PREFIX + "*").count(1000).build())) {
 
             while (cursor.hasNext()) {
                 String key = new String(cursor.next(), StandardCharsets.UTF_8);
-
-                // room:{id}:users 같은 키는 제외 (정확히 room:{id} 형태만 대상)
                 if (key.contains(":users")) continue;
 
-                Object val = redisTemplate.opsForValue().get(key);
-                Long aid = extractArtistId(val);
-                if (aid == null || !artistId.equals(aid)) continue;
+                // opsForValue()로 값을 가져옵니다.
+                Object value = redisTemplate.opsForValue().get(key);
 
-                String roomId = key.substring(ROOM_KEY_PREFIX.length());
-                roomIds.add(roomId);
+                // 헬퍼를 통해 artistId를 추출합니다.
+                Long aid = extractArtistIdFromValue(value);
+
+                if (aid != null && artistId.equals(aid)) {
+                    String roomId = key.substring(ROOM_KEY_PREFIX.length());
+                    roomIds.add(roomId);
+                }
             }
-        } catch (Exception ignore) { /* 로그 원하면 추가 */ }
+        } catch (Exception ignore) { /* 무시 */ }
 
         return roomIds;
     }
 
-    // >>> CHANGED: LiveRoomDTO 또는 Map 역직렬화 모두 지원해서 artistId 뽑기
+    /**
+     * [최적화] opsForValue()로 가져온 값에서 artistId를 추출하는 헬퍼입니다.
+     * 다양한 역직렬화 가능성(DTO, Map, String)을 모두 처리합니다.
+     */
     @SuppressWarnings("unchecked")
-    private Long extractArtistId(Object val) {
+    private Long extractArtistIdFromValue(Object val) {
         if (val == null) return null;
-        if (val instanceof com.a404.duckonback.dto.LiveRoomDTO dto) {
-            return dto.getArtistId();
-        }
-        if (val instanceof Map<?, ?> m) {
-            Object v = m.get("artistId");
-            if (v instanceof Number n) return n.longValue();
-            if (v instanceof String s) {
-                try { return Long.parseLong(s); } catch (NumberFormatException ignore) {}
+
+        try {
+            if (val instanceof LiveRoomDTO dto) {
+                return dto.getArtistId();
             }
+            if (val instanceof Map<?, ?> m) {
+                Object v = m.get("artistId");
+                if (v instanceof Number n) return n.longValue();
+                if (v instanceof String s) return Long.parseLong(s);
+            }
+            if (val instanceof String s && s.trim().startsWith("{")) {
+                Map<String, Object> m = objectMapper.readValue(s, Map.class);
+                Object v = m.get("artistId");
+                if (v instanceof Number n) return n.longValue();
+            }
+        } catch (Exception ignore) {
+            return null;
         }
         return null;
     }
