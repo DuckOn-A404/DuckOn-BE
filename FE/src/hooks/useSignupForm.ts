@@ -123,7 +123,7 @@ export const useSignupForm = () => {
       return;
     }
 
-    // ✅ 제출 직전 최종 검증
+    // 제출 직전 최종 검증
     const pwdErr = validatePassword(formData.password);
     const confirmErr = validatePasswordConfirm(
       formData.password,

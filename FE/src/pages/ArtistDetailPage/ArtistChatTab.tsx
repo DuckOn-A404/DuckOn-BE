@@ -97,7 +97,7 @@ const ArtistChatTab = ({ messages, scrollContainerRef }: ChatTabProps) => {
                       <Popover.Button className="p-1 rounded-full text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus:opacity-100 hover:bg-black/10">
                         <MoreVertical size={16} />
                       </Popover.Button>
-                      <Popover.Panel className="absolute z-10 bottom-full right-0 mb-1 w-32 bg-white border rounded-lg shadow-lg">
+                      <Popover.Panel className="absolute z-10 top-0 left-full ml-1 w-32 bg-white border rounded-lg shadow-lg">
                         <div className="p-1">
                           <button
                             onClick={() =>

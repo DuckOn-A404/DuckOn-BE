@@ -1,4 +1,3 @@
-// src/layouts/MainLayout.tsx
 import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
 import {Outlet, useNavigate} from "react-router-dom";

@@ -1,14 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { useArtistFollowStore } from "../../store/useArtistFollowStore";
+import { createSlug } from "../../utils/slugUtils";
 
 const LeftSidebar = () => {
   const navigate = useNavigate();
   const { followedArtists } = useArtistFollowStore();
 
   const handleArtistClick = (artistId: number, nameEn: string) => {
-    navigate(`/artist/${nameEn}`, {
-      state: { artistId: artistId },
-    });
+    const slug = createSlug(nameEn);
+
+    navigate(`/artist/${slug}`, { state: { artistId } });
   };
 
   return (

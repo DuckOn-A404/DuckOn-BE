@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { formatCompactNumber } from "../../../utils/formatters";
 import { type room } from "../../../types/room";
-// import { enterRoom } from "../../../api/roomService";
 
 const PLACEHOLDER_URL =
   "https://placehold.co/1280x720?text=No+Image&font=roboto";
@@ -25,35 +24,6 @@ const VideoCard = (room: room) => {
       navigate(`/live/${room.roomId}`);
     }
   };
-
-  // const handleCardClick = async () => {
-  //   if (!room.roomId) return;
-
-  //   try {
-  //     // 1차 시도: 무답변으로 입장
-  //     await enterRoom(String(room.roomId), "");
-  //     navigate(`/live/${room.roomId}`);
-  //   } catch (err: any) {
-  //     // 잠금 방인 경우 서버에서 질문을 내려줌
-  //     const q =
-  //       err?.response?.data?.extra?.entryQuestion ||
-  //       err?.response?.data?.entryQuestion ||
-  //       err?.response?.data?.message;
-
-  //     if (q) {
-  //       const answer = window.prompt(q);
-  //       if (answer === null) return; // 사용자 취소
-  //       try {
-  //         await enterRoom(String(room.roomId), answer);
-  //         navigate(`/live/${room.roomId}`);
-  //       } catch {
-  //         alert("입장에 실패했습니다. 비밀번호/정답을 다시 확인해주세요.");
-  //       }
-  //     } else {
-  //       alert("입장에 실패했습니다.");
-  //     }
-  //   }
-  // };
 
   return (
     <div
@@ -83,7 +53,6 @@ const VideoCard = (room: room) => {
         />
         {/* 방 제목 및 방장 닉네임 */}
         <div className="flex-1 min-w-0">
-          {/* min-w-0은 truncate가 잘 동작하게 도와줍니다. */}
           <p
             className="w-full text-gray-800 font-bold truncate"
             title={room.title}

@@ -1,4 +1,3 @@
-// src/pages/RoomListPage.tsx
 import {useState, useEffect, useRef} from "react";
 import VideoCard from "../components/domain/video/VideoCard";
 import VideoCardSkeleton from "../components/domain/video/VideoCardSkeleton";
@@ -15,7 +14,6 @@ const RoomListPage = () => {
     const [totalCount, setTotalCount] = useState(0);
 
     const sentinelRef = useRef<HTMLDivElement | null>(null);
-    // const navigate = useNavigate();
 
     const {data, isLoading, error} = useTrendingRooms(page, PAGE_SIZE);
 
@@ -49,10 +47,6 @@ const RoomListPage = () => {
         };
     }, [hasMore, isLoading]);
 
-    // const handleCardClick = (artistId: number, nameEn: string) => {
-    //     navigate(`/artist/${nameEn}`, {state: {artistId}});
-    // };
-
     return (
         <div className="px-4 md:px-10 py-8">
             {/* 제목 */}
@@ -84,7 +78,6 @@ const RoomListPage = () => {
                                 imgUrl={r.imgUrl}
                                 participantCount={r.participantCount}
                                 hostProfileImgUrl={r.hostProfileImgUrl ?? ""}
-                            // onClick={() => handleCardClick(r.artistId, r.artistNameEn)}
                             />
                         ))
                     ) : (

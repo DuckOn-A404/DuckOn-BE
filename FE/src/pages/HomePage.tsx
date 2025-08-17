@@ -47,7 +47,6 @@ const HomePage = () => {
     fetchRandomArtists();
   }, []);
 
-  // ---------------- Guide Modal state ----------------
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideIndex, setGuideIndex] = useState(0);
 
@@ -210,12 +209,6 @@ const HomePage = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl md:text-3xl font-bold">빠르게 시작하기</h2>
-            {/* <button
-            onClick={() => openGuide(0)}
-            className="text-purple-600 hover:text-purple-800 font-semibold"
-          >
-            전체 가이드 보기 →
-          </button> */}
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">

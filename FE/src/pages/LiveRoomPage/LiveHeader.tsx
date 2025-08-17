@@ -83,7 +83,6 @@ const LiveHeader = ({
               className="text-xl font-bold tracking-tight bg-transparent text-white border border-purple-500/60 rounded-lg px-3 py-1 outline-none focus:border-purple-400"
               placeholder="방 제목을 입력하세요"
               disabled={saving}
-              // onBlur={doSave} // 원하면 블러 저장
             />
           ) : (
             <h1 className="text-xl font-bold tracking-tight">

@@ -1,4 +1,3 @@
-// utils/fireAndForget.ts
 import { API_BASE, getAccessToken, buildApiUrl } from "../api/axiosInstance";
 
 /**

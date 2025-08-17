@@ -60,7 +60,6 @@ export const useArtistList = (params: ListParams) => {
   useEffect(() => {
     reset();
     fetchPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.q, params.sort, params.order, params.size]);
 
   return { artists, totalCount, fetchMore, loading, hasMore, reset };

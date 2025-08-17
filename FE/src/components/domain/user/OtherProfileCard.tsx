@@ -3,6 +3,7 @@ import type { OtherUser } from "../../../types/otherUser";
 type OtherProfileCardProps = {
   user: OtherUser;
   onToggleFollow: () => void;
+  // 타인 페이지에서는 아래 두 핸들러를 쓰지 않습니다(비인터랙티브).
   onFollowerClick?: () => void;
   onFollowingClick?: () => void;
   isFollowLoading?: boolean;
@@ -11,13 +12,12 @@ type OtherProfileCardProps = {
 const OtherProfileCard = ({
   user,
   onToggleFollow,
-  onFollowerClick,
-  onFollowingClick,
 }: OtherProfileCardProps) => {
   return (
-    <div className="bg-white rounded-xl px-8 py-6 mb-10 w-full max-w-[880px] mx-auto shadow-lg border border-gray-200">
-      <div className="flex justify-between items-center mb-6 pb-4 border-b">
-        <h1 className="text-xl font-bold text-gray-800">프로필 정보</h1>
+    <div className="bg-white rounded-xl px-4 sm:px-8 py-6 mb-10 w-full max-w-[880px] mx-auto shadow-sm">
+      {/* 헤더 */}
+      <div className="flex justify-between items-center mb-6 gap-3">
+        <h1 className="text-lg font-bold text-gray-800">프로필 정보</h1>
         <button
           onClick={onToggleFollow}
           className={`w-20 flex-shrink-0 px-2 py-1.5 rounded-full text-sm font-semibold transition-colors ${
@@ -30,49 +30,41 @@ const OtherProfileCard = ({
         </button>
       </div>
 
-      <div className="flex gap-8 items-center">
-        <div className="flex flex-col items-center w-32 shrink-0">
+      {/* 본문 */}
+      <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
+        {/* 왼쪽: 프로필 + 팔/팔 (비인터랙티브) */}
+        <div className="flex flex-col items-center w-full sm:w-32 shrink-0">
           <img
             src={user.imgUrl || "/default_image.png"}
             alt="프로필 이미지"
-            className="w-28 h-28 object-cover rounded-full border-4 border-white shadow-md"
+            className="w-24 h-24 object-cover rounded-full"
           />
-          <div className="mt-4 flex gap-6 text-center">
-            <div>
-              <div className="text-xl font-bold text-gray-800">
-                {user.followerCount?.toLocaleString() ?? "0"}
-              </div>
-              <button
-                onClick={onFollowerClick}
-                disabled={!onFollowerClick}
-                className="text-sm text-gray-500 hover:text-purple-600 hover:underline disabled:no-underline disabled:text-gray-400 disabled:cursor-default focus:outline-none"
-              >
-                팔로워
-              </button>
+
+          <div className="mt-4 flex gap-10 sm:gap-6 text-center select-none">
+            <div className="text-center">
+              <div className="text-lg font-bold">{user.followerCount?.toLocaleString() ?? "0"}</div>
+              <div className="text-xs text-gray-500">팔로워</div>
             </div>
-            <div>
-              <div className="text-xl font-bold text-gray-800">
-                {user.followingCount?.toLocaleString() ?? "0"}
-              </div>
-              <button
-                onClick={onFollowingClick}
-                disabled={!onFollowingClick}
-                className="text-sm text-gray-500 hover:text-purple-600 hover:underline disabled:no-underline disabled:text-gray-400 disabled:cursor-default focus:outline-none"
-              >
-                팔로잉
-              </button>
+            <div className="text-center">
+              <div className="text-lg font-bold">{user.followingCount?.toLocaleString() ?? "0"}</div>
+              <div className="text-xs text-gray-500">팔로잉</div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 text-base grid gap-y-5 pt-2 pl-5">
-          <div className="flex items-center">
-            <div className="w-24 text-gray-500 font-semibold">아이디</div>
-            <div className="text-gray-800">{user.userId}</div>
+        {/* 오른쪽: 라벨 옆 값(항상 가로 배치) */}
+        <div className="min-w-0 flex-1 text-sm space-y-2">
+          <div className="flex items-start gap-2">
+            <div className="shrink-0 w-20 sm:w-24 text-gray-500 font-medium">아이디</div>
+            <div className="min-w-0 flex-1 break-all sm:whitespace-nowrap sm:truncate">
+              {user.userId}
+            </div>
           </div>
-          <div className="flex items-center">
-            <div className="w-24 text-gray-500 font-semibold">닉네임</div>
-            <div className="text-gray-800 font-semibold">{user.nickname}</div>
+          <div className="flex items-start gap-2">
+            <div className="shrink-0 w-20 sm:w-24 text-gray-500 font-medium">닉네임</div>
+            <div className="min-w-0 flex-1 break-all sm:whitespace-nowrap sm:truncate font-semibold">
+              {user.nickname}
+            </div>
           </div>
         </div>
       </div>

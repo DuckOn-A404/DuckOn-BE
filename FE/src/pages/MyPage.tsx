@@ -10,7 +10,6 @@ import EditProfileCard from "../components/domain/user/EditProfileCard";
 import FollowerList from "../components/common/modal/FollowerList";
 import FollowingList from "../components/common/modal/FollowingList";
 import MyProfileCard from "../components/domain/user/MyProfileCard";
-// import type { RoomHistory } from "../types/room";
 import MyCreatedRoomsPanel from "../components/domain/room/MyCreatedRoomsPanel";
 
 const isEmptyImg = (v: unknown): boolean =>
@@ -90,18 +89,6 @@ const MyPage = () => {
 
     loadUser();
   }, []);
-
-  // useEffect(() => {
-  //   if (openList === null) {
-  //     const reloadProfile = async () => {
-  //       try {
-  //         const updated = await fetchMyProfile();
-  //         setMyUser(updated);
-  //       } catch {}
-  //     };
-  //     reloadProfile();
-  //   }
-  // }, [openList]);
 
   useEffect(() => {
     if (openList === null) {

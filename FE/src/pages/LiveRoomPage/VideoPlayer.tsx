@@ -39,12 +39,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const playerRef = useRef<YT.Player | null>(null);
 
+  // 이 탭(session)에서 이미 '사운드 켜기'를 눌렀는지 여부 (탭 닫힐 때까지 유지)
+  const initialUnlocked = (() => {
+    try {
+      return sessionStorage.getItem("audioUnlocked") === "1";
+    } catch {
+      return false;
+    }
+  })();
+  const audioUnlockedRef = useRef<boolean>(initialUnlocked);
+
   // 시청 관련 상태
   const [canWatch, setCanWatch] = useState(false); // 참가자 재생 허용(재생 중) 여부
   const justSynced = useRef(false); // sync 직후 onStateChange 가드
 
-  // 오디오 상태 (초기 무조건 음소거)
-  const [muted, setMuted] = useState(true); // 참가자 음소거 상태
+  // 언락되어 있으면 시작부터 비뮤트
+  const [muted, setMuted] = useState<boolean>(!audioUnlockedRef.current);
   const [showUnmuteHint, setShowUnmuteHint] = useState(false); // "사운드 켜기" 안내 버튼
 
   // 소프트 보정 타이머
@@ -59,10 +69,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const p = playerRef.current;
     if (!p) return;
     try {
-      if (
-        typeof p.getPlaybackRate === "function" &&
-        p.getPlaybackRate() !== 1
-      ) {
+      if (typeof p.getPlaybackRate === "function" && p.getPlaybackRate() !== 1) {
         p.setPlaybackRate(1);
       }
     } catch {}
@@ -71,11 +78,47 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // ENDED 중복 호출 방지
   const endFiredRef = useRef(false);
 
-  const onPlayerReady = (event: YT.PlayerEvent) => {
-    playerRef.current = event.target;
-    event.target.pauseVideo();
-    event.target.setVolume?.(100);
-    setMuted(true);
+  const onPlayerReady = async (event: YT.PlayerEvent) => {
+    const p = event.target;
+    playerRef.current = p;
+
+    try {
+      if (isHost) {
+        // 방장: 소리 ON 자동재생 시도, 거부 시 아래 catch로 폴백
+        p.unMute?.();
+        p.setVolume?.(100);
+        setMuted(false);
+        await p.playVideo();
+        setCanWatch(true);
+      } else {
+        // 참가자
+        if (audioUnlockedRef.current) {
+          // 이미 언락된 참가자는 다시는 mute로 돌리지 않음
+          p.unMute?.();
+          p.setVolume?.(100);
+          setMuted(false);
+          await p.playVideo();
+          setCanWatch(true);
+        } else {
+          // 아직 언락 전이면 정책상 mute 시작
+          p.mute?.();
+          p.setVolume?.(100);
+          setMuted(true);
+          p.pauseVideo();
+        }
+      }
+    } catch {
+      // 자동재생 거부 → mute 재생으로 폴백
+      try {
+        p.mute?.();
+        setMuted(!audioUnlockedRef.current);
+        await p.playVideo();
+        setCanWatch(true);
+      } catch {
+        p.pauseVideo();
+        setCanWatch(false);
+      }
+    }
   };
 
   const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
@@ -158,7 +201,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 ? (parsed.currentTime ?? 0) + (now - parsed.lastUpdated) / 1000
                 : parsed.currentTime ?? 0;
 
-            // 재생 안내 버튼
+            // 재생 안내 버튼 (언락 전일 때만 노출)
             if (parsed.playing && muted) setShowUnmuteHint(true);
 
             const localTime = player.getCurrentTime();
@@ -266,10 +309,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       p.setVolume?.(100);
       setMuted(false);
       setShowUnmuteHint(false);
+      // 이 탭에서 이후로는 계속 소리 ON 유지
+      audioUnlockedRef.current = true;
+      sessionStorage.setItem("audioUnlocked", "1");
     } catch (e) {
       console.warn("unMute 실패", e);
     }
   };
+
+  // 이미 언락된 참가자는 처음부터 비뮤트로 시작
+  const initialMute = isHost ? 0 : (audioUnlockedRef.current ? 0 : 1);
 
   return (
     <div className="relative w-full h-full bg-black">
@@ -284,13 +333,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               width: "100%",
               height: "100%",
               playerVars: {
-                autoplay: 0, // 초기 자동재생 X
-                mute: 1, // 초기 무조건 음소거
+                autoplay: isHost ? 1 : 0, // 방장은 즉시 재생 시도
+                mute: initialMute,        // 참가자: 언락 시 비뮤트로 시작
                 controls: isHost ? 1 : 0, // 참가자 조작 불가
-                disablekb: 1, // 키보드 조작 차단
+                disablekb: 1,             // 키보드 조작 차단
                 rel: 0,
                 enablejsapi: 1,
                 playsinline: 1,
+                modestbranding: 1,
+                iv_load_policy: 3,
               },
             }}
           />

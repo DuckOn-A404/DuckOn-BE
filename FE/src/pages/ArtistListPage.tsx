@@ -21,15 +21,15 @@ const sortOptions: { label: string; key: SortKey; order: SortOrder }[] = [
 const ArtistListPage = () => {
   const navigate = useNavigate();
 
-  // 🔎 검색어 입력값 → 300ms 디바운스 후 서버에 전달
+  // 검색어 입력값 → 300ms 디바운스 후 서버에 전달
   const [searchText, setSearchText] = useState("");
   const debouncedSearchText = useDebounce(searchText, 300);
 
-  // 🔽 기본 정렬: 팔로워 많은순
+  // 기본 정렬: 팔로워 많은순
   const [sort, setSort] = useState<SortKey>("followers");
   const [order, setOrder] = useState<SortOrder>("desc");
 
-  // 📦 화면 크기에 따라 1회 로드 개수 동적 계산(한 화면 + 여유 2행)
+  // 화면 크기에 따라 1회 로드 개수 동적 계산(한 화면 + 여유 2행)
   const [pageSize, setPageSize] = useState(30);
   useEffect(() => {
     const compute = () => {
@@ -44,7 +44,7 @@ const ArtistListPage = () => {
     return () => window.removeEventListener("resize", compute);
   }, []);
 
-  // 📡 목록 데이터: 검색/정렬/사이즈를 한 API(getArtistList)로 처리
+  // 목록 데이터: 검색/정렬/사이즈를 한 API(getArtistList)로 처리
   const { artists, totalCount, fetchMore, hasMore, loading } = useArtistList({
     q: debouncedSearchText || undefined,
     sort,
@@ -52,7 +52,7 @@ const ArtistListPage = () => {
     size: pageSize,
   });
 
-  // ♾️ 무한 스크롤: 바닥 600px 전에 프리패치
+  // 무한 스크롤: 바닥 600px 전에 프리패치
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = sentinelRef.current;

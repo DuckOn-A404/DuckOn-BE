@@ -1,4 +1,3 @@
-// src/pages/OAuth2RedirectHandler.tsx
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserStore } from "../store/useUserStore";
@@ -34,13 +33,6 @@ const OAuth2RedirectHandler = () => {
         setMyUser(userData);
 
         navigate("/");
-
-        // api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-
-        // const userData = await getMyProfileAfterOAuth();
-        // setMyUser(userData);
-
-        // navigate("/");
       } catch {
         navigate("/login");
       }

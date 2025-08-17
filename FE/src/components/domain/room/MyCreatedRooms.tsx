@@ -1,10 +1,13 @@
 import type { RoomHistory } from "../../../types/room";
+import type { ReactNode } from "react";
 
 type Props = {
   rooms: RoomHistory[];
   title?: string;
   liveRoomId?: number | null;
   onEnterLive?: (roomId: number) => void;
+  /** 제목 바로 아래에 꽂을 커스텀 필터/정렬 바 */
+  filters?: ReactNode;
 };
 
 const NO_IMAGE = "https://placehold.co/1280x720?text=No+Image";
@@ -14,6 +17,7 @@ const MyCreatedRooms = ({
   title = "내가 만든 방",
   liveRoomId,
   onEnterLive,
+  filters,
 }: Props) => {
   const list = (rooms ?? [])
     .slice()
@@ -42,6 +46,9 @@ const MyCreatedRooms = ({
   return (
     <div className="bg-white rounded-xl px-8 py-6 w-full max-w-[880px] mx-auto shadow-sm">
       <h2 className="text-lg font-bold mb-4">{title}</h2>
+
+      {/* 제목과 리스트 사이에 필터 바 삽입 */}
+      {filters}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {list.map((r) => {
