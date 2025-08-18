@@ -20,7 +20,7 @@ export const useChatSubscription = (
         `/topic/chat/${roomId}`,
         (message) => {
           const receivedMessage = JSON.parse(message.body);
-          console.log("📩 수신 메시지 구조", receivedMessage);
+          // console.log("📩 수신 메시지 구조", receivedMessage);
           setMessages((prev) => [...prev, receivedMessage]);
         }
       );

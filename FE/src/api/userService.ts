@@ -3,7 +3,7 @@ import { type MyUser } from "../types/mypage";
 import { type RecommendedUser } from "../types";
 import type { OtherUser } from "../types/otherUser";
 
-type BlockedUser = {
+export type BlockedUser = {
   userId: string;
   nickname: string;
   imgUrl: string | null;
@@ -18,7 +18,9 @@ export const fetchMyProfile = async (): Promise<MyUser> => {
 };
 
 // 타 유저 정보 조회
-export const fetchOtherUserProfile = async (userId: string): Promise<OtherUser> => {
+export const fetchOtherUserProfile = async (
+  userId: string
+): Promise<OtherUser> => {
   const response = await api.get<OtherUser>(`/users/${userId}`);
   return response.data;
 };
@@ -47,11 +49,29 @@ export const verifyPassword = async (password: string): Promise<boolean> => {
  * @param formData - FormData 객체(nickname, language, oldPassword, newPassword, profileImg)
  * @returns 백엔드에서 응답받은 수정된 유저 정보 객체
  */
-export const updateUserProfile = async (
-  formData: FormData
-): Promise<MyUser> => {
-  const response = await api.patch("/users/me", formData);
-  return response.data;
+// export const updateUserProfile = async (
+//   formData: FormData
+// ): Promise<MyUser> => {
+//   const response = await api.patch("/users/me", formData);
+//   return response.data;
+// };
+
+export const updateUserProfile = async (formData: FormData): Promise<MyUser> => {
+  const fd = new FormData();
+  for (const [key, value] of formData.entries()) {
+    if (key === "profileImg") {
+      if (value instanceof File && value.size > 0) fd.append("profileImg", value);
+      continue; // 비어있으면 절대 전송하지 않음
+    }
+    if (typeof value === "string") {
+      const v = value.trim();
+      if (v !== "") fd.append(key, v);
+      continue;
+    }
+    fd.append(key, value as any);
+  }
+  const res = await api.patch<MyUser>("/users/me", fd);
+  return res.data;
 };
 
 /**
@@ -65,6 +85,12 @@ export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
   } catch {
     return [];
   }
+};
+
+/** 차단 해제 */
+export const unblockUser = async (userId: string): Promise<string> => {
+  const { data } = await api.delete(`/block/${userId}`);
+  return data?.message ?? "사용자를 차단 해제하였습니다.";
 };
 
 /**

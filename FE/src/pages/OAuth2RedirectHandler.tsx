@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserStore } from "../store/useUserStore";
 import { getMyProfileAfterOAuth } from "../api/authService";
+import { updateUserProfile } from "../api/userService";
 import { emitTokenRefreshed } from "../api/axiosInstance";
 
 /**
@@ -27,9 +28,24 @@ const OAuth2RedirectHandler = () => {
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
 
-        emitTokenRefreshed(accessToken)
+        emitTokenRefreshed(accessToken);
 
-        const userData = await getMyProfileAfterOAuth();
+        let userData = await getMyProfileAfterOAuth();
+
+        if (!userData.language) {
+          try {
+            const formData = new FormData();
+            formData.append("language", "ko");
+
+            const updatedUserData = await updateUserProfile(formData);
+
+            userData = updatedUserData;
+          } catch (updateError) {
+            console.error("기본 언어 설정에 실패했습니다:", updateError);
+            userData = { ...userData, language: "ko" } as typeof userData;
+          }
+        }
+
         setMyUser(userData);
 
         navigate("/");

@@ -82,23 +82,21 @@ const LiveRoomPage = () => {
   const isHostView = !!(room && myUser && room.hostId === myUser.userId);
 
   // 1) 차단 목록 state
-  const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(() => {
-    const raw = localStorage.getItem("blockedUserIds");
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  });
+  const blockedSet = useUserStore((s) => s.blockedSet);
+  const setBlockedList = useUserStore((s) => s.setBlockedList);
+  const blockLocal = useUserStore((s) => s.blockLocal);
 
   // 2) 서버 차단목록 로드해서 병합 (입장/로그인 시)
   useEffect(() => {
     let mounted = true;
     (async () => {
+      if (!myUserId || blockedSet.size > 0) return;
+
       try {
         const list = await getBlockedUsers();
         if (!mounted) return;
-        setBlockedUserIds((prev) => {
-          const merged = new Set(prev);
-          for (const u of list) merged.add(u.userId);
-          return merged;
-        });
+        // 👈 setBlockedList를 사용하여 전역 상태에 저장
+        setBlockedList(list.map((u) => u.userId));
       } catch (e) {
         console.error("차단 목록 불러오기 실패:", e);
       }
@@ -106,20 +104,13 @@ const LiveRoomPage = () => {
     return () => {
       mounted = false;
     };
-  }, [myUserId]);
-
-  // 3) 변경 시 로컬 저장
-  useEffect(() => {
-    localStorage.setItem("blockedUserIds", JSON.stringify([...blockedUserIds]));
-  }, [blockedUserIds]);
+  }, [myUserId, blockedSet.size, setBlockedList]);
 
   const handleBlockUser = (userId: string) => {
-    setBlockedUserIds((prev) => new Set(prev).add(userId));
+    blockLocal(userId);
   };
 
-  const visibleMessages = messages.filter(
-    (m) => !blockedUserIds.has(m.senderId)
-  );
+  const visibleMessages = messages.filter((m) => !blockedSet.has(m.senderId));
 
   const parseId = (raw: string | null) => {
     if (!raw) return undefined;
@@ -509,7 +500,8 @@ const LiveRoomPage = () => {
               case "ROOM_UPDATE":
                 setRoom((prev: any) => {
                   if (!prev) return prev;
-                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated)) return prev;
+                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated))
+                    return prev;
                   return {
                     ...prev,
                     title: evt.title ?? prev.title,
@@ -522,7 +514,8 @@ const LiveRoomPage = () => {
               case "SYNC_STATE":
                 setRoom((prev: any) => {
                   if (!prev) return prev;
-                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated)) return prev;
+                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated))
+                    return prev;
                   return {
                     ...prev,
                     // 제목/호스트명은 절대 덮지 않음
@@ -669,7 +662,8 @@ const LiveRoomPage = () => {
               case "ROOM_UPDATE":
                 setRoom((prev: any) => {
                   if (!prev) return prev;
-                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated)) return prev;
+                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated))
+                    return prev;
                   return {
                     ...prev,
                     title: evt.title ?? prev.title,
@@ -682,7 +676,8 @@ const LiveRoomPage = () => {
               case "SYNC_STATE":
                 setRoom((prev: any) => {
                   if (!prev) return prev;
-                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated)) return prev;
+                  if (!isNewerOrEqual(evt.lastUpdated, prev.lastUpdated))
+                    return prev;
                   return {
                     ...prev,
                     roomId: evt.roomId ?? prev.roomId,
@@ -930,7 +925,10 @@ const LiveRoomPage = () => {
 
       if (isHostRef.current) {
         // 방장: 방 삭제
-        fireAndForget(`/rooms/${roomId}?artistId=${resolvedArtistId}`, "DELETE");
+        fireAndForget(
+          `/rooms/${roomId}?artistId=${resolvedArtistId}`,
+          "DELETE"
+        );
       } else {
         // 참가자: 방 나가기
         fireAndForget(
@@ -1000,7 +998,9 @@ const LiveRoomPage = () => {
           hostNickname={hostNickname ?? room.hostNickname}
           participantCount={participantCount ?? room.participantCount ?? 0}
           onExit={handleExit}
-          onDelete={room.hostId === myUserId ? () => setIsDeleteOpen(true) : undefined}
+          onDelete={
+            room.hostId === myUserId ? () => setIsDeleteOpen(true) : undefined
+          }
           onSaveTitle={handleSaveTitle}
         />
       )}
@@ -1037,7 +1037,8 @@ const LiveRoomPage = () => {
           className="w-full md:w-80 bg-gray-800 flex flex-col
                     border-t md:border-t-0 md:border-l border-gray-700
                     max-h-[44svh] md:max-h-none
-                    overflow-hidden flex-shrink-0">
+                    overflow-hidden flex-shrink-0"
+        >
           {/* 탭 버튼 */}
           <div className="flex flex-shrink-0 border-b border-t md:border-t-0 border-gray-700">
             <button

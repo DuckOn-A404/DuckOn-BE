@@ -91,19 +91,17 @@ const LiveHeader = ({
           )}
 
           {/* 연필(호스트만) */}
-          <button
-            type="button"
-            onClick={onPencilClick}
-            title={editing ? "제목 저장" : "제목 수정"}
-            className={`ml-1 p-1 rounded-lg border ${
-              isHost
-                ? "border-purple-500/60 hover:border-purple-400 hover:bg-purple-500/10"
-                : "border-gray-700 opacity-50 cursor-not-allowed"
-            }`}
-            disabled={!isHost || saving}
-          >
-            <Pencil className={`w-4 h-4 ${saving ? "animate-pulse" : ""}`} />
-          </button>
+          {isHost && (
+            <button
+              type="button"
+              onClick={onPencilClick}
+              title={editing ? "제목 저장" : "제목 수정"}
+              className="ml-1 p-1 rounded-lg border border-purple-500/60 hover:border-purple-400 hover:bg-purple-500/10"
+              disabled={saving}
+            >
+              <Pencil className={`w-4 h-4 ${saving ? "animate-pulse" : ""}`} />
+            </button>
+          )}
         </div>
 
         {/* 제목 아래 보조 정보 */}
