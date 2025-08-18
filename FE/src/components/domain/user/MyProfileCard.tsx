@@ -8,6 +8,7 @@ type MyProfileCardProps = {
   onFollowerClick?: () => void;
   onFollowingClick?: () => void;
   onDeleteClick: () => void;
+  onBlockListClick: () => void;
 };
 
 const MyProfileCard = ({
@@ -16,6 +17,7 @@ const MyProfileCard = ({
   onFollowerClick,
   onFollowingClick,
   onDeleteClick,
+  onBlockListClick,
 }: MyProfileCardProps) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,6 +52,11 @@ const MyProfileCard = ({
     onDeleteClick();
   };
 
+  const handleBlockListClick = () => {
+    setOpen(false);
+    onBlockListClick();
+  };
+
   return (
     <div className="bg-white rounded-xl px-4 sm:px-8 py-6 mb-10 w-full max-w-[880px] mx-auto shadow-sm">
       {/* 헤더 */}
@@ -81,6 +88,13 @@ const MyProfileCard = ({
               aria-label="프로필 옵션"
               className="absolute right-0 top-full mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-50 overflow-hidden"
             >
+              <button
+                role="menuitem"
+                onClick={handleBlockListClick}
+                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                차단 목록 관리
+              </button>
               <button
                 role="menuitem"
                 onClick={handleDeleteClick}
