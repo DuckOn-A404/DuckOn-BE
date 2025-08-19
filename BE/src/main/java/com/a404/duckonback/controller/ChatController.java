@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -41,8 +42,16 @@ public class ChatController {
 
         String key = chatRateLimiter.userKey(principal.getUser().getUserId());
         boolean allowed = chatRateLimiter.allow(key, 5, Duration.ofSeconds(5));
+//        if (!allowed) {
+//            throw new CustomException("채팅은 5초에 5번까지만 가능합니다.", HttpStatus.TOO_MANY_REQUESTS);
+//        }
         if (!allowed) {
-            throw new CustomException("채팅은 5초에 5번까지만 가능합니다.", HttpStatus.TOO_MANY_REQUESTS);
+            throw new CustomException(
+                    "채팅은 5초에 5번까지만 가능합니다.",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    Map.of(
+                            "type", "CHAT_RATE_LIMITED"
+                    ));
         }
 
         ChatMessage saved = chatService.sendMessage(
