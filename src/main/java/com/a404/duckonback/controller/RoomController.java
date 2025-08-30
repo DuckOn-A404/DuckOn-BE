@@ -219,7 +219,7 @@ public class RoomController {
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
-        String entryAnswer = request.getEntryAnswer();
+        String entryAnswer = (request != null) ? request.getEntryAnswer() : null;
 
         if (room == null) {
             throw new CustomException("존재하지 않는 방입니다", HttpStatus.NOT_FOUND);
@@ -246,14 +246,14 @@ public class RoomController {
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
-
-            long participantCount = redisService.getRoomUserCount(roomId.toString());
-            messagingTemplate.convertAndSend(
-                    "/topic/room/" + roomId + "/presence",
-                    new RoomPresenceDTO(roomId, participantCount)
-            );
-            room.setParticipantCount(participantCount);
         }
+
+        long participantCount = redisService.getRoomUserCount(roomId.toString());
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId + "/presence",
+                new RoomPresenceDTO(roomId, participantCount)
+        );
+        room.setParticipantCount(participantCount);
 
         return ResponseEntity.ok(room);
     }
