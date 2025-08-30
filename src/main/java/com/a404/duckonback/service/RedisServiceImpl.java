@@ -527,16 +527,20 @@ public class RedisServiceImpl implements RedisService {
         String cKey = roomCountKey(roomId);
 
         Long added = stringRedisTemplate.opsForSet().add(uKey, user.getUserId());
-        stringRedisTemplate.expire(uKey, ROOM_TTL);
-        stringRedisTemplate.expire(cKey, ROOM_TTL);
 
         // 실제로 추가되었을 때만 카운터 +1
         if (added != null && added > 0) {
-            stringRedisTemplate.opsForValue().increment(cKey);
+            addParticipantCountToRoom(roomId);
         }
     }
 
-//    @Override
+    @Override
+    public void addParticipantCountToRoom(String roomId){
+        String cKey = roomCountKey(roomId);
+        stringRedisTemplate.opsForValue().increment(cKey);
+    }
+
+    //    @Override
 //    public void removeUserFromRoom(String artistId, String roomId, User user) {
 //        String uKey = roomUsersKey(roomId);
 //        String rKey = roomKey(roomId);
@@ -630,7 +634,6 @@ public void removeUserFromRoom(String artistId, String roomId, User user) {
         Long size = stringRedisTemplate.opsForSet().size(roomUsersKey(roomId));
         long fixed = (size == null ? 0L : size);
         stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed));
-        stringRedisTemplate.expire(cKey, ROOM_TTL);
         return fixed;
     }
 
