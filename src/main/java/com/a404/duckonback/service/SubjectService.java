@@ -1,6 +1,9 @@
 package com.a404.duckonback.service;
 
+import com.a404.duckonback.dto.AdminSubjectPatchDTO;
+import com.a404.duckonback.dto.AdminSubjectRequestDTO;
 import com.a404.duckonback.dto.SubjectDTO;
+import com.a404.duckonback.dto.SubjectDetailDTO;
 import com.a404.duckonback.entity.Subject;
 import com.a404.duckonback.entity.SubjectFollow;
 import com.a404.duckonback.exception.CustomException;

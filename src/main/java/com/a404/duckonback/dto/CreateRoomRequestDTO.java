@@ -5,7 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class CreateRoomRequestDTO {
-    private Long artistId;
+    private Long subjectId;
     private String title;
     private String hostId;
     private String hostNickname;

@@ -17,5 +17,5 @@ public interface SubjectRepository extends JpaRepository<Subject, Long>, Subject
     @Query(value = "SELECT * FROM subject ORDER BY RAND() LIMIT :size", nativeQuery = true)
     List<Subject> findRandomSubjects(@Param("size") int size);
 
-    Optional<Subject> findBySlug(String slug);
+    boolean existsBySlug(String slug);
 }

@@ -5,11 +5,10 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class SubjectDTO {
+public class FollowedSubjectDTO {
     private Long subjectId;
-    private String slug;          // FE 라우팅용
-    private String displayName;   // 요청 로케일 → 없으면 native로 대체
+    private String slug;
+    private String displayName;
     private LocalDate debutDate;
     private String imgUrl;
-    private long followerCount;
 }
