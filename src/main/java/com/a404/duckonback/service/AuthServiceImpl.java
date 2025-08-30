@@ -31,8 +31,8 @@ import java.util.Map;
 public class AuthServiceImpl implements AuthService {
 
     private final UserService userService;
-    private final ArtistService artistService;
-    private final ArtistFollowService artistFollowService;
+    private final SubjectService subjectService;
+    private final SubjectFollowService subjectFollowService;
     private final S3Service s3Service;
 
     private final PasswordEncoder passwordEncoder;
@@ -99,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole().name())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(artistService.findAllArtistIdByUserId(user.getId()))
+                .subjectList(subjectService.findAllSubjectIdByUserId(user.getId()))
                 .build();
 
         return LoginResponseDTO.builder()
@@ -130,8 +130,8 @@ public class AuthServiceImpl implements AuthService {
 
         userService.save(user);
 
-        if (dto.getArtistList() != null && !dto.getArtistList().isEmpty()) {
-            artistFollowService.followArtists(user.getId(), dto.getArtistList());
+        if (dto.getSubjectList() != null && !dto.getSubjectList().isEmpty()) {
+            subjectFollowService.followSubjects(user.getId(), dto.getSubjectList());
         }
 
         return ResponseEntity.ok().body("회원가입이 성공적으로 완료되었습니다!");

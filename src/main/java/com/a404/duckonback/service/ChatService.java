@@ -37,7 +37,7 @@ public class ChatService {
         }
         // 3) 엔티티로 변환 후 저장
         ChatMessage msg = ChatMessage.builder()
-                .artistId(artistId)
+                .subjectId(subjectId)
                 .senderId(userPk)
                 .senderUserId(user.getUserId())
                 .senderNickname(user.getNickname())
@@ -48,15 +48,15 @@ public class ChatService {
     }
 
     public List<ChatMessageResponseDTO> getHistory(String artistId) {
-        return chatMessageRepository.findByArtistIdOrderBySentAtAsc(artistId).stream()
-                .map(ChatMessageResponseDTO::fromEntity)
-                .toList();
+        return chatMessageRepository.findBySubjectIdOrderBySentAtAsc(subjectId).stream()
+            .map(ChatMessageResponseDTO::fromEntity)
+            .toList();
     }
 
-    public List<ChatMessageResponseDTO> getHistorySince(String artistId, Instant since) {
-        return chatMessageRepository.findByArtistIdAndSentAtAfterOrderBySentAtAsc(artistId, since)
-                .stream()
-                .map(ChatMessageResponseDTO::fromEntity)
-                .toList();
+    public List<ChatMessageResponseDTO> getHistorySince(String subjectId, Instant since) {
+        return chatMessageRepository.findBySubjectIdAndSentAtAfterOrderBySentAtAsc(subjectId, since)
+            .stream()
+            .map(ChatMessageResponseDTO::fromEntity)
+            .toList();
     }
 }

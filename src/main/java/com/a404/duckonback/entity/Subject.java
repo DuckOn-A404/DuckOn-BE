@@ -1,62 +1,92 @@
 package com.a404.duckonback.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Table(name="subject")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(
+    name = "subject",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_subject_slug", columnNames = {"slug"})
+    },
+    indexes = {
+        @Index(name = "idx_subject_domain",       columnList = "domain_id"),
+        @Index(name = "idx_subject_primary_cat",  columnList = "primary_category_id")
+    }
+)
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class Subject {
+
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name="subject_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "subject_id")
     private Long id;
 
-    @ManyToOne(fetch= FetchType.LAZY) @JoinColumn(name="domain_id", nullable=false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "domain_id", nullable = false)
     private Domain domain;
 
-    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="primary_category_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "primary_category_id")
     private Category primaryCategory;
 
-    private LocalDate debutDate;
-    @Lob
-    private String imgUrl;
+    /** 원어 로케일 (예: ko, en, ja ...) */
+    @Column(name = "native_locale", nullable = false, length = 20)
+    private String nativeLocale;
 
-    @Column(nullable=false, length=100) private String nameEn;
-    @Column(nullable=false, length=100) private String nameKr;
+    /** ISO-3166-1 alpha-2 국가코드 (예: KR, JP, US) */
+    @Column(name = "country_code", nullable = false, length = 2)
+    private String countryCode;
+
+    /** URL용 불변 슬러그 (영어 기반, 생성 후 변경하지 않음) */
+    @Column(name = "slug", nullable = false, length = 120)
+    private String slug;
+
+    @Column(name = "debut_date")
+    private LocalDate debutDate;
+
+    @Lob
+    @Column(name = "img_url")
+    private String imgUrl;
 
     @Builder.Default
     @ManyToMany
-    @JoinTable(name="subject_category_map",
-        joinColumns=@JoinColumn(name="subject_id"),
-        inverseJoinColumns=@JoinColumn(name="category_id"))
+    @JoinTable(
+        name = "subject_category_map",
+        joinColumns = @JoinColumn(name = "subject_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
     private Set<Category> categories = new HashSet<>();
 
-    @Column(name="created_at") private LocalDateTime createdAt;
+    /** 다국어 이름들 (subject_name) */
+    @Builder.Default
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SubjectName> names = new HashSet<>();
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
     @PrePersist
-    void onCreate(){ if(createdAt==null) createdAt=LocalDateTime.now(); }
+    void onCreate() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
+
+    /** 연관 편의 메서드 */
+    public void addName(SubjectName name) {
+        if (name == null) return;
+        name.setSubject(this);
+        this.names.add(name);
+    }
+
+    public void removeName(SubjectName name) {
+        if (name == null) return;
+        this.names.remove(name);
+        name.setSubject(null);
+    }
 }
