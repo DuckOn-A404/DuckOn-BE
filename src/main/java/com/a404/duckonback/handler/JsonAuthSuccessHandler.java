@@ -5,6 +5,7 @@ import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.ArtistService;
+import com.a404.duckonback.service.SubjectService;
 import com.a404.duckonback.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +26,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper    objectMapper;
     private final JWTUtil         jwtUtil;
     private final UserRepository  userRepository;
-    private final ArtistService   artistService;
+    private final SubjectService subjectService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req,
@@ -48,7 +49,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
                 .role(user.getRole().name())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(artistService.findAllArtistIdByUserId(user.getId()))
+                .subjectList(subjectService.findAllSubjectIdByUserId(user.getId()))
                 .build();
 
         LoginResponseDTO body = LoginResponseDTO.builder()

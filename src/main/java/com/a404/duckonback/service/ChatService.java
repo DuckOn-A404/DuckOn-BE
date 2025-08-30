@@ -20,14 +20,14 @@ import java.util.List;
 public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
-    private final ArtistFollowService artistFollowService;
+    private final SubjectFollowService subjectFollowService;
 
-    public ChatMessage sendMessage(Long userPk, String artistId, ChatMessageRequestDTO dto) {
+    public ChatMessage sendMessage(Long userPk, String subjectId, ChatMessageRequestDTO dto) {
         // 1) 팔로우 여부 체크
-        if (!artistFollowService.isFollowingArtist(userPk, Long.valueOf(artistId))) {
+        if (!subjectFollowService.isFollowingSubject(userPk, Long.valueOf(subjectId))) {
             throw new CustomException(
-                    "해당 아티스트를 팔로우한 사용자만 채팅할 수 있습니다.",
-                    HttpStatus.FORBIDDEN
+                "해당 대상을 팔로우한 사용자만 채팅할 수 있습니다.",
+                HttpStatus.FORBIDDEN
             );
         }
         // 2) 사용자 정보 조회
@@ -47,7 +47,7 @@ public class ChatService {
         return chatMessageRepository.save(msg);
     }
 
-    public List<ChatMessageResponseDTO> getHistory(String artistId) {
+    public List<ChatMessageResponseDTO> getHistory(String subjectId) {
         return chatMessageRepository.findBySubjectIdOrderBySentAtAsc(subjectId).stream()
             .map(ChatMessageResponseDTO::fromEntity)
             .toList();

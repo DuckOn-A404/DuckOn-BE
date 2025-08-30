@@ -2,7 +2,10 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.dto.AdminArtistRequestDTO;
+import com.a404.duckonback.dto.AdminSubjectPatchDTO;
+import com.a404.duckonback.dto.AdminSubjectRequestDTO;
 import com.a404.duckonback.service.ArtistService;
+import com.a404.duckonback.service.SubjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,24 +23,24 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    private final ArtistService artistService;
+    private final SubjectService subjectService;
 
-    @PostMapping("/artists")
-    public ResponseEntity<Map<String,String>> createArtist(
-            @ModelAttribute @Valid AdminArtistRequestDTO dto
+    @PostMapping("/subjects")
+    public ResponseEntity<Map<String,String>> createSubject(
+        @ModelAttribute @Valid AdminSubjectRequestDTO dto
     ) {
-        artistService.createArtist(dto);
+        subjectService.createSubject(dto);
         return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(Map.of("message", "아티스트가 성공적으로 등록되었습니다."));
+            .status(HttpStatus.CREATED)
+            .body(Map.of("message", "대상이 성공적으로 등록되었습니다."));
     }
 
-    @PatchMapping("/artists/{artistId}")
-    public ResponseEntity<Map<String,String>> patchArtist(
-            @PathVariable Long artistId,
-            @ModelAttribute @Valid AdminArtistPatchDTO dto
+    @PatchMapping("/subjects/{subjectId}")
+    public ResponseEntity<Map<String,String>> patchSubject(
+        @PathVariable Long subjectId,
+        @ModelAttribute @Valid AdminSubjectPatchDTO dto
     ) {
-        artistService.patchArtist(artistId, dto);
-        return ResponseEntity.ok(Map.of("message", "아티스트 정보가 성공적으로 수정되었습니다."));
+        subjectService.patchSubject(subjectId, dto);
+        return ResponseEntity.ok(Map.of("message", "대상 정보가 성공적으로 수정되었습니다."));
     }
 }
