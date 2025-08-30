@@ -246,6 +246,8 @@ public class RoomController {
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
+        }else{// 로그인 하지 않더라도 참여자 수 증가
+            redisService.addParticipantCountToRoom(roomId.toString());
         }
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());
