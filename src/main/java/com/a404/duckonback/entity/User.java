@@ -65,7 +65,7 @@ public class User {
     private String imgUrl;
 
     @Column(name = "deleted", nullable = false)
-    private boolean deleted = false;
+    private boolean deleted;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;

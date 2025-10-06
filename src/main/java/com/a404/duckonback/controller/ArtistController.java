@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+// 전체 Subject 목록/검색/정렬 통합 (SubjectController로 이관)
 @Tag(name = "아티스트 관리", description = "아티스트 정보 조회, 팔로우/언팔로우, 검색 등의 기능을 제공합니다.")
 @Slf4j
 @RestController

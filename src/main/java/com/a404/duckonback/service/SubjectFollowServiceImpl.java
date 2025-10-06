@@ -9,6 +9,7 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.SubjectFollowRepository;
 import com.a404.duckonback.repository.SubjectRepository;
 import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.util.SubjectDisplayNameResolver;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,9 @@ public class SubjectFollowServiceImpl implements SubjectFollowService {
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
     private final SubjectFollowRepository subjectFollowRepository;
+    private final SubjectDisplayNameResolver displayNameResolver;
+
+    private static final String DEFAULT_DISPLAY_LOCALE = "ko";
 
     @Override
     public SubjectFollow createSubjectFollow(SubjectFollow subjectFollow) {
@@ -80,17 +84,25 @@ public class SubjectFollowServiceImpl implements SubjectFollowService {
 
     @Override
     public Page<FollowedSubjectDTO> getFollowedSubjects(Long userId, Pageable pageable) {
-        if (userRepository.findByIdAndDeletedFalse(userId) == null) {
+        var user = userRepository.findByIdAndDeletedFalse(userId);
+        if (user == null) {
             throw new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND);
         }
+        String preferredLocale = (user.getLanguage() == null || user.getLanguage().isBlank())
+            ? DEFAULT_DISPLAY_LOCALE : user.getLanguage();
+
         return subjectFollowRepository.findByUser_Id(userId, pageable)
-            .map(sf -> new FollowedSubjectDTO(
-                sf.getSubject().getId(),
-                sf.getSubject().getNameEn(),
-                sf.getSubject().getNameKr(),
-                sf.getSubject().getDebutDate(),
-                sf.getSubject().getImgUrl()
-            ));
+            .map(sf -> {
+                Subject s = sf.getSubject();
+                String displayName = displayNameResolver.resolve(s, preferredLocale);
+                return FollowedSubjectDTO.builder()
+                    .subjectId(s.getId())
+                    .slug(s.getSlug())
+                    .displayName(displayName)
+                    .debutDate(s.getDebutDate())
+                    .imgUrl(s.getImgUrl())
+                    .build();
+            });
     }
 
     @Override

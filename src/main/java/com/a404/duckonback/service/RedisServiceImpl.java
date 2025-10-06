@@ -412,8 +412,10 @@ import com.a404.duckonback.entity.Subject;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.ArtistRepository;
+import com.a404.duckonback.repository.SubjectNameRepository;
 import com.a404.duckonback.repository.SubjectRepository;
 import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.util.SubjectDisplayNameResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.*;
@@ -438,12 +440,16 @@ public class RedisServiceImpl implements RedisService {
 
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
+    private final SubjectNameRepository subjectNameRepository;
+    private final SubjectDisplayNameResolver displayNameResolver;
 
     private static final String ROOM_KEY_PREFIX = "room:";
     private static final String ROOM_USERS_SUFFIX = ":users";
     private static final String SUBJECT_ROOMS_PREFIX = "subject:";
     private static final String SUBJECT_ROOMS_SUFFIX = ":rooms";
     private static final Duration ROOM_TTL = Duration.ofHours(6);
+
+    private static final String DEFAULT_DISPLAY_LOCALE = "ko";
 
     private String roomKey(String roomId) { return ROOM_KEY_PREFIX + roomId; }
     private String roomKey(Long roomId)   { return ROOM_KEY_PREFIX + roomId; }
@@ -596,65 +602,68 @@ public class RedisServiceImpl implements RedisService {
                 .toList();
     }
 
-    @Override
-    public List<RoomListInfoDTO> getTrendingRooms(int size) {
-        Page<RoomListInfoDTO> page = getTrendingRooms(PageRequest.of(0, size));
-        return page.getContent();
-    }
+//    @Override
+//    public List<RoomListInfoDTO> getTrendingRooms(int size) {
+//        Page<RoomListInfoDTO> page = getTrendingRooms(PageRequest.of(0, size));
+//        return page.getContent();
+//    }
 
     @Override
     public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
-        // 1) room:* 스캔
         Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        // 2) "room:{숫자}"만 추출 (":users", ":info" 등 제거)
+        // "room:{id}"만 추출
         List<String> roomIds = keys.stream()
-                .map(k -> k.substring(ROOM_KEY_PREFIX.length()))  // "{id}" 또는 "{id}:users" 등
-                .filter(rest -> rest.chars().allMatch(Character::isDigit)) // 숫자만 통과
-                .toList();
+            .filter(k -> {
+                // room:{id} 형태만 (":users" 같은 suffix 제외)
+                String rest = k.substring(ROOM_KEY_PREFIX.length());
+                return rest.chars().allMatch(Character::isDigit);
+            })
+            .map(k -> k.substring(ROOM_KEY_PREFIX.length()))
+            .toList();
 
         if (roomIds.isEmpty()) return Page.empty(pageable);
 
-        // 3) DTO는 항상 "room:{id}" 로 GET
         List<RoomListInfoDTO> all = roomIds.stream()
-                .map(roomIdStr -> {
-                    String rKey = roomKey(roomIdStr); // "room:{id}"
-                    LiveRoomDTO dto = roomTemplate.opsForValue().get(rKey);
-                    if (dto == null || dto.getArtistId() == null) return null;
+            .map(roomIdStr -> {
+                String rKey = roomKey(roomIdStr);
+                LiveRoomDTO dto = roomTemplate.opsForValue().get(rKey);
+                if (dto == null || dto.getSubjectId() == null) return null;
 
-                    // 참여자 수
-                    Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
-                    int participantCount = cnt != null ? cnt.intValue() : 0;
+                // 참가자 수
+                Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+                int participantCount = cnt != null ? cnt.intValue() : 0;
 
-                    // host 정보
-                    User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
-                    String hostNickname   = host != null ? host.getNickname() : null;
-                    String hostProfileImg = host != null ? host.getImgUrl()    : null;
+                // host
+                User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
+                String hostNickname   = host != null ? host.getNickname() : null;
+                String hostProfileImg = host != null ? host.getImgUrl()    : null;
 
-                    // subject 정보
-                    Subject subject = subjectRepository.findById(dto.getSubjectId()).orElse(null);
-                    String subjectNameEn = subject != null ? subject.getNameEn() : null;
-                    String subjectNameKr = subject != null ? subject.getNameKr() : null;
+                // subject
+                Subject subject = subjectRepository.findById(dto.getSubjectId()).orElse(null);
+                String subjectSlug = subject != null ? subject.getSlug() : null;
+                String subjectDisplayName =
+                    (subject != null) ? displayNameResolver.resolve(subject, DEFAULT_DISPLAY_LOCALE) : null;
 
-                    return RoomListInfoDTO.builder()
-                            .roomId(dto.getRoomId())
-                            .artistId(dto.getArtistId())
-                            .subjectNameEn(subjectNameEn)
-                            .subjectNameKr(subjectNameKr)
-                            .title(dto.getTitle())
-                            .hostId(dto.getHostId())
-                            .hostNickname(hostNickname)
-                            .hostProfileImgUrl(hostProfileImg)
-                            .imgUrl(dto.getImgUrl())
-                            .participantCount(participantCount)
-                            .build();
-                })
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
-                .toList();
+                return RoomListInfoDTO.builder()
+                    .roomId(dto.getRoomId())
+                    .subjectId(dto.getSubjectId())
+                    .subjectSlug(subjectSlug)
+                    .subjectDisplayName(subjectDisplayName)
+                    .title(dto.getTitle())
+                    .hostId(dto.getHostId())
+                    .hostNickname(hostNickname)
+                    .hostProfileImgUrl(hostProfileImg)
+                    .imgUrl(dto.getImgUrl())
+                    .participantCount(participantCount)
+                    .build();
+            })
+            .filter(Objects::nonNull)
+            .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
+            .toList();
 
         int total = all.size();
         int from = (int) pageable.getOffset();
@@ -698,25 +707,29 @@ public class RedisServiceImpl implements RedisService {
 
             User hostUser = userRepository.findByUserIdAndDeletedFalse(hostUserId);
             String hostNickname   = (dto.getHostNickname() != null) ? dto.getHostNickname()
-                    : (hostUser != null ? hostUser.getNickname() : null);
+                : (hostUser != null ? hostUser.getNickname() : null);
             String hostProfileImg = hostUser != null ? hostUser.getImgUrl() : null;
 
             Subject subject = (dto.getSubjectId() != null)
                 ? subjectRepository.findById(dto.getSubjectId()).orElse(null)
                 : null;
 
+            String subjectSlug = subject != null ? subject.getSlug() : null;
+            String subjectDisplayName =
+                (subject != null) ? displayNameResolver.resolve(subject, DEFAULT_DISPLAY_LOCALE) : null;
+
             return RoomListInfoDTO.builder()
-                    .roomId(dto.getRoomId())
-                    .artistId(dto.getArtistId())
-                    .subjectNameEn(subject != null ? subject.getNameEn() : null)
-                    .subjectNameKr(subject != null ? subject.getNameKr() : null)
-                    .title(dto.getTitle())
-                    .hostId(hostUserId)
-                    .hostNickname(hostNickname)
-                    .hostProfileImgUrl(hostProfileImg)
-                    .imgUrl(dto.getImgUrl())
-                    .participantCount(participantCount)
-                    .build();
+                .roomId(dto.getRoomId())
+                .subjectId(dto.getSubjectId())
+                .subjectSlug(subjectSlug)
+                .subjectDisplayName(subjectDisplayName)
+                .title(dto.getTitle())
+                .hostId(hostUserId)
+                .hostNickname(hostNickname)
+                .hostProfileImgUrl(hostProfileImg)
+                .imgUrl(dto.getImgUrl())
+                .participantCount(participantCount)
+                .build();
         }
         return null;
     }

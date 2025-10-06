@@ -4,6 +4,7 @@ import com.a404.duckonback.entity.Subject;
 import com.a404.duckonback.entity.SubjectFollow;
 import com.a404.duckonback.entity.SubjectFollowId;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.dto.FollowedSubjectDTO;
 import com.a404.duckonback.exception.CustomException;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;

@@ -569,6 +569,7 @@ import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
 import com.a404.duckonback.util.Anonymizer;
 import com.a404.duckonback.util.JWTUtil;
+import com.a404.duckonback.util.SubjectDisplayNameResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -615,6 +616,9 @@ public class UserServiceImpl implements UserService {
     private static final int LIMIT_ARTIST_FOLLOWERS = 30;
     private static final int LIMIT_RECENT_HOSTS = 10;
     private static final int REDIS_SAMPLE_PER_ROOM = 20; // 방당 최대 샘플 수
+
+    private final SubjectDisplayNameResolver displayNameResolver;
+    private static final String DEFAULT_DISPLAY_LOCALE = "ko";
 
     // >>> CHANGED: room 키 프리픽스(현재 Redis 스키마에 맞춤)
     private static final String ROOM_KEY_PREFIX = "room:";
@@ -674,10 +678,20 @@ public class UserServiceImpl implements UserService {
                 .toList();
 
         List<RoomDTO> roomList = Optional.ofNullable(user.getRooms())
-                .orElse(List.of())
-                .stream()
-                .map(RoomDTO::fromEntity)
-                .toList();
+            .orElse(List.of())
+            .stream()
+            .map(room -> {
+                String locale = Optional.ofNullable(user.getLanguage())
+                    .filter(s -> !s.isBlank())
+                    .orElse(DEFAULT_DISPLAY_LOCALE)
+                    .toLowerCase();
+                String displayName = (room.getSubject() != null)
+                    ? displayNameResolver.resolve(room.getSubject(), locale)
+                    : null;
+                return RoomDTO.fromEntity(room, displayName); // ← 2개 인자 전달
+            })
+            .toList();
+
 
         List<Penalty> penalties = penaltyService.getActivePenaltiesByUser(user.getId());
         List<PenaltyDTO> pennaltyList = penalties.stream()
@@ -761,7 +775,18 @@ public class UserServiceImpl implements UserService {
 
         // 과거 히스토리
         List<RoomDTO> roomList = roomRepository.findByCreator_Id(user.getId())
-                .stream().map(RoomDTO::fromEntity).toList();
+            .stream()
+            .map(room -> {
+                String locale = Optional.ofNullable(user.getLanguage())
+                    .filter(s -> !s.isBlank())
+                    .orElse(DEFAULT_DISPLAY_LOCALE)
+                    .toLowerCase();
+                String displayName = (room.getSubject() != null)
+                    ? displayNameResolver.resolve(room.getSubject(), locale)
+                    : null;
+                return RoomDTO.fromEntity(room, displayName); // ← 2개 인자
+            })
+            .toList();
 
         // 현재 라이브(레디스)
         RoomListInfoDTO active = redisService.getActiveRoomByHost(otherUserId);
@@ -1191,7 +1216,7 @@ public class UserServiceImpl implements UserService {
 
         try {
             if (val instanceof LiveRoomDTO dto) {
-                return dto.getArtistId();
+                return dto.getSubjectId();
             }
             if (val instanceof Map<?, ?> m) {
                 Object v = m.get("artistId");

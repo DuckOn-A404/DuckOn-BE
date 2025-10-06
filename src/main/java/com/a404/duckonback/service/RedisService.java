@@ -12,13 +12,14 @@ import java.util.List;
 
 public interface RedisService {
     void saveRoomInfo(String roomId, LiveRoomDTO room);
-    void addRoomToArtist(String artistId, String roomId);
+//    void addRoomToArtist(String artistId, String roomId);
+    void addRoomToSubject(String subjectId, String roomId);
     LiveRoomDTO getRoomInfo(String roomId);
     void deleteRoomInfo(Long artistId, Long roomId);
     void addUserToRoom(String roomId, User user);
     void removeUserFromRoom(String artistId, String roomId,User user);
     List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId);
-    List<RoomListInfoDTO> getTrendingRooms(int size);        // 기존
+//    List<RoomListInfoDTO> getTrendingRooms(int size);        // 기존
     Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable); // 페이징 추가
 
     void updateRoomInfo(LiveRoomSyncDTO room);

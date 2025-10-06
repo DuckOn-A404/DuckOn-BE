@@ -1,4 +1,4 @@
-package com.a404.duckonback.support;
+package com.a404.duckonback.util;
 
 import com.a404.duckonback.entity.Subject;
 import com.a404.duckonback.entity.SubjectName;
@@ -20,42 +20,54 @@ public class SubjectDisplayNameResolver {
     /** names 컬렉션이 이미 로드되어 있으면 in-memory, 아니면 repo 조회로 */
     public String resolve(Subject subject, String preferredLocale) {
         Set<SubjectName> loaded = subject.getNames();
-        boolean available = loaded != null && !loaded.isEmpty();
+        boolean hasLoaded = loaded != null && !loaded.isEmpty();
+        String pref = (preferredLocale == null || preferredLocale.isBlank()) ? "ko" : preferredLocale.toLowerCase();
 
         // 1) preferred OFFICIAL
-        Optional<String> s1 = available
-            ? pick(loaded, preferredLocale, SubjectNameType.OFFICIAL)
-            : subjectNameRepository.pickOfficialName(subject.getId(), preferredLocale);
-        if (s1.isPresent()) return s1.get();
-
-        // 2) native OFFICIAL
-        Optional<String> s2 = available
-            ? pick(loaded, subject.getNativeLocale(), SubjectNameType.OFFICIAL)
-            : subjectNameRepository.pickOfficialName(subject.getId(), subject.getNativeLocale());
-        if (s2.isPresent()) return s2.get();
-
-        // 3) any OFFICIAL
-        Optional<String> s3 = available
-            ? pickAny(loaded, SubjectNameType.OFFICIAL)
-            : subjectNameRepository.pickAnyByType(subject.getId(), SubjectNameType.OFFICIAL);
-        if (s3.isPresent()) return s3.get();
-
-        // 4) fallback order
-        for (SubjectNameType t : new SubjectNameType[]{SubjectNameType.ROMANIZED, SubjectNameType.TRANSLATED, SubjectNameType.ALIAS}) {
-            Optional<String> s = available
-                ? pickAny(loaded, t)
-                : subjectNameRepository.pickAnyByType(subject.getId(), t);
+        if (hasLoaded) {
+            Optional<String> s = pick(loaded, pref, SubjectNameType.OFFICIAL);
+            if (s.isPresent()) return s.get();
+        } else {
+            var s = subjectNameRepository.pickOfficialName(subject.getId(), pref);
             if (s.isPresent()) return s.get();
         }
-        // 마지막 최후의 수단
-        return "Unknown";
+
+        // 2) native OFFICIAL
+        if (hasLoaded) {
+            Optional<String> s = pick(loaded, subject.getNativeLocale(), SubjectNameType.OFFICIAL);
+            if (s.isPresent()) return s.get();
+        } else {
+            var s = subjectNameRepository.pickOfficialName(subject.getId(), subject.getNativeLocale());
+            if (s.isPresent()) return s.get();
+        }
+
+        // 3) any OFFICIAL
+        if (hasLoaded) {
+            Optional<String> s = pickAny(loaded, SubjectNameType.OFFICIAL);
+            if (s.isPresent()) return s.get();
+        } else {
+            var s = subjectNameRepository.pickAnyByType(subject.getId(), SubjectNameType.OFFICIAL);
+            if (s.isPresent()) return s.get();
+        }
+
+        // 4) fallback (ROMANIZED → TRANSLATED → ALIAS)
+        for (SubjectNameType t : new SubjectNameType[]{SubjectNameType.ROMANIZED, SubjectNameType.TRANSLATED, SubjectNameType.ALIAS}) {
+            if (hasLoaded) {
+                Optional<String> s = pickAny(loaded, t);
+                if (s.isPresent()) return s.get();
+            } else {
+                var s = subjectNameRepository.pickAnyByType(subject.getId(), t);
+                if (s.isPresent()) return s.get();
+            }
+        }
+        return subject.getSlug(); // 최후 보루
     }
 
     private Optional<String> pick(Set<SubjectName> names, String locale, SubjectNameType type) {
         return names.stream()
-            .filter(n -> n.getLocaleTag().equalsIgnoreCase(locale) && n.getNameType() == type)
+            .filter(n -> n.getNameType() == type && n.getLocaleTag().equalsIgnoreCase(locale))
             .sorted(Comparator.<SubjectName>comparingInt(n -> n.isPrimary() ? 0 : 1)
-                .thenComparingInt(n -> n.getPriority()))
+                .thenComparing(SubjectName::getPriority).reversed())
             .map(SubjectName::getName)
             .findFirst();
     }
@@ -64,7 +76,7 @@ public class SubjectDisplayNameResolver {
         return names.stream()
             .filter(n -> n.getNameType() == type)
             .sorted(Comparator.<SubjectName>comparingInt(n -> n.isPrimary() ? 0 : 1)
-                .thenComparingInt(n -> n.getPriority()))
+                .thenComparing(SubjectName::getPriority).reversed())
             .map(SubjectName::getName)
             .findFirst();
     }
