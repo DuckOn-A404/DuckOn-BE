@@ -114,7 +114,7 @@ jobs:
             echo "latest=dev-latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Login to GHCR
+      - name: Login to GHCR (for push)
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -149,6 +149,7 @@ jobs:
             LATEST="${{ steps.vars.outputs.latest }}"
             NET="duckon-dev-net"
 
+            # GHCR가 Private일 때만 필요 (Public이면 자동 스킵)
             if [ -n "${{ secrets.DEV_GHCR_PAT || '' }}" ]; then
               echo "${{ secrets.DEV_GHCR_PAT }}" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
             fi
@@ -172,6 +173,10 @@ jobs:
             curl -fsS http://127.0.0.1:18081/actuator/health || true
 
       # -------- prod = SSM 배포 --------
+      - name: Install jq (for SSM params)
+        if: steps.vars.outputs.env == 'prod'
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Configure AWS (PROD)
         if: steps.vars.outputs.env == 'prod'
         uses: aws-actions/configure-aws-credentials@v4
@@ -211,8 +216,6 @@ jobs:
           LATEST="__LATEST__"
 
           APP="duckon-app-prod"
-
-          # prod.env: 고정 경로 (/srv/duckon/prod.env)
           ENV_FILE="/srv/duckon/prod.env"
           if [ ! -f "$ENV_FILE" ]; then
             echo "[ERROR] env file not found at $ENV_FILE"
@@ -220,6 +223,14 @@ jobs:
             exit 1
           fi
           echo "Using env file: $ENV_FILE"
+
+          # (옵션) GHCR 로그인: 패키지가 Private이면 필요. Public이면 빈값으로 넘어와 스킵됨.
+          GHCR_USER="__GHCR_USER__"
+          GHCR_PAT="__GHCR_PAT__"
+          if [ -n "$GHCR_PAT" ] && [ "$GHCR_PAT" != "__EMPTY__" ]; then
+            echo "[diag] docker login ghcr.io as $GHCR_USER"
+            echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          fi
 
           # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
@@ -252,9 +263,18 @@ jobs:
           EOS
           )
 
+          # 자리표시자 치환
           SCRIPT="${SCRIPT//__REPO__/$REPO}"
           SCRIPT="${SCRIPT//__TAG__/$TAG}"
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
+
+          # GHCR 자격증명(없으면 빈값 주입되어 로그인 스킵)
+          GHCR_USER="${{ secrets.PROD_GHCR_USERNAME }}"
+          GHCR_PAT="${{ secrets.PROD_GHCR_PAT }}"
+          [ -z "$GHCR_USER" ] && GHCR_USER="__EMPTY__"
+          [ -z "$GHCR_PAT" ] && GHCR_PAT="__EMPTY__"
+          SCRIPT="${SCRIPT//__GHCR_USER__/$GHCR_USER}"
+          SCRIPT="${SCRIPT//__GHCR_PAT__/$GHCR_PAT}"
 
           echo "== Send command =="
           jq -n --arg script "$SCRIPT" '{commands: [$script]}' > ssm-params.json
