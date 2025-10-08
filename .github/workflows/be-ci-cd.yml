@@ -187,7 +187,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
           aws-region: ${{ vars.AWS_REGION_PROD }}
 
-      - name: Deploy to PROD via SSM
+      - name: Deploy to PROD via SSM (debug + wait)
         if: steps.vars.outputs.env == 'prod'
         run: |
           set -euo pipefail
@@ -197,6 +197,20 @@ jobs:
           TAG="${{ github.sha }}"
           LATEST="${{ steps.vars.outputs.latest }}"
 
+          echo "== AWS identity =="
+          aws sts get-caller-identity
+
+          echo "== EC2 instance check =="
+          aws ec2 describe-instances --instance-ids "$INSTANCE" \
+            --query 'Reservations[0].Instances[0].[InstanceId,State.Name,Placement.AvailabilityZone]' \
+            --output text
+
+          echo "== SSM managed check =="
+          aws ssm describe-instance-information \
+            --query "InstanceInformationList[?InstanceId=='$INSTANCE'].[InstanceId,PingStatus,PlatformType,AgentVersion,IsLatestVersion,IPAddress]" \
+            --output table || true
+
+          echo "== Build remote script =="
           read -r -d '' SCRIPT <<'EOS'
           set -euo pipefail
           REPO="__REPO__"
@@ -205,12 +219,18 @@ jobs:
 
           APP="duckon-app-prod"
           ENV_FILE="$HOME/prod.env"
+
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
           [ -z "$NET" ] && NET="bridge"
+          echo "Using network: $NET"
 
+          echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
           docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
 
+          echo "Stopping old container (if any)"
           docker rm -f "$APP" 2>/dev/null || true
+
+          echo "Starting $APP ..."
           docker run -d --name "$APP" \
             --network "$NET" \
             --env-file "$ENV_FILE" \
@@ -218,15 +238,35 @@ jobs:
             -e JAVA_OPTS="-Xms256m -Xmx512m" \
             --restart unless-stopped \
             "$REPO:$TAG"
+
+          echo "Container started. Current ps:"
+          docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
           EOS
 
           SCRIPT="${SCRIPT//__REPO__/$REPO}"
           SCRIPT="${SCRIPT//__TAG__/$TAG}"
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
 
-          aws ssm send-command \
+          echo "== Send command =="
+          CMD_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE" \
             --document-name "AWS-RunShellScript" \
             --parameters commands="[$(printf '%q' "$SCRIPT")]" \
             --comment "DuckOn BE prod deploy $TAG" \
-            --region "$REGION" >/dev/null
+            --region "$REGION" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "CommandId: $CMD_ID"
+
+          echo "== Wait for command to finish =="
+          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION"
+
+          echo "== Command result =="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION" --output table
+
+          STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION" --query Status --output text)
+          if [ "$STATUS" != "Success" ]; then
+            echo "SSM command failed with status=$STATUS"
+            exit 1
+          fi
