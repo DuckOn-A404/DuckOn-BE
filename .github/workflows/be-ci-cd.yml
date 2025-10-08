@@ -211,7 +211,7 @@ jobs:
             --output table || true
 
           echo "== Build remote script =="
-          read -r -d '' SCRIPT <<'EOS'
+          SCRIPT=$(cat <<'EOS'
           set -euo pipefail
           REPO="__REPO__"
           TAG="__TAG__"
@@ -220,6 +220,7 @@ jobs:
           APP="duckon-app-prod"
           ENV_FILE="$HOME/prod.env"
 
+          # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
           [ -z "$NET" ] && NET="bridge"
           echo "Using network: $NET"
@@ -242,7 +243,9 @@ jobs:
           echo "Container started. Current ps:"
           docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
           EOS
+          )
 
+          # 자리표시자 치환
           SCRIPT="${SCRIPT//__REPO__/$REPO}"
           SCRIPT="${SCRIPT//__TAG__/$TAG}"
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
