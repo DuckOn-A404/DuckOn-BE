@@ -251,10 +251,14 @@ jobs:
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
 
           echo "== Send command =="
+          # ✅ 멀티라인 스크립트를 JSON으로 안전하게 감싸기
+          # jq -Rs : raw input을 JSON 문자열로 이스케이프
+          jq -n --arg script "$SCRIPT" '{commands: [$script]}' > ssm-params.json
+
           CMD_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE" \
             --document-name "AWS-RunShellScript" \
-            --parameters commands="[$(printf '%q' "$SCRIPT")]" \
+            --parameters file://ssm-params.json \
             --comment "DuckOn BE prod deploy $TAG" \
             --region "$REGION" \
             --query "Command.CommandId" \
