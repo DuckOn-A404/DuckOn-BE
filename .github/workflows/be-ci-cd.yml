@@ -218,7 +218,8 @@ jobs:
           LATEST="__LATEST__"
 
           APP="duckon-app-prod"
-          ENV_FILE="$HOME/prod.env"
+          ENV_FILE="/home/ubuntu/prod.env"
+          [ -f "$ENV_FILE" ] || { echo "[ERROR] env file not found: $ENV_FILE"; ls -l /home/ubuntu || true; exit 1; }
 
           # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
