@@ -209,17 +209,32 @@ jobs:
           LATEST="__LATEST__"
 
           APP="duckon-app-prod"
-          ENV_FILE="/home/ubuntu/prod.env"
-          [ -f "$ENV_FILE" ] || { echo "[ERROR] env file not found: $ENV_FILE"; ls -l /home/ubuntu || true; exit 1; }
 
+          # ---- prod.env 위치 자동 탐색 (sh 호환) ----
+          ENV_FILE=""
+          for p in /home/ubuntu/prod.env /home/ec2-user/prod.env /root/prod.env /home/admin/prod.env; do
+            if [ -f "$p" ]; then ENV_FILE="$p"; break; fi
+          done
+          if [ -z "$ENV_FILE" ]; then
+            echo "[ERROR] prod.env not found in: /home/ubuntu /home/ec2-user /root /home/admin"
+            echo "[hint] put your prod.env at one of paths above (recommended: /home/ubuntu/prod.env)"
+            echo "[home list]"; ls -l /home || true
+            exit 1
+          fi
+          echo "Using env file: $ENV_FILE"
+          # ------------------------------------------
+
+          # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
           [ -z "$NET" ] && NET="bridge"
           echo "Using network: $NET"
 
+          # ---- 진단 라인 ----
           echo "[diag] whoami=$(whoami)"
           echo "[diag] docker version:" && docker --version || true
           echo "[diag] resolve ghcr.io:" && getent hosts ghcr.io || true
           echo "[diag] curl ghcr.io/v2 (HEAD):" && curl -sSIL https://ghcr.io/v2/ | head -n 5 || true
+          # ------------------
 
           echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
           docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
