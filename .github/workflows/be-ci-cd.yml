@@ -24,7 +24,8 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
       - name: Gradle build
         run: |
-          cd deploy/DuckOn-BE
+          chmod +x ./gradlew || true
+          ./gradlew --version
           ./gradlew clean build
       - name: Docker build (no push)
         uses: docker/build-push-action@v5
