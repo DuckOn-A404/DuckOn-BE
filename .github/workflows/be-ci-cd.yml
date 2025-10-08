@@ -24,12 +24,12 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      # 소문자 owner 계산 (job마다 필요)
+      # 소문자 owner 계산
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & context 자동 감지
-      - name: Detect Dockerfile & context
+      # Dockerfile & build context 자동 감지 (예약변수 피해서 BUILD_CONTEXT/DOCKERFILE_PATH 사용)
+      - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
           FOUND=$(git ls-files | grep -E '(^|/)(Dockerfile)$' | head -n1 || true)
@@ -39,14 +39,15 @@ jobs:
           fi
           DIR=$(dirname "$FOUND")
           if [ "$DIR" = "." ]; then
-            echo "DOCKER_CONTEXT=." >> $GITHUB_ENV
-            echo "DOCKERFILE=./Dockerfile" >> $GITHUB_ENV
+            echo "BUILD_CONTEXT=." >> $GITHUB_ENV
+            echo "DOCKERFILE_PATH=./Dockerfile" >> $GITHUB_ENV
           else
-            echo "DOCKER_CONTEXT=$DIR" >> $GITHUB_ENV
-            echo "DOCKERFILE=$FOUND" >> $GITHUB_ENV
+            echo "BUILD_CONTEXT=$DIR" >> $GITHUB_ENV
+            echo "DOCKERFILE_PATH=$FOUND" >> $GITHUB_ENV
           fi
-          echo "Detected context=$DIR, file=$FOUND"
+          echo "Detected build context=$DIR, dockerfile=$FOUND"
 
+      # Buildx 빌더 생성/선택
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -62,9 +63,9 @@ jobs:
       - name: Docker build (no push)
         uses: docker/build-push-action@v5
         with:
-          builder: ${{ steps.buildx.outputs.name }}   # ✅ 명시적으로 빌더 지정
-          context: ${{ env.DOCKER_CONTEXT }}
-          file: ${{ env.DOCKERFILE }}
+          builder: ${{ steps.buildx.outputs.name }}
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.DOCKERFILE_PATH }}
           push: false
           tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
 
@@ -77,6 +78,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Buildx 빌더 생성/선택
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -87,8 +89,8 @@ jobs:
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & context 자동 감지
-      - name: Detect Dockerfile & context
+      # Dockerfile & build context 자동 감지
+      - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
           FOUND=$(git ls-files | grep -E '(^|/)(Dockerfile)$' | head -n1 || true)
@@ -98,13 +100,13 @@ jobs:
           fi
           DIR=$(dirname "$FOUND")
           if [ "$DIR" = "." ]; then
-            echo "DOCKER_CONTEXT=." >> $GITHUB_ENV
-            echo "DOCKERFILE=./Dockerfile" >> $GITHUB_ENV
+            echo "BUILD_CONTEXT=." >> $GITHUB_ENV
+            echo "DOCKERFILE_PATH=./Dockerfile" >> $GITHUB_ENV
           else
-            echo "DOCKER_CONTEXT=$DIR" >> $GITHUB_ENV
-            echo "DOCKERFILE=$FOUND" >> $GITHUB_ENV
+            echo "BUILD_CONTEXT=$DIR" >> $GITHUB_ENV
+            echo "DOCKERFILE_PATH=$FOUND" >> $GITHUB_ENV
           fi
-          echo "Detected context=$DIR, file=$FOUND"
+          echo "Detected build context=$DIR, dockerfile=$FOUND"
 
       - name: Figure env & tags
         id: vars
@@ -129,8 +131,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           builder: ${{ steps.buildx.outputs.name }}
-          context: ${{ env.DOCKER_CONTEXT }}
-          file: ${{ env.DOCKERFILE }}
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.DOCKERFILE_PATH }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.latest }}
