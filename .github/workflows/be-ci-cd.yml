@@ -24,11 +24,9 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      # 소문자 owner 계산
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & build context 자동 감지 (예약변수 충돌 방지: BUILD_CONTEXT/DOCKERFILE_PATH 사용)
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
@@ -47,7 +45,6 @@ jobs:
           fi
           echo "Detected build context=$DIR, dockerfile=$FOUND"
 
-      # Buildx 빌더 생성/선택
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -78,18 +75,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Buildx 빌더 생성/선택
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
         with:
           install: true
 
-      # 소문자 owner 계산
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & build context 자동 감지
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
@@ -138,7 +132,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.latest }}
             ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      # -------- dev = SSH 배포 --------
       - name: Deploy to DEV via SSH
         if: steps.vars.outputs.env == 'dev'
         uses: appleboy/ssh-action@v1.2.0
@@ -155,7 +148,6 @@ jobs:
             LATEST="${{ steps.vars.outputs.latest }}"
             NET="duckon-dev-net"
 
-            # GHCR가 Private이면 PAT 로그인 (없으면 스킵)
             if [ -n "${{ secrets.DEV_GHCR_PAT || '' }}" ]; then
               echo "${{ secrets.DEV_GHCR_PAT }}" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
             fi
@@ -178,7 +170,6 @@ jobs:
             sleep 3
             curl -fsS http://127.0.0.1:18081/actuator/health || true
 
-      # -------- prod = SSM 배포 (디버그+로그 수집) --------
       - name: Configure AWS (PROD)
         if: steps.vars.outputs.env == 'prod'
         uses: aws-actions/configure-aws-credentials@v4
@@ -212,7 +203,7 @@ jobs:
 
           echo "== Build remote script =="
           SCRIPT=$(cat <<'EOS'
-          set -euo pipefail
+          set -eu
           REPO="__REPO__"
           TAG="__TAG__"
           LATEST="__LATEST__"
@@ -221,17 +212,14 @@ jobs:
           ENV_FILE="/home/ubuntu/prod.env"
           [ -f "$ENV_FILE" ] || { echo "[ERROR] env file not found: $ENV_FILE"; ls -l /home/ubuntu || true; exit 1; }
 
-          # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
           [ -z "$NET" ] && NET="bridge"
           echo "Using network: $NET"
 
-          # ---- 진단 라인 (EC2에서 실행됨) ----
           echo "[diag] whoami=$(whoami)"
           echo "[diag] docker version:" && docker --version || true
           echo "[diag] resolve ghcr.io:" && getent hosts ghcr.io || true
           echo "[diag] curl ghcr.io/v2 (HEAD):" && curl -sSIL https://ghcr.io/v2/ | head -n 5 || true
-          # -----------------------------------
 
           echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
           docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
@@ -253,7 +241,6 @@ jobs:
           EOS
           )
 
-          # 자리표시자 치환
           SCRIPT="${SCRIPT//__REPO__/$REPO}"
           SCRIPT="${SCRIPT//__TAG__/$TAG}"
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
