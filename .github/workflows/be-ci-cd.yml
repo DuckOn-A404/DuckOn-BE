@@ -28,7 +28,7 @@ jobs:
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & build context 자동 감지 (예약변수 피해서 BUILD_CONTEXT/DOCKERFILE_PATH 사용)
+      # Dockerfile & build context 자동 감지 (예약변수 충돌 방지: BUILD_CONTEXT/DOCKERFILE_PATH 사용)
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
@@ -178,7 +178,7 @@ jobs:
             sleep 3
             curl -fsS http://127.0.0.1:18081/actuator/health || true
 
-      # -------- prod = SSM 배포 --------
+      # -------- prod = SSM 배포 (디버그+로그 수집) --------
       - name: Configure AWS (PROD)
         if: steps.vars.outputs.env == 'prod'
         uses: aws-actions/configure-aws-credentials@v4
@@ -187,7 +187,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
           aws-region: ${{ vars.AWS_REGION_PROD }}
 
-      - name: Deploy to PROD via SSM (debug + wait)
+      - name: Deploy to PROD via SSM (debug + logs)
         if: steps.vars.outputs.env == 'prod'
         run: |
           set -euo pipefail
@@ -226,6 +226,13 @@ jobs:
           [ -z "$NET" ] && NET="bridge"
           echo "Using network: $NET"
 
+          # ---- 진단 라인 (EC2에서 실행됨) ----
+          echo "[diag] whoami=$(whoami)"
+          echo "[diag] docker version:" && docker --version || true
+          echo "[diag] resolve ghcr.io:" && getent hosts ghcr.io || true
+          echo "[diag] curl ghcr.io/v2 (HEAD):" && curl -sSIL https://ghcr.io/v2/ | head -n 5 || true
+          # -----------------------------------
+
           echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
           docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
 
@@ -252,8 +259,6 @@ jobs:
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
 
           echo "== Send command =="
-          # ✅ 멀티라인 스크립트를 JSON으로 안전하게 감싸기
-          # jq -Rs : raw input을 JSON 문자열로 이스케이프
           jq -n --arg script "$SCRIPT" '{commands: [$script]}' > ssm-params.json
 
           CMD_ID=$(aws ssm send-command \
@@ -267,14 +272,31 @@ jobs:
 
           echo "CommandId: $CMD_ID"
 
-          echo "== Wait for command to finish =="
-          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION"
+          echo "== Polling command status =="
+          while true; do
+            OUT=$(aws ssm get-command-invocation \
+              --command-id "$CMD_ID" \
+              --instance-id "$INSTANCE" \
+              --region "$REGION" \
+              --output json || true)
 
-          echo "== Command result =="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION" --output table
+            STATUS=$(echo "$OUT" | jq -r '.Status // empty')
+            echo "SSM status: $STATUS"
 
-          STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION" --query Status --output text)
-          if [ "$STATUS" != "Success" ]; then
-            echo "SSM command failed with status=$STATUS"
-            exit 1
-          fi
+            if [ "$STATUS" = "Pending" ] || [ "$STATUS" = "InProgress" ] || [ "$STATUS" = "Delayed" ] || [ -z "$STATUS" ]; then
+              sleep 3
+              continue
+            fi
+
+            echo "----- STDOUT -----"
+            echo "$OUT" | jq -r '.StandardOutputContent // ""'
+            echo "----- STDERR -----"
+            echo "$OUT" | jq -r '.StandardErrorContent // ""'
+            echo "----- END LOGS -----"
+
+            if [ "$STATUS" = "Success" ]; then
+              exit 0
+            else
+              exit 1
+            fi
+          done
