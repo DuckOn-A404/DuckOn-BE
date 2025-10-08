@@ -128,10 +128,11 @@ jobs:
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.latest }}
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.latest }}
+          ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
+      # -------- dev = SSH 배포 --------
       - name: Deploy to DEV via SSH
         if: steps.vars.outputs.env == 'dev'
         uses: appleboy/ssh-action@v1.2.0
@@ -170,6 +171,7 @@ jobs:
             sleep 3
             curl -fsS http://127.0.0.1:18081/actuator/health || true
 
+      # -------- prod = SSM 배포 --------
       - name: Configure AWS (PROD)
         if: steps.vars.outputs.env == 'prod'
         uses: aws-actions/configure-aws-credentials@v4
@@ -210,31 +212,25 @@ jobs:
 
           APP="duckon-app-prod"
 
-          # ---- prod.env 위치 자동 탐색 (sh 호환) ----
-          ENV_FILE=""
-          for p in /home/ubuntu/prod.env /home/ec2-user/prod.env /root/prod.env /home/admin/prod.env; do
-            if [ -f "$p" ]; then ENV_FILE="$p"; break; fi
-          done
-          if [ -z "$ENV_FILE" ]; then
-            echo "[ERROR] prod.env not found in: /home/ubuntu /home/ec2-user /root /home/admin"
-            echo "[hint] put your prod.env at one of paths above (recommended: /home/ubuntu/prod.env)"
-            echo "[home list]"; ls -l /home || true
+          # prod.env: 고정 경로 (/srv/duckon/prod.env)
+          ENV_FILE="/srv/duckon/prod.env"
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "[ERROR] env file not found at $ENV_FILE"
+            ls -l /srv/duckon || true
             exit 1
           fi
           echo "Using env file: $ENV_FILE"
-          # ------------------------------------------
 
           # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
           [ -z "$NET" ] && NET="bridge"
           echo "Using network: $NET"
 
-          # ---- 진단 라인 ----
+          # 진단
           echo "[diag] whoami=$(whoami)"
           echo "[diag] docker version:" && docker --version || true
           echo "[diag] resolve ghcr.io:" && getent hosts ghcr.io || true
           echo "[diag] curl ghcr.io/v2 (HEAD):" && curl -sSIL https://ghcr.io/v2/ | head -n 5 || true
-          # ------------------
 
           echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
           docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
