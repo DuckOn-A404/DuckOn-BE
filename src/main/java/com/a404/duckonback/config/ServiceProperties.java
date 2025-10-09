@@ -38,4 +38,25 @@ public class ServiceProperties {
     @Value("${translate.timeout-ms}")
     private long translateTimeoutMs;
 
+    @Value("${service.mail.from:noreply@duckon.site}")
+    private String mailFrom;
+
+    @Value("${service.mail.brand:DUCKON}")
+    private String mailBrand;
+
+    @Value("${service.email.code.ttl-seconds:600}")
+    private long emailCodeTtlSeconds;
+
+    @Value("${service.email.code.length:6}")
+    private int emailCodeLength;
+
+    @Value("${service.email.rate-limit.send.per-10m:5}")
+    private int sendPer10m;
+
+    @Value("${service.email.rate-limit.verify.per-1h:10}")
+    private int verifyPer1h;
+
+    @Value("${service.email.code.consume-on-success:true}")
+    private boolean consumeOnSuccess;
+
 }
