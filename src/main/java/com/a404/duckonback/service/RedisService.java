@@ -28,5 +28,5 @@ public interface RedisService {
 
     RoomListInfoDTO getActiveRoomByHost(String hostUserId);
     void addParticipantCountToRoom(String roomId);
-
+    void decreaseParticipantCountFromRoom(String roomId);
 }

@@ -540,6 +540,13 @@ public class RedisServiceImpl implements RedisService {
         stringRedisTemplate.opsForValue().increment(cKey);
     }
 
+    @Override
+    public void decreaseParticipantCountFromRoom(String roomId){
+        String cKey = roomCountKey(roomId);
+        stringRedisTemplate.opsForValue().decrement(cKey);
+    }
+
+
     //    @Override
 //    public void removeUserFromRoom(String artistId, String roomId, User user) {
 //        String uKey = roomUsersKey(roomId);
@@ -577,51 +584,51 @@ public class RedisServiceImpl implements RedisService {
 //        }
 //        // 남아있는 경우의 host 변경은 프론트에서 재전송하는 정책(주석 그대로 유지)
 //    }
-@Override
-public void removeUserFromRoom(String artistId, String roomId, User user) {
-    String uKey = roomUsersKey(roomId);
-    String rKey = roomKey(roomId);
-    String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
-    String cKey = roomCountKey(roomId);
+    @Override
+    public void removeUserFromRoom(String artistId, String roomId, User user) {
+        String uKey = roomUsersKey(roomId);
+        String rKey = roomKey(roomId);
+        String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
+        String cKey = roomCountKey(roomId);
 
-    // 롤백 대비 백업
-    Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
-            .orElseGet(Collections::emptySet);
-    LiveRoomDTO backup = roomTemplate.opsForValue().get(rKey);
+        // 롤백 대비 백업
+        Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
+                .orElseGet(Collections::emptySet);
+        LiveRoomDTO backup = roomTemplate.opsForValue().get(rKey);
 
-    // 제거 시도
-    Long removedUser = stringRedisTemplate.opsForSet().remove(uKey, user.getUserId());
-    if (removedUser != null && removedUser > 0) {
-        // 실제로 빠졌으면 카운터 -1 (음수 방지)
-        Long after = stringRedisTemplate.opsForValue().decrement(cKey);
-        if (after != null && after < 0) {
-            stringRedisTemplate.opsForValue().set(cKey, "0");
+        // 제거 시도
+        Long removedUser = stringRedisTemplate.opsForSet().remove(uKey, user.getUserId());
+        if (removedUser != null && removedUser > 0) {
+            // 실제로 빠졌으면 카운터 -1 (음수 방지)
+            Long after = stringRedisTemplate.opsForValue().decrement(cKey);
+            if (after != null && after < 0) {
+                stringRedisTemplate.opsForValue().set(cKey, "0");
+            }
+        }
+
+        Long size = stringRedisTemplate.opsForSet().size(uKey);
+        if (size != null && size == 0L) {
+            // 마지막 사용자면 방 정리
+            Boolean deletedUsers = stringRedisTemplate.delete(uKey);
+            Boolean deletedRoom  = roomTemplate.delete(rKey);
+            Long removedFromArtist = stringRedisTemplate.opsForSet().remove(aKey, roomId);
+            // 카운터 키도 정리
+            stringRedisTemplate.delete(cKey);
+
+            if ((deletedRoom != null && !deletedRoom) || removedFromArtist == null || removedFromArtist == 0) {
+                // 롤백
+                if (backup != null) roomTemplate.opsForValue().set(rKey, backup, ROOM_TTL);
+                if (!before.isEmpty()) stringRedisTemplate.opsForSet().add(uKey, before.toArray(String[]::new));
+                // 카운터를 집합 크기로 복원
+                Long fixed = stringRedisTemplate.opsForSet().size(uKey);
+                stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed == null ? 0 : fixed));
+                stringRedisTemplate.expire(uKey, ROOM_TTL);
+                stringRedisTemplate.expire(cKey, ROOM_TTL);
+
+                throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
     }
-
-    Long size = stringRedisTemplate.opsForSet().size(uKey);
-    if (size != null && size == 0L) {
-        // 마지막 사용자면 방 정리
-        Boolean deletedUsers = stringRedisTemplate.delete(uKey);
-        Boolean deletedRoom  = roomTemplate.delete(rKey);
-        Long removedFromArtist = stringRedisTemplate.opsForSet().remove(aKey, roomId);
-        // 카운터 키도 정리
-        stringRedisTemplate.delete(cKey);
-
-        if ((deletedRoom != null && !deletedRoom) || removedFromArtist == null || removedFromArtist == 0) {
-            // 롤백
-            if (backup != null) roomTemplate.opsForValue().set(rKey, backup, ROOM_TTL);
-            if (!before.isEmpty()) stringRedisTemplate.opsForSet().add(uKey, before.toArray(String[]::new));
-            // 카운터를 집합 크기로 복원
-            Long fixed = stringRedisTemplate.opsForSet().size(uKey);
-            stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed == null ? 0 : fixed));
-            stringRedisTemplate.expire(uKey, ROOM_TTL);
-            stringRedisTemplate.expire(cKey, ROOM_TTL);
-
-            throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-}
 
     @Override
     public Long getRoomUserCount(String roomId) {
