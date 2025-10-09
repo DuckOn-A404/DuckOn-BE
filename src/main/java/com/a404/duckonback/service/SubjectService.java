@@ -21,14 +21,16 @@ public interface SubjectService {
 
     Subject findById(Long subjectId);
     List<Long> findAllSubjectIdByUserId(Long id);
-    SubjectDetailDTO getSubjectDetail(Long userId, Long subjectId);
+    SubjectDetailDTO getSubjectDetail(Long userId, Long subjectId, boolean includeTaxonomy);
     List<SubjectDTO> searchSubjects(String keyword);
+    Page<SubjectDTO> getSubjects(Pageable pageable, String sort, String order, String keyword);
+//    Page<SubjectDTO> getSubjects(Pageable pageable);
+    Page<SubjectDTO> getSubjectsByCategory(Pageable pageable, String domainCode, List<String> categoryCodes, boolean matchAll);
     List<SubjectDTO> getRandomSubjects(int size);
     Subject createSubject(AdminSubjectRequestDTO dto);
     Subject updateSubject(Long subjectId, AdminSubjectRequestDTO dto);
     Subject patchSubject(Long subjectId, AdminSubjectPatchDTO dto);
     String findSlugById(Long subjectId);
     String slugify(String s);
-    Page<SubjectDTO> getSubjects(Pageable pageable, String sort, String order, String keyword);
-    Page<SubjectDTO> getSubjects(Pageable pageable);
+
 }

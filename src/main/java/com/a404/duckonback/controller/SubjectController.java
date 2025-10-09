@@ -9,6 +9,7 @@ import com.a404.duckonback.service.SubjectFollowService;
 import com.a404.duckonback.service.SubjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,14 +34,15 @@ public class SubjectController {
 
     // 단일 Subject 상세 조회
     @Operation(summary = "Subject 상세 조회",
-        description = "특정 Subject의 상세 정보를 조회합니다. 로그인한 사용자의 팔로우 상태도 함께 반환됩니다.")
+        description = "includeTaxonomy=true 시 도메인/카테고리 요약을 함께 반환합니다.")
     @GetMapping("/{subjectId}")
     public ResponseEntity<?> getSubject(
         @PathVariable Long subjectId,
-        @AuthenticationPrincipal CustomUserPrincipal principal
+        @AuthenticationPrincipal CustomUserPrincipal principal,
+        @RequestParam(defaultValue = "false") boolean includeTaxonomy
     ) {
         Long userId = principal != null ? principal.getUser().getId() : null;
-        SubjectDetailDTO dto = subjectService.getSubjectDetail(userId, subjectId);
+        SubjectDetailDTO dto = subjectService.getSubjectDetail(userId, subjectId, includeTaxonomy);
         return ResponseEntity.ok(dto);
     }
 
@@ -61,6 +63,34 @@ public class SubjectController {
 
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<SubjectDTO> dtoPage = subjectService.getSubjects(pageable, sort, order, keyword);
+
+        return ResponseEntity.ok(Map.of(
+            "subjectList", dtoPage.getContent(),
+            "page", page,
+            "size", size,
+            "totalPages", dtoPage.getTotalPages(),
+            "totalElements", dtoPage.getTotalElements()
+        ));
+    }
+
+    @Operation(
+        summary = "카테고리 기반 Subject 검색",
+        description = "domain=SPORTS&codes=FOOTBALL,PLAYER&match=all|any 형태로 필터링합니다."
+    )
+    @GetMapping("/category")
+    public ResponseEntity<?> getByCategory(
+        @RequestParam(required = false) String domain,
+        @RequestParam(required = false) List<String> codes,
+        @RequestParam(defaultValue = "any") String match,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "30") int size
+    ) {
+        if (page < 1 || size < 1) {
+            return ResponseEntity.badRequest().body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
+        }
+        boolean matchAll = "all".equalsIgnoreCase(match);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page - 1, size);
+        var dtoPage = subjectService.getSubjectsByCategory(pageable, domain, codes, matchAll);
 
         return ResponseEntity.ok(Map.of(
             "subjectList", dtoPage.getContent(),

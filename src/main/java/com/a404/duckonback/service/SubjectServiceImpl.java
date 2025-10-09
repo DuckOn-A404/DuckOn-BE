@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
@@ -49,22 +50,25 @@ public class SubjectServiceImpl implements SubjectService {
     }
 
     @Override
-    public SubjectDetailDTO getSubjectDetail(Long userId, Long subjectId) {
-        Subject subject = subjectRepository.findById(subjectId)
-            .orElseThrow(() -> new CustomException("해당 대상을 찾을 수 없습니다. ID: " + subjectId, HttpStatus.NOT_FOUND));
+    public SubjectDetailDTO getSubjectDetail(Long userId, Long subjectId, boolean includeTaxonomy) {
+        Subject subject = includeTaxonomy
+            ? subjectRepository.findDetailWithTaxonomy(subjectId)
+            .orElseThrow(() -> new CustomException("해당 대상을 찾을 수 없습니다. ID: " + subjectId, HttpStatus.NOT_FOUND))
+            : subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new CustomException("해당 대상을 찾을 수 없습니다. ID: " + subjectId, HttpStatus.NOT_FOUND));
 
         boolean isFollowed = false;
         LocalDateTime followedAt = null;
         if (userId != null && userRepository.findByIdAndDeletedFalse(userId) != null) {
-            Optional<SubjectFollow> followOpt = subjectFollowRepository.findByUser_IdAndSubject_Id(userId, subjectId);
+            var followOpt = subjectFollowRepository.findByUser_IdAndSubject_Id(userId, subjectId);
             if (followOpt.isPresent()) {
                 isFollowed = true;
                 followedAt = followOpt.get().getCreatedAt();
             }
         }
-
         String displayName = resolveDisplayName(subject, DEFAULT_DISPLAY_LOCALE);
-        return SubjectDetailDTO.of(subject, displayName, isFollowed, followedAt);
+
+        return SubjectDetailDTO.of(subject, displayName, isFollowed, followedAt, includeTaxonomy);
     }
 
     @Override
@@ -85,26 +89,62 @@ public class SubjectServiceImpl implements SubjectService {
     @Override
     public List<SubjectDTO> getRandomSubjects(int size) {
         if (size < 1) throw new CustomException("size는 1 이상의 정수여야 합니다.", HttpStatus.BAD_REQUEST);
-
         return subjectRepository.findRandomSubjects(size).stream()
-            .map(s -> {
-                long cnt = subjectFollowRepository.countBySubject_Id(s.getId());
-                return SubjectDTO.builder()
-                    .subjectId(s.getId())
-                    .slug(s.getSlug())
-                    .displayName(resolveDisplayName(s, DEFAULT_DISPLAY_LOCALE))
-                    .debutDate(s.getDebutDate())
-                    .imgUrl(s.getImgUrl())
-                    .followerCount(cnt)
-                    .build();
-            })
+            .map(this::toCard)
             .toList();
+    }
+
+
+    // --------------------------
+    // 목록 (페이지네이션)
+    // --------------------------
+    @Transactional(readOnly = true)
+    @Override
+    public Page<SubjectDTO> getSubjects(Pageable pageable, String sort, String order, String keyword) {
+        // 표시 로케일: 현재는 고정, 필요하면 파라미터/컨텍스트로 주입
+        String disp = DEFAULT_DISPLAY_LOCALE;
+
+        String sortKey = (sort == null) ? "followers" : sort.toLowerCase();
+        if (!List.of("followers", "name", "debut").contains(sortKey)) sortKey = "followers";
+
+        String sortOrder = (order == null) ? "desc" : order.toLowerCase();
+        if (!List.of("asc", "desc").contains(sortOrder)) sortOrder = "desc";
+
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+
+        return subjectRepository.pageSubjects(pageable, sortKey, sortOrder, kw, disp);
+    }
+
+//    @Override
+//    public Page<SubjectDTO> getSubjects(Pageable pageable) {
+//        return getSubjects(pageable, "followers", "desc", null);
+//    }
+
+    // ========= 카테고리 필터(C) =========
+    @Override
+    public Page<SubjectDTO> getSubjectsByCategory(
+        Pageable pageable,
+        String domainCode,
+        List<String> categoryCodes,
+        boolean matchAll
+    ) {
+        List<String> codes = (categoryCodes == null)
+            ? List.of()
+            : categoryCodes.stream().filter(Objects::nonNull).map(String::trim).filter(s -> !s.isEmpty()).toList();
+
+        Page<Subject> page = matchAll
+            ? (codes.isEmpty()
+            ? subjectRepository.findByDomainAndAnyCategory(domainCode, List.of(), true, pageable)
+            : subjectRepository.findByDomainAndAllCategories(domainCode, codes, codes.size(), pageable))
+            : subjectRepository.findByDomainAndAnyCategory(domainCode, codes, codes.isEmpty(), pageable);
+
+        return page.map(this::toCard);
     }
 
     // --------------------------
     // 생성
     // --------------------------
-    @Override
+    @Override @Transactional
     public Subject createSubject(AdminSubjectRequestDTO dto) {
         // 필수값 검증
         if (dto.getDomainId() == null) {
@@ -301,30 +341,6 @@ public class SubjectServiceImpl implements SubjectService {
         return subject.getSlug(); // 불변 정책
     }
 
-    // --------------------------
-    // 목록 (페이지네이션)
-    // --------------------------
-    @Override
-    public Page<SubjectDTO> getSubjects(Pageable pageable, String sort, String order, String keyword) {
-        // 표시 로케일: 현재는 고정, 필요하면 파라미터/컨텍스트로 주입
-        String disp = DEFAULT_DISPLAY_LOCALE;
-
-        String sortKey = (sort == null) ? "followers" : sort.toLowerCase();
-        if (!List.of("followers", "name", "debut").contains(sortKey)) sortKey = "followers";
-
-        String sortOrder = (order == null) ? "desc" : order.toLowerCase();
-        if (!List.of("asc", "desc").contains(sortOrder)) sortOrder = "desc";
-
-        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-
-        return subjectRepository.pageSubjects(pageable, sortKey, sortOrder, kw, disp);
-    }
-
-    @Override
-    public Page<SubjectDTO> getSubjects(Pageable pageable) {
-        return getSubjects(pageable, "followers", "desc", null);
-    }
-
     @Override
     public String slugify(String s) {
         if (s == null) return "subject";
@@ -342,6 +358,18 @@ public class SubjectServiceImpl implements SubjectService {
     // =====================================================================
     // 헬퍼들
     // =====================================================================
+
+    private SubjectDTO toCard(Subject s) {
+        long cnt = subjectFollowRepository.countBySubject_Id(s.getId());
+        return SubjectDTO.builder()
+            .subjectId(s.getId())
+            .slug(s.getSlug())
+            .displayName(resolveDisplayName(s, DEFAULT_DISPLAY_LOCALE))
+            .debutDate(s.getDebutDate())
+            .imgUrl(s.getImgUrl())
+            .followerCount(cnt)
+            .build();
+    }
 
     /** 표시명 선택: displayLocale OFFICIAL → native OFFICIAL → en OFFICIAL → 아무 OFFICIAL */
     private String resolveDisplayName(Subject s, String displayLocale) {
