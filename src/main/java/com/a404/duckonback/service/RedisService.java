@@ -27,5 +27,6 @@ public interface RedisService {
     boolean increaseChatCount(String roomId, String userId);
 
     RoomListInfoDTO getActiveRoomByHost(String hostUserId);
-
+    void addParticipantCountToRoom(String roomId);
+    void decreaseParticipantCountFromRoom(String roomId);
 }
