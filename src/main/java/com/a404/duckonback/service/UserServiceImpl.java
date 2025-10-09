@@ -982,7 +982,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
+    public RecommendUsersResponseDTO recommendUsers(String myUserId, Long subjectId, int size, boolean includeReasons) {
         if (size <= 0) size = SIZE_DEFAULT;
 
         // 1) 로그인/게스트 분기
@@ -1010,8 +1010,8 @@ public class UserServiceImpl implements UserService {
         Map<String, Candidate> scores = new HashMap<>();
 
         // A) 같은 아티스트 현재 방 참여자 (Redis)  >>> CHANGED: 인덱스 세트 대신 SCAN + DTO 필터
-        if (artistId != null) {
-            Set<String> roomIds = findRoomIdsByArtist(artistId); // >>> CHANGED
+        if (subjectId != null) {
+            Set<String> roomIds = findRoomIdsByArtist(subjectId); // >>> CHANGED
 
             for (String roomId : roomIds) {
                 String usersKey = roomUsersKey(roomId);
@@ -1053,9 +1053,9 @@ public class UserServiceImpl implements UserService {
         }
 
         // B) 같은 아티스트 팔로워 (MySQL, 프로젝션)
-        if (artistId != null) {
+        if (subjectId != null) {
             var followerBriefs = userRepository.findArtistFollowersBrief(
-                    artistId, PageRequest.of(0, LIMIT_ARTIST_FOLLOWERS));
+                    subjectId, PageRequest.of(0, LIMIT_ARTIST_FOLLOWERS));
             for (UserBrief b : followerBriefs) {
                 if (myUserId == null || !b.getUserId().equals(myUserId)) {
                     add(scores, b.getUserId(), SCORE_ARTIST_FAN, includeReasons ? "같은 아티스트 팔로워" : null);
@@ -1064,10 +1064,10 @@ public class UserServiceImpl implements UserService {
         }
 
         // C) 같은 아티스트 최근 방 호스트 (MySQL, 프로젝션)
-        if (artistId != null) {
+        if (subjectId != null) {
             LocalDateTime since = LocalDateTime.now().minusDays(7);
             var hostBriefs = userRepository.findRecentHostsBrief(
-                    artistId, since, PageRequest.of(0, LIMIT_RECENT_HOSTS));
+                    subjectId, since, PageRequest.of(0, LIMIT_RECENT_HOSTS));
             for (UserBrief b : hostBriefs) {
                 if (myUserId == null || !b.getUserId().equals(myUserId)) {
                     add(scores, b.getUserId(), SCORE_RECENT_HOST, includeReasons ? "같은 아티스트 최근 방 호스트" : null);
@@ -1178,7 +1178,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // >>> CHANGED: room:* 키를 SCAN하여 artistId가 일치하는 roomId만 반환
-    private Set<String> findRoomIdsByArtist(Long artistId) {
+    private Set<String> findRoomIdsByArtist(Long subjectId) {
         Set<String> roomIds = new HashSet<>();
         var cf = redisTemplate.getConnectionFactory();
         if (cf == null) return roomIds;
@@ -1194,9 +1194,9 @@ public class UserServiceImpl implements UserService {
                 Object value = redisTemplate.opsForValue().get(key);
 
                 // 헬퍼를 통해 artistId를 추출합니다.
-                Long aid = extractArtistIdFromValue(value);
+                Long aid = extractSubjectIdFromValue(value);
 
-                if (aid != null && artistId.equals(aid)) {
+                if (aid != null && subjectId.equals(aid)) {
                     String roomId = key.substring(ROOM_KEY_PREFIX.length());
                     roomIds.add(roomId);
                 }
@@ -1211,7 +1211,7 @@ public class UserServiceImpl implements UserService {
      * 다양한 역직렬화 가능성(DTO, Map, String)을 모두 처리합니다.
      */
     @SuppressWarnings("unchecked")
-    private Long extractArtistIdFromValue(Object val) {
+    private Long extractSubjectIdFromValue(Object val) {
         if (val == null) return null;
 
         try {
@@ -1219,13 +1219,13 @@ public class UserServiceImpl implements UserService {
                 return dto.getSubjectId();
             }
             if (val instanceof Map<?, ?> m) {
-                Object v = m.get("artistId");
+                Object v = m.get("subjectId");
                 if (v instanceof Number n) return n.longValue();
                 if (v instanceof String s) return Long.parseLong(s);
             }
             if (val instanceof String s && s.trim().startsWith("{")) {
                 Map<String, Object> m = objectMapper.readValue(s, Map.class);
-                Object v = m.get("artistId");
+                Object v = m.get("subjectId");
                 if (v instanceof Number n) return n.longValue();
             }
         } catch (Exception ignore) {

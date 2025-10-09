@@ -51,11 +51,12 @@ public class SubjectServiceImpl implements SubjectService {
 
     @Override
     public SubjectDetailDTO getSubjectDetail(Long userId, Long subjectId, boolean includeTaxonomy) {
+        String notFoundMessage = "해당 대상을 찾을 수 없습니다. ID: " + subjectId;
         Subject subject = includeTaxonomy
             ? subjectRepository.findDetailWithTaxonomy(subjectId)
-            .orElseThrow(() -> new CustomException("해당 대상을 찾을 수 없습니다. ID: " + subjectId, HttpStatus.NOT_FOUND))
+            .orElseThrow(() -> new CustomException(notFoundMessage, HttpStatus.NOT_FOUND))
             : subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new CustomException("해당 대상을 찾을 수 없습니다. ID: " + subjectId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException(notFoundMessage, HttpStatus.NOT_FOUND));
 
         boolean isFollowed = false;
         LocalDateTime followedAt = null;
