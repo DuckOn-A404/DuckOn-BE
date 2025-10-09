@@ -41,21 +41,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
     SELECT u 
     FROM User u
-      LEFT JOIN FETCH u.artistFollows af
-      LEFT JOIN FETCH af.artist
+      LEFT JOIN FETCH u.subjectFollows sf
+      LEFT JOIN FETCH sf.subject
     WHERE u.userId = :userId AND u.deleted = false
     """)
-    Optional<User> findUserDetailWithArtistFollows(@Param("userId") String userId);
+    Optional<User> findUserDetailWithSubjectFollows(@Param("userId") String userId);
 
     /** 같은 아티스트 팔로워 (탈퇴 제외) */
     @Query("""
       SELECT u.userId AS userId, u.nickname AS nickname, u.imgUrl AS imgUrl
-      FROM ArtistFollow af JOIN af.user u
-      WHERE af.artist.artistId = :artistId
+      FROM SubjectFollow sf JOIN sf.user u
+      WHERE sf.subject.id = :subjectId
         AND u.deleted = false
-      ORDER BY af.createdAt DESC
+      ORDER BY sf.createdAt DESC
     """)
-    List<UserBrief> findArtistFollowersBrief(@Param("artistId") Long artistId, Pageable pageable);
+    List<UserBrief> findArtistFollowersBrief(@Param("subjectId") Long subjectId, Pageable pageable);
 
     /** 같은 아티스트에서 최근 방 호스트 (탈퇴 제외) */
     @Query("""
@@ -66,13 +66,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
         MAX(r.createdAt) AS lastCreated
       FROM Room r
         JOIN r.creator u
-      WHERE r.artist.artistId = :artistId
+      WHERE r.subject.id = :subjectId
         AND r.createdAt >= :since
         AND u.deleted = false
       GROUP BY u.userId, u.nickname, u.imgUrl
       ORDER BY lastCreated DESC
     """)
-    List<UserBrief> findRecentHostsBrief(@Param("artistId") Long artistId,
+    List<UserBrief> findRecentHostsBrief(@Param("subjectId") Long subjectId,
                                          @Param("since") LocalDateTime since,
                                          Pageable pageable);
 

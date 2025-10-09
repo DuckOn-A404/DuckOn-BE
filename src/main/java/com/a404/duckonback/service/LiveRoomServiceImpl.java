@@ -3,7 +3,7 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
-import com.a404.duckonback.entity.Artist;
+//import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.Room;
 import com.a404.duckonback.entity.Subject;
 import com.a404.duckonback.entity.User;

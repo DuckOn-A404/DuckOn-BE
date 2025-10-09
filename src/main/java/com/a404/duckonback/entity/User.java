@@ -96,7 +96,7 @@ public class User {
 
     @Builder.Default
     @OneToMany(mappedBy = "user")
-    private List<ArtistFollow> artistFollows = new ArrayList<>();
+    private List<SubjectFollow> subjectFollows = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "user")

@@ -657,7 +657,7 @@ public class UserServiceImpl implements UserService {
     @Override
 //    @Transactional(readOnly = true)
     public UserDetailInfoResponseDTO getUserDetailInfo(String userId) {
-        User user = userRepository.findUserDetailWithArtistFollows(userId)
+        User user = userRepository.findUserDetailWithSubjectFollows(userId)
                 .orElseThrow(() -> new CustomException("사용자 없음", HttpStatus.NOT_FOUND));
 
         return toDTO(user);
@@ -670,10 +670,10 @@ public class UserServiceImpl implements UserService {
 
         boolean isSocial = user.getHasLocalCredential() != null;
 
-        List<Long> artistList = Optional.ofNullable(user.getArtistFollows())
+        List<Long> artistList = Optional.ofNullable(user.getSubjectFollows())
                 .orElse(List.of())
                 .stream()
-                .map(af -> af.getArtist() != null ? af.getArtist().getArtistId() : null)
+                .map(af -> af.getSubject().getId() != null ? af.getSubject().getId() : null)
                 .filter(Objects::nonNull)
                 .toList();
 
