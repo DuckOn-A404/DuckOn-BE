@@ -14,7 +14,7 @@ import java.util.List;
 public class LiveRoomDTO {
     private Long roomId;
     private String title;
-    private Long artistId;
+    private Long subjectId;
     private String hostId;
     private String hostNickname;
     private String imgUrl;

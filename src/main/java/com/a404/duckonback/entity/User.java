@@ -65,7 +65,7 @@ public class User {
     private String imgUrl;
 
     @Column(name = "deleted", nullable = false)
-    private boolean deleted = false;
+    private boolean deleted;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
@@ -96,7 +96,7 @@ public class User {
 
     @Builder.Default
     @OneToMany(mappedBy = "user")
-    private List<ArtistFollow> artistFollows = new ArrayList<>();
+    private List<SubjectFollow> subjectFollows = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "user")

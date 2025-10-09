@@ -12,5 +12,5 @@ public interface RoomService {
     Room updateRoom(Long roomId, Room updatedRoom);
     void deleteRoom(Long roomId);
     List<Room> getRoomsByCreator(Long id);
-    List<Room> getRoomsByArtist(Long artistId);
+    List<Room> getRoomsBySubject(Long subjectId);
 }

@@ -569,6 +569,7 @@ import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
 import com.a404.duckonback.util.Anonymizer;
 import com.a404.duckonback.util.JWTUtil;
+import com.a404.duckonback.util.SubjectDisplayNameResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -616,6 +617,9 @@ public class UserServiceImpl implements UserService {
     private static final int LIMIT_RECENT_HOSTS = 10;
     private static final int REDIS_SAMPLE_PER_ROOM = 20; // 방당 최대 샘플 수
 
+    private final SubjectDisplayNameResolver displayNameResolver;
+    private static final String DEFAULT_DISPLAY_LOCALE = "ko";
+
     // >>> CHANGED: room 키 프리픽스(현재 Redis 스키마에 맞춤)
     private static final String ROOM_KEY_PREFIX = "room:";
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -653,7 +657,7 @@ public class UserServiceImpl implements UserService {
     @Override
 //    @Transactional(readOnly = true)
     public UserDetailInfoResponseDTO getUserDetailInfo(String userId) {
-        User user = userRepository.findUserDetailWithArtistFollows(userId)
+        User user = userRepository.findUserDetailWithSubjectFollows(userId)
                 .orElseThrow(() -> new CustomException("사용자 없음", HttpStatus.NOT_FOUND));
 
         return toDTO(user);
@@ -666,18 +670,28 @@ public class UserServiceImpl implements UserService {
 
         boolean isSocial = user.getHasLocalCredential() != null;
 
-        List<Long> artistList = Optional.ofNullable(user.getArtistFollows())
+        List<Long> subjectList = Optional.ofNullable(user.getSubjectFollows())
                 .orElse(List.of())
                 .stream()
-                .map(af -> af.getArtist() != null ? af.getArtist().getArtistId() : null)
+                .map(af -> af.getSubject().getId())
                 .filter(Objects::nonNull)
                 .toList();
 
         List<RoomDTO> roomList = Optional.ofNullable(user.getRooms())
-                .orElse(List.of())
-                .stream()
-                .map(RoomDTO::fromEntity)
-                .toList();
+            .orElse(List.of())
+            .stream()
+            .map(room -> {
+                String locale = Optional.ofNullable(user.getLanguage())
+                    .filter(s -> !s.isBlank())
+                    .orElse(DEFAULT_DISPLAY_LOCALE)
+                    .toLowerCase();
+                String displayName = (room.getSubject() != null)
+                    ? displayNameResolver.resolve(room.getSubject(), locale)
+                    : null;
+                return RoomDTO.fromEntity(room, displayName); // ← 2개 인자 전달
+            })
+            .toList();
+
 
         List<Penalty> penalties = penaltyService.getActivePenaltiesByUser(user.getId());
         List<PenaltyDTO> pennaltyList = penalties.stream()
@@ -697,7 +711,7 @@ public class UserServiceImpl implements UserService {
                 .role(user.getRole().toString())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(artistList)
+                .subjectList(subjectList)
                 .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
                 .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
                 .socialLogin(isSocial)
@@ -761,7 +775,18 @@ public class UserServiceImpl implements UserService {
 
         // 과거 히스토리
         List<RoomDTO> roomList = roomRepository.findByCreator_Id(user.getId())
-                .stream().map(RoomDTO::fromEntity).toList();
+            .stream()
+            .map(room -> {
+                String locale = Optional.ofNullable(user.getLanguage())
+                    .filter(s -> !s.isBlank())
+                    .orElse(DEFAULT_DISPLAY_LOCALE)
+                    .toLowerCase();
+                String displayName = (room.getSubject() != null)
+                    ? displayNameResolver.resolve(room.getSubject(), locale)
+                    : null;
+                return RoomDTO.fromEntity(room, displayName); // ← 2개 인자
+            })
+            .toList();
 
         // 현재 라이브(레디스)
         RoomListInfoDTO active = redisService.getActiveRoomByHost(otherUserId);
@@ -957,7 +982,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons) {
+    public RecommendUsersResponseDTO recommendUsers(String myUserId, Long subjectId, int size, boolean includeReasons) {
         if (size <= 0) size = SIZE_DEFAULT;
 
         // 1) 로그인/게스트 분기
@@ -985,8 +1010,8 @@ public class UserServiceImpl implements UserService {
         Map<String, Candidate> scores = new HashMap<>();
 
         // A) 같은 아티스트 현재 방 참여자 (Redis)  >>> CHANGED: 인덱스 세트 대신 SCAN + DTO 필터
-        if (artistId != null) {
-            Set<String> roomIds = findRoomIdsByArtist(artistId); // >>> CHANGED
+        if (subjectId != null) {
+            Set<String> roomIds = findRoomIdsByArtist(subjectId); // >>> CHANGED
 
             for (String roomId : roomIds) {
                 String usersKey = roomUsersKey(roomId);
@@ -1028,9 +1053,9 @@ public class UserServiceImpl implements UserService {
         }
 
         // B) 같은 아티스트 팔로워 (MySQL, 프로젝션)
-        if (artistId != null) {
+        if (subjectId != null) {
             var followerBriefs = userRepository.findArtistFollowersBrief(
-                    artistId, PageRequest.of(0, LIMIT_ARTIST_FOLLOWERS));
+                    subjectId, PageRequest.of(0, LIMIT_ARTIST_FOLLOWERS));
             for (UserBrief b : followerBriefs) {
                 if (myUserId == null || !b.getUserId().equals(myUserId)) {
                     add(scores, b.getUserId(), SCORE_ARTIST_FAN, includeReasons ? "같은 아티스트 팔로워" : null);
@@ -1039,10 +1064,10 @@ public class UserServiceImpl implements UserService {
         }
 
         // C) 같은 아티스트 최근 방 호스트 (MySQL, 프로젝션)
-        if (artistId != null) {
+        if (subjectId != null) {
             LocalDateTime since = LocalDateTime.now().minusDays(7);
             var hostBriefs = userRepository.findRecentHostsBrief(
-                    artistId, since, PageRequest.of(0, LIMIT_RECENT_HOSTS));
+                    subjectId, since, PageRequest.of(0, LIMIT_RECENT_HOSTS));
             for (UserBrief b : hostBriefs) {
                 if (myUserId == null || !b.getUserId().equals(myUserId)) {
                     add(scores, b.getUserId(), SCORE_RECENT_HOST, includeReasons ? "같은 아티스트 최근 방 호스트" : null);
@@ -1153,7 +1178,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // >>> CHANGED: room:* 키를 SCAN하여 artistId가 일치하는 roomId만 반환
-    private Set<String> findRoomIdsByArtist(Long artistId) {
+    private Set<String> findRoomIdsByArtist(Long subjectId) {
         Set<String> roomIds = new HashSet<>();
         var cf = redisTemplate.getConnectionFactory();
         if (cf == null) return roomIds;
@@ -1169,9 +1194,9 @@ public class UserServiceImpl implements UserService {
                 Object value = redisTemplate.opsForValue().get(key);
 
                 // 헬퍼를 통해 artistId를 추출합니다.
-                Long aid = extractArtistIdFromValue(value);
+                Long aid = extractSubjectIdFromValue(value);
 
-                if (aid != null && artistId.equals(aid)) {
+                if (aid != null && subjectId.equals(aid)) {
                     String roomId = key.substring(ROOM_KEY_PREFIX.length());
                     roomIds.add(roomId);
                 }
@@ -1186,21 +1211,21 @@ public class UserServiceImpl implements UserService {
      * 다양한 역직렬화 가능성(DTO, Map, String)을 모두 처리합니다.
      */
     @SuppressWarnings("unchecked")
-    private Long extractArtistIdFromValue(Object val) {
+    private Long extractSubjectIdFromValue(Object val) {
         if (val == null) return null;
 
         try {
             if (val instanceof LiveRoomDTO dto) {
-                return dto.getArtistId();
+                return dto.getSubjectId();
             }
             if (val instanceof Map<?, ?> m) {
-                Object v = m.get("artistId");
+                Object v = m.get("subjectId");
                 if (v instanceof Number n) return n.longValue();
                 if (v instanceof String s) return Long.parseLong(s);
             }
             if (val instanceof String s && s.trim().startsWith("{")) {
                 Map<String, Object> m = objectMapper.readValue(s, Map.class);
-                Object v = m.get("artistId");
+                Object v = m.get("subjectId");
                 if (v instanceof Number n) return n.longValue();
             }
         } catch (Exception ignore) {

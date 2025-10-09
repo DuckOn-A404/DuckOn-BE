@@ -4,7 +4,8 @@ import com.a404.duckonback.config.ServiceProperties;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
-import com.a404.duckonback.service.ArtistService;
+//import com.a404.duckonback.service.ArtistService;
+import com.a404.duckonback.service.SubjectService;
 import com.a404.duckonback.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,8 +24,8 @@ import java.io.IOException;
 public class OAuth2AuthSuccessHandler implements AuthenticationSuccessHandler {
     private final JWTUtil         jwtUtil;
     private final UserRepository  userRepository;
-    private final ArtistService   artistService;
     private final ServiceProperties serviceProperties;
+//    private final SubjectService subjectService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req,

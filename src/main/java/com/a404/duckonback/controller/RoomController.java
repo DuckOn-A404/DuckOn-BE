@@ -62,7 +62,7 @@ public class RoomController {
             description = "특정 방을 삭제합니다. 방 ID와 아티스트 ID를 통해 방 정보를 삭제합니다.")
     @DeleteMapping("/{roomId}")
     public ResponseEntity<?> deleteRoom(@PathVariable Long roomId,
-                                        @RequestParam Long artistId,
+                                        @RequestParam Long subjectId,
                                         @AuthenticationPrincipal CustomUserPrincipal principal) {
         if (principal == null) {
             throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
@@ -74,7 +74,7 @@ public class RoomController {
             throw new CustomException("호스트만 방을 삭제할 수 있습니다.", HttpStatus.FORBIDDEN);
         }
 
-        redisService.deleteRoomInfo(artistId, roomId);
+        redisService.deleteRoomInfo(subjectId, roomId);
 
         LiveRoomSyncDTO dto = LiveRoomSyncDTO.builder()
                 .eventType(RoomSyncEventType.ROOM_DELETED)
@@ -264,13 +264,13 @@ public class RoomController {
     @PostMapping("/{roomId}/exit")
     public ResponseEntity<?> exitRoom(
             @PathVariable Long roomId,
-            @RequestParam Long artistId,
+            @RequestParam Long subjectId,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
 
         if (principal != null) {
             redisService.removeUserFromRoom(
-                    artistId.toString(),
+                    subjectId.toString(),
                     roomId.toString(),
                     principal.getUser()
             );
@@ -282,7 +282,7 @@ public class RoomController {
 //            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
 //        }
 //
-//        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
+//        redisService.removeUserFromRoom(subjectId.toString(), roomId.toString(), principal.getUser());
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());
         messagingTemplate.convertAndSend(
@@ -295,8 +295,8 @@ public class RoomController {
 
     @Operation(summary = "방 목록 조회", description = "현재 존재하는 모든 방 목록을 조회합니다.")
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllRoomSummaries(@RequestParam Long artistId) {
-        List<LiveRoomSummaryDTO> rooms = redisService.getAllRoomSummaries(artistId);
+    public ResponseEntity<Map<String, Object>> getAllRoomSummaries(@RequestParam Long subjectId) {
+        List<LiveRoomSummaryDTO> rooms = redisService.getAllRoomSummaries(subjectId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("roomInfoList", rooms);

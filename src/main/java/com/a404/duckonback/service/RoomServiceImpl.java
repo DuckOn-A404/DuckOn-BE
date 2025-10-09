@@ -37,7 +37,7 @@ public class RoomServiceImpl implements RoomService {
                     room.setImgUrl(updatedRoom.getImgUrl());
                     room.setCreatedAt(updatedRoom.getCreatedAt());
                     room.setCreator(updatedRoom.getCreator());
-                    room.setArtist(updatedRoom.getArtist());
+                    room.setSubject(updatedRoom.getSubject());
                     return roomRepository.save(room);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Room not found with ID: " + roomId));
@@ -54,7 +54,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public List<Room> getRoomsByArtist(Long artistId) {
-        return roomRepository.findByArtist_ArtistId(artistId);
+    public List<Room> getRoomsBySubject(Long subjectId) {
+        return roomRepository.findBySubject_Id(subjectId);
     }
 }

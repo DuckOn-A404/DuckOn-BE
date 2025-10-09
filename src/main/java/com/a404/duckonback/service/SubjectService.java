@@ -1,0 +1,36 @@
+package com.a404.duckonback.service;
+
+import com.a404.duckonback.dto.AdminSubjectPatchDTO;
+import com.a404.duckonback.dto.AdminSubjectRequestDTO;
+import com.a404.duckonback.dto.SubjectDTO;
+import com.a404.duckonback.dto.SubjectDetailDTO;
+import com.a404.duckonback.entity.Subject;
+import com.a404.duckonback.entity.SubjectFollow;
+import com.a404.duckonback.exception.CustomException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MultipartFile;
+
+public interface SubjectService {
+
+    Subject findById(Long subjectId);
+    List<Long> findAllSubjectIdByUserId(Long id);
+    SubjectDetailDTO getSubjectDetail(Long userId, Long subjectId, boolean includeTaxonomy);
+    List<SubjectDTO> searchSubjects(String keyword);
+    Page<SubjectDTO> getSubjects(Pageable pageable, String sort, String order, String keyword);
+//    Page<SubjectDTO> getSubjects(Pageable pageable);
+    Page<SubjectDTO> getSubjectsByCategory(Pageable pageable, String domainCode, List<String> categoryCodes, boolean matchAll);
+    List<SubjectDTO> getRandomSubjects(int size);
+    Subject createSubject(AdminSubjectRequestDTO dto);
+    Subject updateSubject(Long subjectId, AdminSubjectRequestDTO dto);
+    Subject patchSubject(Long subjectId, AdminSubjectPatchDTO dto);
+    String findSlugById(Long subjectId);
+    String slugify(String s);
+
+}

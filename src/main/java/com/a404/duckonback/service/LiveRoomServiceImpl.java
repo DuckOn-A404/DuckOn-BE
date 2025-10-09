@@ -3,8 +3,9 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
-import com.a404.duckonback.entity.Artist;
+//import com.a404.duckonback.entity.Artist;
 import com.a404.duckonback.entity.Room;
+import com.a404.duckonback.entity.Subject;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
     private final RedisService redisService;
     private final UserService userService;
     private final RoomService roomService;
-    private final ArtistService artistService;
+    private final SubjectService subjectService;
     private final S3Service s3Service;
 
     public LiveRoomDTO createRoom(CreateRoomRequestDTO req) {
@@ -37,14 +38,14 @@ public class LiveRoomServiceImpl implements LiveRoomService {
 
         User user = userService.findByUserId(req.getHostId());
 
-        Artist artist = artistService.findById(req.getArtistId());
+        Subject subject = subjectService.findById(req.getSubjectId());
 
         Room roomEntity = Room.builder()
                 .title(req.getTitle())
                 .imgUrl(imgUrl)
                 .createdAt(LocalDateTime.now())
                 .creator(user)
-                .artist(artist)
+                .subject(subject)
                 .build();
 
         if (req.isLocked()) {
@@ -62,7 +63,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
         LiveRoomDTO room = LiveRoomDTO.builder()
                 .roomId(roomId)
                 .title(req.getTitle())
-                .artistId(req.getArtistId())
+                .subjectId(req.getSubjectId())
                 .hostId(req.getHostId())
                 .hostNickname(req.getHostNickname())
                 .imgUrl(imgUrl)
@@ -76,7 +77,7 @@ public class LiveRoomServiceImpl implements LiveRoomService {
                 .entryAnswer(req.getEntryAnswer())
                 .build();
 
-        redisService.addRoomToArtist(req.getArtistId().toString(), roomId.toString());
+        redisService.addRoomToSubject(req.getSubjectId().toString(), roomId.toString());
         redisService.saveRoomInfo(roomId.toString(), room);
 
         return room;
