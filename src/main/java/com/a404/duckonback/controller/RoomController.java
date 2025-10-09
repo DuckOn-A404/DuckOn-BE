@@ -267,11 +267,22 @@ public class RoomController {
             @RequestParam Long artistId,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        if (principal == null) {
-            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+
+        if (principal != null) {
+            redisService.removeUserFromRoom(
+                    artistId.toString(),
+                    roomId.toString(),
+                    principal.getUser()
+            );
+        }else{
+            redisService.decreaseParticipantCountFromRoom(roomId.toString());
         }
 
-        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
+//        if (principal == null) {
+//            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+//        }
+//
+//        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());
         messagingTemplate.convertAndSend(
