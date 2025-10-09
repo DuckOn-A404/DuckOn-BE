@@ -19,7 +19,7 @@ public interface RedisService {
     void addUserToRoom(String roomId, User user);
     void removeUserFromRoom(String artistId, String roomId,User user);
     List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId);
-//    List<RoomListInfoDTO> getTrendingRooms(int size);        // 기존
+    List<RoomListInfoDTO> getTrendingRooms(int size);        // 기존
     Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable); // 페이징 추가
 
     void updateRoomInfo(LiveRoomSyncDTO room);
@@ -28,5 +28,6 @@ public interface RedisService {
     boolean increaseChatCount(String roomId, String userId);
 
     RoomListInfoDTO getActiveRoomByHost(String hostUserId);
-
+    void addParticipantCountToRoom(String roomId);
+    void decreaseParticipantCountFromRoom(String roomId);
 }

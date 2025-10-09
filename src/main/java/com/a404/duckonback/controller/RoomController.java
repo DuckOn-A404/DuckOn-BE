@@ -219,7 +219,7 @@ public class RoomController {
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
-        String entryAnswer = request.getEntryAnswer();
+        String entryAnswer = (request != null) ? request.getEntryAnswer() : null;
 
         if (room == null) {
             throw new CustomException("존재하지 않는 방입니다", HttpStatus.NOT_FOUND);
@@ -246,14 +246,16 @@ public class RoomController {
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
-
-            long participantCount = redisService.getRoomUserCount(roomId.toString());
-            messagingTemplate.convertAndSend(
-                    "/topic/room/" + roomId + "/presence",
-                    new RoomPresenceDTO(roomId, participantCount)
-            );
-            room.setParticipantCount(participantCount);
+        }else{// 로그인 하지 않더라도 참여자 수 증가
+            redisService.addParticipantCountToRoom(roomId.toString());
         }
+
+        long participantCount = redisService.getRoomUserCount(roomId.toString());
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId + "/presence",
+                new RoomPresenceDTO(roomId, participantCount)
+        );
+        room.setParticipantCount(participantCount);
 
         return ResponseEntity.ok(room);
     }
@@ -265,11 +267,22 @@ public class RoomController {
             @RequestParam Long artistId,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        if (principal == null) {
-            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+
+        if (principal != null) {
+            redisService.removeUserFromRoom(
+                    artistId.toString(),
+                    roomId.toString(),
+                    principal.getUser()
+            );
+        }else{
+            redisService.decreaseParticipantCountFromRoom(roomId.toString());
         }
 
-        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
+//        if (principal == null) {
+//            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+//        }
+//
+//        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());
         messagingTemplate.convertAndSend(

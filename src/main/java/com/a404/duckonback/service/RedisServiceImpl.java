@@ -434,6 +434,8 @@ public class RedisServiceImpl implements RedisService {
 
     private final @Qualifier("roomTemplate")
     RedisTemplate<String, LiveRoomDTO> roomTemplate;
+    // DTO 통저장용
+//    private final RedisTemplate<String, LiveRoomDTO> roomTemplate;
 
     // 집합/문자열 카운터 등 부가기능용
     private final StringRedisTemplate stringRedisTemplate;
@@ -448,9 +450,12 @@ public class RedisServiceImpl implements RedisService {
     private static final String SUBJECT_ROOMS_PREFIX = "subject:";
     private static final String SUBJECT_ROOMS_SUFFIX = ":rooms";
     private static final Duration ROOM_TTL = Duration.ofHours(6);
+    private static final String ROOM_COUNT_SUFFIX = ":count";
 
     private static final String DEFAULT_DISPLAY_LOCALE = "ko";
 
+    private String roomCountKey(String roomId) { return ROOM_KEY_PREFIX + roomId + ROOM_COUNT_SUFFIX; }
+    private String roomCountKey(Long roomId)   { return ROOM_KEY_PREFIX + roomId + ROOM_COUNT_SUFFIX; }
     private String roomKey(String roomId) { return ROOM_KEY_PREFIX + roomId; }
     private String roomKey(Long roomId)   { return ROOM_KEY_PREFIX + roomId; }
     private String roomUsersKey(String roomId) { return ROOM_KEY_PREFIX + roomId + ROOM_USERS_SUFFIX; }
@@ -460,6 +465,11 @@ public class RedisServiceImpl implements RedisService {
 
     public void saveRoomInfo(String roomId, LiveRoomDTO room) {
         roomTemplate.opsForValue().set(roomKey(roomId), room, ROOM_TTL);
+
+        // 참여자 수 카운터를 0으로 초기화 (이미 있으면 건들지 않음)
+        String cKey = roomCountKey(roomId);
+        Boolean created = stringRedisTemplate.opsForValue().setIfAbsent(cKey, "0");
+        stringRedisTemplate.expire(cKey, ROOM_TTL);
     }
 
     public LiveRoomDTO getRoomInfo(String roomId) {
@@ -495,10 +505,12 @@ public class RedisServiceImpl implements RedisService {
         String rKey = roomKey(roomId);
         String sKey = subjectRoomsKey(subjectId);
         String uKey = roomUsersKey(roomId.toString());
+        String cKey = roomCountKey(roomId);
 
         Boolean roomDeleted = roomTemplate.delete(rKey);
         Long removed = stringRedisTemplate.opsForSet().remove(sKey, roomId.toString());
         Boolean usersDeleted = stringRedisTemplate.delete(uKey);
+        stringRedisTemplate.delete(cKey); // 카운터 정리
 
         if (roomDeleted != null && !roomDeleted) {
             throw new CustomException("roomId에 대한 방이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
@@ -506,7 +518,6 @@ public class RedisServiceImpl implements RedisService {
         if (removed == null || removed == 0) {
             throw new CustomException("해당 아티스트의 방 목록에 해당 roomId가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
         }
-        // usersDeleted는 없어도 false일 수 있음(이미 삭제된 경우). 강제 예외 X.
     }
 
     // ===== Subject-방 매핑 =====
@@ -518,16 +529,73 @@ public class RedisServiceImpl implements RedisService {
     // ===== 참가자 관리 =====
     @Override
     public void addUserToRoom(String roomId, User user) {
-        String key = roomUsersKey(roomId);
-        stringRedisTemplate.opsForSet().add(key, user.getUserId());
-        stringRedisTemplate.expire(key, ROOM_TTL);
+        String uKey = roomUsersKey(roomId);
+        String cKey = roomCountKey(roomId);
+
+        Long added = stringRedisTemplate.opsForSet().add(uKey, user.getUserId());
+
+        // 실제로 추가되었을 때만 카운터 +1
+        if (added != null && added > 0) {
+            addParticipantCountToRoom(roomId);
+        }
     }
 
+    @Override
+    public void addParticipantCountToRoom(String roomId){
+        String cKey = roomCountKey(roomId);
+        stringRedisTemplate.opsForValue().increment(cKey);
+    }
+
+    @Override
+    public void decreaseParticipantCountFromRoom(String roomId){
+        String cKey = roomCountKey(roomId);
+        stringRedisTemplate.opsForValue().decrement(cKey);
+    }
+
+
+    //    @Override
+//    public void removeUserFromRoom(String artistId, String roomId, User user) {
+//        String uKey = roomUsersKey(roomId);
+//        String rKey = roomKey(roomId);
+//        String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
+//
+//        // 현재 유저셋 백업(롤백 대비)
+//        Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
+//                .orElseGet(Collections::emptySet);
+//
+//        // 현재 DTO 백업(롤백 대비)
+//        LiveRoomDTO backup = roomTemplate.opsForValue().get(rKey);
+//
+//        // 제거
+//        stringRedisTemplate.opsForSet().remove(uKey, user.getUserId());
+//
+//        Long size = stringRedisTemplate.opsForSet().size(uKey);
+//        if (size != null && size == 0L) {
+//            // 마지막 사용자면 방 정리
+//            Boolean deletedUsers = stringRedisTemplate.delete(uKey);
+//            Boolean deletedRoom  = roomTemplate.delete(rKey);
+//            Long removedFromArtist = stringRedisTemplate.opsForSet().remove(aKey, roomId);
+//
+//            // 실패 시 간단 롤백
+//            if ((deletedRoom != null && !deletedRoom) || removedFromArtist == null || removedFromArtist == 0) {
+//                // 롤백
+//                if (backup != null) {
+//                    roomTemplate.opsForValue().set(rKey, backup, ROOM_TTL);
+//                }
+//                if (!before.isEmpty()) {
+//                    stringRedisTemplate.opsForSet().add(uKey, before.toArray(String[]::new));
+//                }
+//                throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
+//            }
+//        }
+//        // 남아있는 경우의 host 변경은 프론트에서 재전송하는 정책(주석 그대로 유지)
+//    }
     @Override
     public void removeUserFromRoom(String subjectId, String roomId, User user) {
         String uKey = roomUsersKey(roomId);
         String rKey = roomKey(roomId);
         String sKey = SUBJECT_ROOMS_PREFIX + subjectId + SUBJECT_ROOMS_SUFFIX;
+        String cKey = roomCountKey(roomId);
 
         // 현재 유저셋 백업(롤백 대비)
         Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
@@ -536,8 +604,15 @@ public class RedisServiceImpl implements RedisService {
         // 현재 DTO 백업(롤백 대비)
         LiveRoomDTO backup = roomTemplate.opsForValue().get(rKey);
 
-        // 제거
-        stringRedisTemplate.opsForSet().remove(uKey, user.getUserId());
+        // 제거 시도
+        Long removedUser = stringRedisTemplate.opsForSet().remove(uKey, user.getUserId());
+        if (removedUser != null && removedUser > 0) {
+            // 실제로 빠졌으면 카운터 -1 (음수 방지)
+            Long after = stringRedisTemplate.opsForValue().decrement(cKey);
+            if (after != null && after < 0) {
+                stringRedisTemplate.opsForValue().set(cKey, "0");
+            }
+        }
 
         Long size = stringRedisTemplate.opsForSet().size(uKey);
         if (size != null && size == 0L) {
@@ -545,27 +620,41 @@ public class RedisServiceImpl implements RedisService {
             Boolean deletedUsers = stringRedisTemplate.delete(uKey);
             Boolean deletedRoom  = roomTemplate.delete(rKey);
             Long removedFromSubject = stringRedisTemplate.opsForSet().remove(sKey, roomId);
-            // 실패 시 간단 롤백
-            if ((deletedRoom != null && !deletedRoom) || removedFromSubject == null || removedFromSubject == 0) {          // 롤백
-                if (backup != null) {
-                    roomTemplate.opsForValue().set(rKey, backup, ROOM_TTL);
-                }
-                if (!before.isEmpty()) {
-                    stringRedisTemplate.opsForSet().add(uKey, before.toArray(String[]::new));
-                }
+            // 카운터 키도 정리
+            stringRedisTemplate.delete(cKey);
+
+            if ((deletedRoom != null && !deletedRoom) || removedFromSubject == null || removedFromSubject == 0) {
+                // 롤백
+                if (backup != null) roomTemplate.opsForValue().set(rKey, backup, ROOM_TTL);
+                if (!before.isEmpty()) stringRedisTemplate.opsForSet().add(uKey, before.toArray(String[]::new));
+                // 카운터를 집합 크기로 복원
+                Long fixed = stringRedisTemplate.opsForSet().size(uKey);
+                stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed == null ? 0 : fixed));
+                stringRedisTemplate.expire(uKey, ROOM_TTL);
+                stringRedisTemplate.expire(cKey, ROOM_TTL);
+
                 throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
-        // 남아있는 경우의 host 변경은 프론트에서 재전송하는 정책(주석 그대로 유지)
     }
 
     @Override
     public Long getRoomUserCount(String roomId) {
+        String cKey = roomCountKey(roomId);
+        String val = stringRedisTemplate.opsForValue().get(cKey);
+        if (val != null) {
+            try { return Long.valueOf(val); } catch (NumberFormatException ignore) {}
+        }
+        // 카운터가 없으면 집합 크기로 보정하고 카운터 저장
         Long size = stringRedisTemplate.opsForSet().size(roomUsersKey(roomId));
-        return size == null ? 0L : size;
+        long fixed = (size == null ? 0L : size);
+        stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed));
+        return fixed;
     }
 
-    // ===== 목록/트렌딩 =====
+
+    // ===================== 목록/트렌딩 =====================
+
     @Override
     public List<LiveRoomSummaryDTO> getAllRoomSummaries(Long subjectId) {
         String sKey = subjectRoomsKey(subjectId);
@@ -580,8 +669,9 @@ public class RedisServiceImpl implements RedisService {
                     if (dto == null) return null;
 
                     // 참가자 수
-                    Long userCount = stringRedisTemplate.opsForSet().size(roomUsersKey(roomId));
-                    int participantCount = userCount != null ? userCount.intValue() : 0;
+//                    Long userCount = stringRedisTemplate.opsForSet().size(roomUsersKey(roomId));
+//                    int participantCount = userCount != null ? userCount.intValue() : 0;
+                    int participantCount = Math.toIntExact(getRoomUserCount(roomId));
 
                     // 호스트 보강
                     User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
@@ -602,64 +692,119 @@ public class RedisServiceImpl implements RedisService {
                 .toList();
     }
 
-//    @Override
-//    public List<RoomListInfoDTO> getTrendingRooms(int size) {
-//        Page<RoomListInfoDTO> page = getTrendingRooms(PageRequest.of(0, size));
-//        return page.getContent();
-//    }
-
     @Override
-    public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
-        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
-        if (keys == null || keys.isEmpty()) {
-            return Page.empty(pageable);
-        }
+    public List<RoomListInfoDTO> getTrendingRooms(int size) {
+        Page<RoomListInfoDTO> page = getTrendingRooms(PageRequest.of(0, size));
+        return page.getContent();
+    }
 
-        // "room:{id}"만 추출
-        List<String> roomIds = keys.stream()
-            .filter(k -> {
-                // room:{id} 형태만 (":users" 같은 suffix 제외)
-                String rest = k.substring(ROOM_KEY_PREFIX.length());
-                return rest.chars().allMatch(Character::isDigit);
-            })
-            .map(k -> k.substring(ROOM_KEY_PREFIX.length()))
+//    @Override
+//    public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
+//        // room:* 값 스캔 (주의: 운영 대규모면 SCAN 커서 방식 권장)
+//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//        if (keys == null || keys.isEmpty()) {
+//            return Page.empty(pageable);
+//        }
+//
+//        List<RoomListInfoDTO> all = keys.stream()
+//                .map(key -> {
+//                    // key = room:{roomId}
+//                    String[] parts = key.split(":");
+//                    if (parts.length < 2) return null;
+//                    String roomIdStr = parts[1];
+//
+//                    LiveRoomDTO dto = roomTemplate.opsForValue().get(key);
+//                    if (dto == null || dto.getArtistId() == null) return null;
+//
+//                    // 참여자 수
+//                    Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+//                    int participantCount = cnt != null ? cnt.intValue() : 0;
+//
+//                    // host 정보
+//                    User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
+//                    String hostNickname   = host != null ? host.getNickname() : null;
+//                    String hostProfileImg = host != null ? host.getImgUrl()    : null;
+//
+//                    // artist 정보
+//                    Artist artist = artistRepository.findById(dto.getArtistId()).orElse(null);
+//                    String artistNameEn = artist != null ? artist.getNameEn() : null;
+//                    String artistNameKr = artist != null ? artist.getNameKr() : null;
+//
+//                    return RoomListInfoDTO.builder()
+//                            .roomId(dto.getRoomId())
+//                            .artistId(dto.getArtistId())
+//                            .artistNameEn(artistNameEn)
+//                            .artistNameKr(artistNameKr)
+//                            .title(dto.getTitle())
+//                            .hostId(dto.getHostId())
+//                            .hostNickname(hostNickname)
+//                            .hostProfileImgUrl(hostProfileImg)
+//                            .imgUrl(dto.getImgUrl())
+//                            .participantCount(participantCount)
+//                            .build();
+//                })
+//                .filter(Objects::nonNull)
+//                .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
+//                .toList();
+//
+//        int total = all.size();
+//        int from = (int) pageable.getOffset();
+//        if (from >= total) return new PageImpl<>(List.of(), pageable, total);
+//        int to = Math.min(from + pageable.getPageSize(), total);
+//        return new PageImpl<>(all.subList(from, to), pageable, total);
+//    }
+@Override
+public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
+    // 1) room:* 스캔
+    Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+    if (keys == null || keys.isEmpty()) {
+        return Page.empty(pageable);
+    }
+
+    // 2) "room:{숫자}"만 추출 (":users", ":info" 등 제거)
+    List<String> roomIds = keys.stream()
+            .map(k -> k.substring(ROOM_KEY_PREFIX.length()))  // "{id}" 또는 "{id}:users" 등
+            .filter(rest -> rest.chars().allMatch(Character::isDigit)) // 숫자만 통과
             .toList();
 
-        if (roomIds.isEmpty()) return Page.empty(pageable);
+    if (roomIds.isEmpty()) return Page.empty(pageable);
 
-        List<RoomListInfoDTO> all = roomIds.stream()
+    // 3) DTO는 항상 "room:{id}" 로 GET
+    List<RoomListInfoDTO> all = roomIds.stream()
             .map(roomIdStr -> {
-                String rKey = roomKey(roomIdStr);
+                String rKey = roomKey(roomIdStr); // "room:{id}"
                 LiveRoomDTO dto = roomTemplate.opsForValue().get(rKey);
                 if (dto == null || dto.getSubjectId() == null) return null;
 
-                // 참가자 수
-                Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
-                int participantCount = cnt != null ? cnt.intValue() : 0;
+                // 참여자 수
+//                Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+//                int participantCount = cnt != null ? cnt.intValue() : 0;
+                int participantCount = Math.toIntExact(getRoomUserCount(roomIdStr));
 
-                // host
+
+                // host 정보
                 User host = userRepository.findByUserIdAndDeletedFalse(dto.getHostId());
                 String hostNickname   = host != null ? host.getNickname() : null;
                 String hostProfileImg = host != null ? host.getImgUrl()    : null;
 
-                // subject
+                // subject 정보
                 Subject subject = subjectRepository.findById(dto.getSubjectId()).orElse(null);
                 String subjectSlug = subject != null ? subject.getSlug() : null;
                 String subjectDisplayName =
                     (subject != null) ? displayNameResolver.resolve(subject, DEFAULT_DISPLAY_LOCALE) : null;
 
                 return RoomListInfoDTO.builder()
-                    .roomId(dto.getRoomId())
-                    .subjectId(dto.getSubjectId())
-                    .subjectSlug(subjectSlug)
-                    .subjectDisplayName(subjectDisplayName)
-                    .title(dto.getTitle())
-                    .hostId(dto.getHostId())
-                    .hostNickname(hostNickname)
-                    .hostProfileImgUrl(hostProfileImg)
-                    .imgUrl(dto.getImgUrl())
-                    .participantCount(participantCount)
-                    .build();
+                        .roomId(dto.getRoomId())
+                        .subjectId(dto.getSubjectId())
+                        .subjectSlug(subjectSlug)
+                        .subjectDisplayName(subjectDisplayName)
+                        .title(dto.getTitle())
+                        .hostId(dto.getHostId())
+                        .hostNickname(hostNickname)
+                        .hostProfileImgUrl(hostProfileImg)
+                        .imgUrl(dto.getImgUrl())
+                        .participantCount(participantCount)
+                        .build();
             })
             .filter(Objects::nonNull)
             .sorted(Comparator.comparingInt(RoomListInfoDTO::getParticipantCount).reversed())
@@ -673,7 +818,7 @@ public class RedisServiceImpl implements RedisService {
     }
 
 
-    // ===== 채팅 RateLimit 카운터 =====
+    // ===================== 채팅 RateLimit 카운터 =====================
 
     @Override
     public boolean increaseChatCount(String roomId, String userId) {
@@ -685,7 +830,45 @@ public class RedisServiceImpl implements RedisService {
         return count != null && count <= 10;
     }
 
-    // ===== 호스트 활성 방 조회 =====
+    // ===================== 호스트 활성 방 조회 =====================
+
+//    @Override
+//    public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
+//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//        if (keys == null || keys.isEmpty()) return null;
+//
+//        for (String key : keys) {
+//            LiveRoomDTO dto = roomTemplate.opsForValue().get(key);
+//            if (dto == null) continue;
+//            if (!Objects.equals(hostUserId, dto.getHostId())) continue;
+//
+//            String roomIdStr = key.substring(ROOM_KEY_PREFIX.length());
+//            Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+//            int participantCount = cnt != null ? cnt.intValue() : 0;
+//
+//            User hostUser = userRepository.findByUserIdAndDeletedFalse(hostUserId);
+//            String hostNickname   = hostUser != null ? hostUser.getNickname() : null;
+//            String hostProfileImg = hostUser != null ? hostUser.getImgUrl()    : null;
+//
+//            Artist artist = (dto.getArtistId() != null) ? artistRepository.findById(dto.getArtistId()).orElse(null) : null;
+//            String artistNameEn = artist != null ? artist.getNameEn() : null;
+//            String artistNameKr = artist != null ? artist.getNameKr() : null;
+//
+//            return RoomListInfoDTO.builder()
+//                    .roomId(dto.getRoomId())
+//                    .artistId(dto.getArtistId())
+//                    .artistNameEn(artistNameEn)
+//                    .artistNameKr(artistNameKr)
+//                    .title(dto.getTitle())
+//                    .hostId(hostUserId)
+//                    .hostNickname(hostNickname)
+//                    .hostProfileImgUrl(hostProfileImg)
+//                    .imgUrl(dto.getImgUrl())
+//                    .participantCount(participantCount)
+//                    .build();
+//        }
+//        return null;
+//    }
     @Override
     public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
         // KEYS 대신 SCAN 권장 (간단히 KEYS를 쓰되 "room:{id}"만 통과시키려면 아래 필터는 꼭!)
@@ -702,34 +885,36 @@ public class RedisServiceImpl implements RedisService {
             if (!Objects.equals(hostUserId, dto.getHostId())) continue;
 
             String roomIdStr = key.substring(ROOM_KEY_PREFIX.length());
-            Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
-            int participantCount = cnt != null ? cnt.intValue() : 0;
+    //        Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
+    //        int participantCount = cnt != null ? cnt.intValue() : 0;
+            int participantCount = Math.toIntExact(getRoomUserCount(roomIdStr));
+
 
             User hostUser = userRepository.findByUserIdAndDeletedFalse(hostUserId);
             String hostNickname   = (dto.getHostNickname() != null) ? dto.getHostNickname()
-                : (hostUser != null ? hostUser.getNickname() : null);
+                    : (hostUser != null ? hostUser.getNickname() : null);
             String hostProfileImg = hostUser != null ? hostUser.getImgUrl() : null;
 
-            Subject subject = (dto.getSubjectId() != null)
-                ? subjectRepository.findById(dto.getSubjectId()).orElse(null)
-                : null;
+                Subject subject = (dto.getSubjectId() != null)
+                    ? subjectRepository.findById(dto.getSubjectId()).orElse(null)
+                    : null;
 
-            String subjectSlug = subject != null ? subject.getSlug() : null;
-            String subjectDisplayName =
-                (subject != null) ? displayNameResolver.resolve(subject, DEFAULT_DISPLAY_LOCALE) : null;
+                String subjectSlug = subject != null ? subject.getSlug() : null;
+                String subjectDisplayName =
+                    (subject != null) ? displayNameResolver.resolve(subject, DEFAULT_DISPLAY_LOCALE) : null;
 
             return RoomListInfoDTO.builder()
-                .roomId(dto.getRoomId())
-                .subjectId(dto.getSubjectId())
-                .subjectSlug(subjectSlug)
-                .subjectDisplayName(subjectDisplayName)
-                .title(dto.getTitle())
-                .hostId(hostUserId)
-                .hostNickname(hostNickname)
-                .hostProfileImgUrl(hostProfileImg)
-                .imgUrl(dto.getImgUrl())
-                .participantCount(participantCount)
-                .build();
+                    .roomId(dto.getRoomId())
+                    .subjectId(dto.getSubjectId())
+                    .subjectSlug(subjectSlug)
+                    .subjectDisplayName(subjectDisplayName)
+                    .title(dto.getTitle())
+                    .hostId(hostUserId)
+                    .hostNickname(hostNickname)
+                    .hostProfileImgUrl(hostProfileImg)
+                    .imgUrl(dto.getImgUrl())
+                    .participantCount(participantCount)
+                    .build();
         }
         return null;
     }
