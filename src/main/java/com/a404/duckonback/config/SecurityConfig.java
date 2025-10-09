@@ -92,16 +92,16 @@ public class SecurityConfig {
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
-                                .requestMatchers("/api/artists/me").authenticated()
-                                .requestMatchers(HttpMethod.POST,   "/api/artists/*/follow").authenticated() // 팔로우
-                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated() // 팔로우/언팔로우
-                                .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글
-                                .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated() // 채팅 메시지 전송
+                                .requestMatchers("/api/subjects/me").authenticated()
+                                .requestMatchers(HttpMethod.POST,   "/api/subjects/*/follow").authenticated() // 팔로우
+                                .requestMatchers(HttpMethod.DELETE, "/api/subjects/*/follow").authenticated() // 팔로우/언팔로우
+                                .requestMatchers(HttpMethod.PUT,    "/api/subjects/follow").authenticated() // 팔로우/언팔로우 토글
+                                .requestMatchers(HttpMethod.POST, "/api/chat/subjects/**").authenticated() // 채팅 메시지 전송
                                 // 2) 누구나 볼 수 있는 조회 API
-                                .requestMatchers(HttpMethod.GET, "/api/artists").permitAll()           // 페이징 조회 & 키워드
-                                .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
-                                .requestMatchers(HttpMethod.GET, "/api/artists/*").permitAll()         // 단일 상세
-                                .requestMatchers(HttpMethod.GET, "/api/chat/artist/**").permitAll() // 채팅 내역 조회
+                                .requestMatchers(HttpMethod.GET, "/api/subjects").permitAll()           // 페이징 조회 & 키워드
+                                .requestMatchers(HttpMethod.GET, "/api/subjects/random").permitAll()    // 랜덤
+                                .requestMatchers(HttpMethod.GET, "/api/subjects/*").permitAll()         // 단일 상세
+                                .requestMatchers(HttpMethod.GET, "/api/chat/subjects/**").permitAll() // 채팅 내역 조회
                                 .requestMatchers(HttpMethod.POST, "/api/rooms/*/enter").permitAll()
                                 .requestMatchers(HttpMethod.POST,"/api/rooms/*/exit").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll() // 방 목록 조회
@@ -109,6 +109,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
                                 .requestMatchers(HttpMethod.GET, "/api/users/recommendations").permitAll() // 추천 유저 조회
                                 .requestMatchers(HttpMethod.GET, "/api/public/youtube/meta/*").permitAll() // 유튜브 메타데이터 조회
+                                .requestMatchers(HttpMethod.GET, "/api/taxonomy/*").permitAll() // 도메인/카테고리 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()
