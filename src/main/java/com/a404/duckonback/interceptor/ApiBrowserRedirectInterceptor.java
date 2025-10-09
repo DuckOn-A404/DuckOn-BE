@@ -1,6 +1,6 @@
 package com.a404.duckonback.interceptor;
 
-import com.a404.duckonback.service.ArtistService;
+//import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.SubjectService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

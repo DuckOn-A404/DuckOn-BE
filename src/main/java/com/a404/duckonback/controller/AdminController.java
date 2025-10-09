@@ -1,10 +1,10 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.AdminArtistPatchDTO;
-import com.a404.duckonback.dto.AdminArtistRequestDTO;
+//import com.a404.duckonback.dto.AdminArtistPatchDTO;
+//import com.a404.duckonback.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.dto.AdminSubjectPatchDTO;
 import com.a404.duckonback.dto.AdminSubjectRequestDTO;
-import com.a404.duckonback.service.ArtistService;
+//import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.SubjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
