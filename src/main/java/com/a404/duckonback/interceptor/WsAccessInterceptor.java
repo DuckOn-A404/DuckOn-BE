@@ -21,13 +21,27 @@ public class WsAccessInterceptor implements ChannelInterceptor {
             String dest = acc.getDestination();
             if (dest == null) return message;
 
-            // 송신 제한: 로그인 사용자만 허용
-            if (dest.equals("/app/room/chat") || dest.equals("/app/room/update")) {
+            // 방 동기화(업데이트)는 로그인만 허용
+            if (dest.startsWith("/app/room/update")) {
                 User user = (User) acc.getSessionAttributes().get("user");
                 if (user == null) {
                     throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
                 }
+                return message;
             }
+
+            if (dest.startsWith("/app/room/chat")) {
+                // 게스트/유저 모두 통과
+                return message;
+            }
+
+            // 송신 제한: 로그인 사용자만 허용
+//            if (dest.equals("/app/room/chat") || dest.equals("/app/room/update")) {
+//                User user = (User) acc.getSessionAttributes().get("user");
+//                if (user == null) {
+//                    throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+//                }
+//            }
         }
 
         // SUBSCRIBE는 제한X (모두 수신 가능)

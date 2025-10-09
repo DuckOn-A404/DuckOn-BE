@@ -55,27 +55,55 @@ public class RoomSocketController {
                      StompHeaderAccessor accessor) {
 
         User user = (User) accessor.getSessionAttributes().get("user");
-        if (user != null) {
-            message.setSenderNickName(user.getNickname()); // 또는 userId
-            message.setSenderId(user.getUserId());
-        } else {
-            throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);
-        }
+        Boolean isGuest = (Boolean) accessor.getSessionAttributes().getOrDefault("guest", Boolean.FALSE);
+
+//        if (user != null) {
+//            message.setSenderNickName(user.getNickname()); // 또는 userId
+//            message.setSenderId(user.getUserId());
+//        } else {
+//            throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);
+//        }
 
         if(message.getContent().length() > 100){
             throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
-        String key = chatRateLimiter.userKey(user.getUserId());
-        boolean allowed = chatRateLimiter.allow(key, 5, Duration.ofSeconds(5));
+        String rateKey;
+        if (user != null && !isGuest) {
+            message.setSenderId(user.getUserId());
+            message.setSenderNickName(user.getNickname());
+            rateKey = chatRateLimiter.userKey(user.getUserId());
+        } else {
+            // 게스트
+            String guestId = (String) accessor.getSessionAttributes().get("guestId");
+            String guestNickname = (String) accessor.getSessionAttributes().get("guestNickname");
+            if (guestId == null) guestId = "guest:" + java.util.UUID.randomUUID();
+            if (guestNickname == null) guestNickname = "게스트";
+
+            message.setSenderId(guestId);            // 문자열 ID 허용(프론트 필터링에도 사용됨)
+            message.setSenderNickName(guestNickname);
+            rateKey = chatRateLimiter.userKey(guestId); // 같은 레이트리밋 로직 재사용
+        }
+
+        boolean allowed = chatRateLimiter.allow(rateKey, 5, Duration.ofSeconds(5));
         if (!allowed) {
             throw new CustomException(
                     "채팅은 5초에 5번까지만 가능합니다.",
                     HttpStatus.TOO_MANY_REQUESTS,
-                    Map.of(
-                    "type", "CHAT_RATE_LIMITED"
-            ));
+                    Map.of("type","CHAT_RATE_LIMITED")
+            );
         }
+
+//        String key = chatRateLimiter.userKey(user.getUserId());
+//        boolean allowed = chatRateLimiter.allow(key, 5, Duration.ofSeconds(5));
+//        if (!allowed) {
+//            throw new CustomException(
+//                    "채팅은 5초에 5번까지만 가능합니다.",
+//                    HttpStatus.TOO_MANY_REQUESTS,
+//                    Map.of(
+//                    "type", "CHAT_RATE_LIMITED"
+//            ));
+//        }
 
 
         messagingTemplate.convertAndSend("/topic/chat/" + message.getRoomId(), message);
