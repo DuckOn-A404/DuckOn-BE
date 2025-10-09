@@ -2,9 +2,9 @@ name: BE Dev/Prod CI/CD (dev=SSH, prod=SSM)
 
 on:
   pull_request:
-    branches: [ dev, main ]   # PR: 빌드만
+    branches: [ develop, main ]   # PR: 빌드만
   push:
-    branches: [ dev, main ]   # push/merge: 빌드+배포
+    branches: [ develop, main ]   # push/merge: 빌드+배포
   workflow_dispatch:
 
 env:
