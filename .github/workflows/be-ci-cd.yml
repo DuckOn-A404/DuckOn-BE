@@ -24,11 +24,9 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      # 소문자 owner 계산
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & build context 자동 감지 (예약변수 피해서 BUILD_CONTEXT/DOCKERFILE_PATH 사용)
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
@@ -47,7 +45,6 @@ jobs:
           fi
           echo "Detected build context=$DIR, dockerfile=$FOUND"
 
-      # Buildx 빌더 생성/선택
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -78,18 +75,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Buildx 빌더 생성/선택
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
         with:
           install: true
 
-      # 소문자 owner 계산
       - name: Compute lowercase owner
         run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      # Dockerfile & build context 자동 감지
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
@@ -120,7 +114,7 @@ jobs:
             echo "latest=dev-latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Login to GHCR
+      - name: Login to GHCR (for push)
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -155,7 +149,7 @@ jobs:
             LATEST="${{ steps.vars.outputs.latest }}"
             NET="duckon-dev-net"
 
-            # GHCR가 Private이면 PAT 로그인 (없으면 스킵)
+            # GHCR가 Private일 때만 필요 (Public이면 자동 스킵)
             if [ -n "${{ secrets.DEV_GHCR_PAT || '' }}" ]; then
               echo "${{ secrets.DEV_GHCR_PAT }}" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
             fi
@@ -179,6 +173,10 @@ jobs:
             curl -fsS http://127.0.0.1:18081/actuator/health || true
 
       # -------- prod = SSM 배포 --------
+      - name: Install jq (for SSM params)
+        if: steps.vars.outputs.env == 'prod'
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Configure AWS (PROD)
         if: steps.vars.outputs.env == 'prod'
         uses: aws-actions/configure-aws-credentials@v4
@@ -187,7 +185,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
           aws-region: ${{ vars.AWS_REGION_PROD }}
 
-      - name: Deploy to PROD via SSM (debug + wait)
+      - name: Deploy to PROD via SSM (debug + logs)
         if: steps.vars.outputs.env == 'prod'
         run: |
           set -euo pipefail
@@ -211,18 +209,39 @@ jobs:
             --output table || true
 
           echo "== Build remote script =="
-          read -r -d '' SCRIPT <<'EOS'
-          set -euo pipefail
+          SCRIPT=$(cat <<'EOS'
+          set -eu
           REPO="__REPO__"
           TAG="__TAG__"
           LATEST="__LATEST__"
 
           APP="duckon-app-prod"
-          ENV_FILE="$HOME/prod.env"
+          ENV_FILE="/srv/duckon/prod.env"
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "[ERROR] env file not found at $ENV_FILE"
+            ls -l /srv/duckon || true
+            exit 1
+          fi
+          echo "Using env file: $ENV_FILE"
 
+          # (옵션) GHCR 로그인: 패키지가 Private이면 필요. Public이면 빈값으로 넘어와 스킵됨.
+          GHCR_USER="__GHCR_USER__"
+          GHCR_PAT="__GHCR_PAT__"
+          if [ -n "$GHCR_PAT" ] && [ "$GHCR_PAT" != "__EMPTY__" ]; then
+            echo "[diag] docker login ghcr.io as $GHCR_USER"
+            echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          fi
+
+          # 프록시 네트워크 자동 감지(없으면 bridge)
           NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
           [ -z "$NET" ] && NET="bridge"
           echo "Using network: $NET"
+
+          # 진단
+          echo "[diag] whoami=$(whoami)"
+          echo "[diag] docker version:" && docker --version || true
+          echo "[diag] resolve ghcr.io:" && getent hosts ghcr.io || true
+          echo "[diag] curl ghcr.io/v2 (HEAD):" && curl -sSIL https://ghcr.io/v2/ | head -n 5 || true
 
           echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
           docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
@@ -242,16 +261,28 @@ jobs:
           echo "Container started. Current ps:"
           docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
           EOS
+          )
 
+          # 자리표시자 치환
           SCRIPT="${SCRIPT//__REPO__/$REPO}"
           SCRIPT="${SCRIPT//__TAG__/$TAG}"
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
 
+          # GHCR 자격증명(없으면 빈값 주입되어 로그인 스킵)
+          GHCR_USER="${{ secrets.PROD_GHCR_USERNAME }}"
+          GHCR_PAT="${{ secrets.PROD_GHCR_PAT }}"
+          [ -z "$GHCR_USER" ] && GHCR_USER="__EMPTY__"
+          [ -z "$GHCR_PAT" ] && GHCR_PAT="__EMPTY__"
+          SCRIPT="${SCRIPT//__GHCR_USER__/$GHCR_USER}"
+          SCRIPT="${SCRIPT//__GHCR_PAT__/$GHCR_PAT}"
+
           echo "== Send command =="
+          jq -n --arg script "$SCRIPT" '{commands: [$script]}' > ssm-params.json
+
           CMD_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE" \
             --document-name "AWS-RunShellScript" \
-            --parameters commands="[$(printf '%q' "$SCRIPT")]" \
+            --parameters file://ssm-params.json \
             --comment "DuckOn BE prod deploy $TAG" \
             --region "$REGION" \
             --query "Command.CommandId" \
@@ -259,14 +290,31 @@ jobs:
 
           echo "CommandId: $CMD_ID"
 
-          echo "== Wait for command to finish =="
-          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION"
+          echo "== Polling command status =="
+          while true; do
+            OUT=$(aws ssm get-command-invocation \
+              --command-id "$CMD_ID" \
+              --instance-id "$INSTANCE" \
+              --region "$REGION" \
+              --output json || true)
 
-          echo "== Command result =="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION" --output table
+            STATUS=$(echo "$OUT" | jq -r '.Status // empty')
+            echo "SSM status: $STATUS"
 
-          STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --region "$REGION" --query Status --output text)
-          if [ "$STATUS" != "Success" ]; then
-            echo "SSM command failed with status=$STATUS"
-            exit 1
-          fi
+            if [ "$STATUS" = "Pending" ] || [ "$STATUS" = "InProgress" ] || [ "$STATUS" = "Delayed" ] || [ -z "$STATUS" ]; then
+              sleep 3
+              continue
+            fi
+
+            echo "----- STDOUT -----"
+            echo "$OUT" | jq -r '.StandardOutputContent // ""'
+            echo "----- STDERR -----"
+            echo "$OUT" | jq -r '.StandardErrorContent // ""'
+            echo "----- END LOGS -----"
+
+            if [ "$STATUS" = "Success" ]; then
+              exit 0
+            else
+              exit 1
+            fi
+          done
