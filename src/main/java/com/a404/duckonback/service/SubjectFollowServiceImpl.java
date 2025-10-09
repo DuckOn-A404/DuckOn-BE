@@ -164,7 +164,8 @@ public class SubjectFollowServiceImpl implements SubjectFollowService {
         Set<Long> toUnfollow = existing.stream().filter(id -> !requested.contains(id)).collect(Collectors.toSet());
 
         for (Long sid : toFollow) {
-            Subject subject = subjectRepository.findById(sid).get();
+            Subject subject = subjectRepository.findById(sid)
+                .orElseThrow(() -> new CustomException("대상을 찾을 수 없습니다: " + sid, HttpStatus.NOT_FOUND));
             subjectFollowRepository.save(
                 SubjectFollow.builder()
                     .user(user)

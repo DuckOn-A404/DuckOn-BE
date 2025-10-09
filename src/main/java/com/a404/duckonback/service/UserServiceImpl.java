@@ -673,7 +673,7 @@ public class UserServiceImpl implements UserService {
         List<Long> subjectList = Optional.ofNullable(user.getSubjectFollows())
                 .orElse(List.of())
                 .stream()
-                .map(af -> af.getSubject().getId() != null ? af.getSubject().getId() : null)
+                .map(af -> af.getSubject().getId())
                 .filter(Objects::nonNull)
                 .toList();
 
