@@ -109,7 +109,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
                                 .requestMatchers(HttpMethod.GET, "/api/users/recommendations").permitAll() // 추천 유저 조회
                                 .requestMatchers(HttpMethod.GET, "/api/public/youtube/meta/*").permitAll() // 유튜브 메타데이터 조회
-                                .requestMatchers(HttpMethod.GET, "/api/taxonomy/*").permitAll() // 도메인/카테고리 조회
+                                .requestMatchers(HttpMethod.GET, "/api/taxonomy/**").permitAll() // 도메인/카테고리 조회
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()
