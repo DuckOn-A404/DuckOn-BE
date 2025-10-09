@@ -16,7 +16,7 @@ public class UserDetailInfoResponseDTO {
     private String role;
     private String language;
     private String imgUrl;
-    private List<Long> artistList;
+    private List<Long> subjectList;
     private int followingCount;
     private int followerCount;
     private String password;

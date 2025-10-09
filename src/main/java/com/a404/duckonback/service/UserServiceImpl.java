@@ -670,7 +670,7 @@ public class UserServiceImpl implements UserService {
 
         boolean isSocial = user.getHasLocalCredential() != null;
 
-        List<Long> artistList = Optional.ofNullable(user.getSubjectFollows())
+        List<Long> subjectList = Optional.ofNullable(user.getSubjectFollows())
                 .orElse(List.of())
                 .stream()
                 .map(af -> af.getSubject().getId() != null ? af.getSubject().getId() : null)
@@ -711,7 +711,7 @@ public class UserServiceImpl implements UserService {
                 .role(user.getRole().toString())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
-                .artistList(artistList)
+                .subjectList(subjectList)
                 .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
                 .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
                 .socialLogin(isSocial)
