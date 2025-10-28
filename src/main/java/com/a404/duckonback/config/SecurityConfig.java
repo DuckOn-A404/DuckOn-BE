@@ -2,7 +2,6 @@ package com.a404.duckonback.config;
 
 import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter;
 import com.a404.duckonback.filter.CustomOAuth2UserService;
-import com.a404.duckonback.filter.CustomUserDetailsService;
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.*;
 import com.a404.duckonback.service.TokenBlacklistService;
@@ -70,6 +69,8 @@ public class SecurityConfig {
         // JSON 로그인 필터
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
                 new CustomJsonUsernamePasswordAuthenticationFilter(authManager);
+
+        jsonFilter.setFilterProcessesUrl("/api/auth/login");
         jsonFilter.setAuthenticationSuccessHandler(jsonSuccessHandler);
         jsonFilter.setAuthenticationFailureHandler(jsonFailureHandler);
 
@@ -112,7 +113,7 @@ public class SecurityConfig {
 
                                 // Auth API
                                 .requestMatchers("/api/auth/logout").authenticated()
-                                .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
+                                .requestMatchers("/api/auth/**", "/oauth2/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
 
 //                        .requestMatchers("/").hasAnyRole("USER", "ADMIN")
                                 .anyRequest().authenticated()

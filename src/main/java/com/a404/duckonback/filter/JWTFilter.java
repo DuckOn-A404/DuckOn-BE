@@ -13,13 +13,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -77,6 +78,35 @@ public class JWTFilter extends OncePerRequestFilter {
 //        // 6. 다음 필터로 이동
 //        filterChain.doFilter(request, response);
 //    }
+
+    // ★★★ 화이트리스트: JWT 검증을 완전히 건너뛸 경로들
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+    private static final List<String> WHITELIST = List.of(
+            "/api/auth/**",          // 로그인/리프레시/회원가입 등
+            "/oauth2/**",            // OAuth2 플로우
+            "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**",
+            "/ws-chat/**"            // (필요시) 웹소켓 핸드셰이크 경로
+    );
+
+    /**
+     * ★ 이 요청은 JWTFilter를 적용하지 않는다.
+     *    - 화이트리스트 매칭
+     *    - 혹은 CORS preflight(OPTIONS)
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        // 프리플라이트 제외 (원치 않으면 제거 가능)
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        String uri = request.getRequestURI();
+        for (String pattern : WHITELIST) {
+            if (PATH_MATCHER.match(pattern, uri)) {
+                return true; // ← 이 경우 doFilterInternal 자체가 실행되지 않음
+            }
+        }
+        return false;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
