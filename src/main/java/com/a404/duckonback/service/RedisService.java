@@ -3,6 +3,7 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSummaryDTO;
 import com.a404.duckonback.dto.LiveRoomSyncDTO;
+import com.a404.duckonback.dto.HomeArtistRoomDTO;
 import com.a404.duckonback.dto.RoomListInfoDTO;
 import com.a404.duckonback.entity.User;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ public interface RedisService {
     void addUserToRoom(String roomId, User user);
     void removeUserFromRoom(String artistId, String roomId,User user);
     List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId);
+    List<HomeArtistRoomDTO> getHomeArtistRooms(List<Long> artistIds, int roomLimitPerArtist);
     List<RoomListInfoDTO> getTrendingRooms(int size);        // 기존
     Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable); // 페이징 추가
 
