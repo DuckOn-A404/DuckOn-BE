@@ -1,6 +1,7 @@
 package com.a404.duckonback.exception;
 
 
+import com.a404.duckonback.response.ErrorCode;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
