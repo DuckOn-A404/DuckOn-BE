@@ -4,6 +4,7 @@ import com.a404.duckonback.dto.*;
 import com.a404.duckonback.enums.RoomSyncEventType;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,7 @@ public class RoomController {
 
     private final LiveRoomService liveRoomService;
     private final RedisService redisService;
+    private final ArtistService artistService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Operation(summary = "방 생성",
@@ -301,6 +303,29 @@ public class RoomController {
         Map<String, Object> response = new HashMap<>();
         response.put("roomInfoList", rooms);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "홈 화면 아티스트별 라이브룸 조회", 
+           description = "홈 화면에 표시할 랜덤 아티스트와 각 아티스트의 인기 라이브룸을 조회합니다. (참여자 수 내림차순)")
+    @GetMapping("/home")
+    public ResponseEntity<Map<String, Object>> getHomeRooms(
+            @RequestParam(defaultValue = "3") int artistCount,
+            @RequestParam(defaultValue = "6") int roomsPerArtist) {
+        
+        // 기존 ArtistService를 활용하여 랜덤 아티스트 조회
+        List<ArtistDTO> randomArtists = artistService.getRandomArtists(artistCount);
+        
+        List<Long> artistIds = randomArtists.stream()
+                .map(ArtistDTO::getArtistId)
+                .toList();
+        
+        // 각 아티스트별 라이브룸 조회 (참여자 수 내림차순)
+        List<HomeArtistRoomDTO> artistRooms = redisService.getHomeArtistRooms(artistIds, roomsPerArtist);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("artistRooms", artistRooms);
+        
         return ResponseEntity.ok(response);
     }
 
