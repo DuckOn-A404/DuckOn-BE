@@ -19,5 +19,6 @@ public class UserInfoResponseDTO {
 
     private List<RoomSummaryDTO> roomList;          // 과거 히스토리
     private RoomListInfoDTO activeRoom;      // 현재 레디스 라이브(없으면 null)
+    private UserRankDTO userRank;               // 유저 랭크 정보
 
 }

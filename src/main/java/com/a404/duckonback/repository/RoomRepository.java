@@ -30,4 +30,14 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     long countByCreator_Id(Long creatorId);    // 해당 유저가 만든 방 개수
 
     List<Room> findByArtist_ArtistId(Long artistId); // 특정 아티스트 방
+
+    // 리더보드 쿼리
+    @Query(value = """
+        SELECT r.creator_id AS userId, COUNT(*) AS cnt
+        FROM room r
+        GROUP BY r.creator_id
+        ORDER BY cnt DESC, userId ASC
+        LIMIT :limit OFFSET :offset
+    """, nativeQuery = true)
+    List<Object[]> findLeaderboard(@Param("limit") int limit, @Param("offset") int offset);
 }

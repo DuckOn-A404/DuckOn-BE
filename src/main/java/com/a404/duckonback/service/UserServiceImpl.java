@@ -604,6 +604,7 @@ public class UserServiceImpl implements UserService {
     private final TokenBlacklistService tokenBlacklistService;
     private final JWTUtil jWTUtil;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final UserRankService userRankService;
 
     // --- 가벼운 규칙 상수 ---
     private static final int SIZE_DEFAULT = 10;
@@ -768,6 +769,9 @@ public class UserServiceImpl implements UserService {
         // 현재 라이브(레디스)
         RoomListInfoDTO active = redisService.getActiveRoomByHost(otherUserId);
 
+        // 랭킹
+        UserRankDTO rankDTO = userRankService.getUserRank(user.getId());
+
         return UserInfoResponseDTO.builder()
                 .userId(user.getUserId())
                 .nickname(user.getNickname())
@@ -777,6 +781,7 @@ public class UserServiceImpl implements UserService {
                 .following(followService.isFollowing(myUserId, otherUserId))
                 .roomList(roomPage.getContent())
                 .activeRoom(active)
+                .userRank(rankDTO)
                 .build();
     }
 
