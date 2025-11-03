@@ -1,9 +1,7 @@
 package com.a404.duckonback.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
 
 import java.time.Instant;
 
@@ -17,7 +15,11 @@ public class ChatMessageDTO {
     private String senderId;
     private String senderNickName;
     private String content; // isImage == true -> url / false -> String(일반 메시지)
+
+    @Getter(onMethod_ = {@JsonProperty("isImage")})
+    @Setter
     private boolean isImage; // 해당 dto의 content가 이미지 url 인지, 일반 메세지(String) 인지
+
     @Builder.Default
     private Instant sentAt = Instant.now();
 }
