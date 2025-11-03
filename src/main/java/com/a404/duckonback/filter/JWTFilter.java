@@ -42,6 +42,7 @@ public class JWTFilter extends OncePerRequestFilter {
     // 완전 스킵(필터 미적용) 경로
     private static final List<String> WHITELIST = List.of(
             "/api/auth/**",
+            "/login/oauth2/**",
             "/oauth2/**",
             "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**",
             "/ws-chat/**"
