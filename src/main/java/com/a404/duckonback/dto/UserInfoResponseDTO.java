@@ -17,7 +17,7 @@ public class UserInfoResponseDTO {
     private int followerCount; // 팔로워 수
     private int followingCount; // 팔로잉 수
 
-    private List<RoomDTO> roomList;          // 과거 히스토리
+    private List<RoomSummaryDTO> roomList;          // 과거 히스토리
     private RoomListInfoDTO activeRoom;      // 현재 레디스 라이브(없으면 null)
 
 }

@@ -49,11 +49,6 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public List<Room> getRoomsByCreator(Long id) {
-        return roomRepository.findByCreator_Id(id);
-    }
-
-    @Override
     public List<Room> getRoomsByArtist(Long artistId) {
         return roomRepository.findByArtist_ArtistId(artistId);
     }
