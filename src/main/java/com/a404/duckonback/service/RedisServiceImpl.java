@@ -694,27 +694,25 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public List<HomeArtistRoomDTO> getHomeArtistRooms(List<Long> artistIds, int roomLimitPerArtist) {
         return artistIds.stream()
-                .map(artistId -> {
-                    // 아티스트 정보 조회
-                    Artist artist = artistRepository.findById(artistId).orElse(null);
-                    if (artist == null) return null;
-                    
-                    // 해당 아티스트의 모든 방 조회
-                    List<LiveRoomSummaryDTO> rooms = getAllRoomSummaries(artistId);
-                    
-                    // 참여자 수 내림차순 정렬 및 제한
-                    List<LiveRoomSummaryDTO> sortedRooms = rooms.stream()
-                            .sorted((r1, r2) -> Integer.compare(r2.getParticipantCount(), r1.getParticipantCount()))
-                            .limit(roomLimitPerArtist)
-                            .toList();
-                    
-                    return HomeArtistRoomDTO.builder()
-                            .artistId(artist.getArtistId())
-                            .artistName(artist.getArtistName())
-                            .artistImgUrl(artist.getImgUrl())
-                            .rooms(sortedRooms)
-                            .build();
-                })
+            .map(artistId -> {
+                Artist artist = artistRepository.findById(artistId).orElse(null);
+                if (artist == null) return null;
+
+                // 해당 아티스트의 모든 방 조회
+                List<LiveRoomSummaryDTO> rooms = getAllRoomSummaries(artistId);
+                // 참여자 수 내림차순 정렬 및 제한한
+                List<LiveRoomSummaryDTO> sortedRooms = rooms.stream()
+                        .sorted((r1, r2) -> Integer.compare(r2.getParticipantCount(), r1.getParticipantCount()))
+                        .limit(roomLimitPerArtist)
+                        .toList();
+
+                return HomeArtistRoomDTO.builder()
+                        .artistId(artist.getArtistId())
+                        .artistName(artist.getNameEn())
+                        .artistImgUrl(artist.getImgUrl())
+                        .rooms(sortedRooms)
+                        .build();
+            })
                 .filter(Objects::nonNull)
                 .toList();
     }
