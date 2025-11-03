@@ -48,6 +48,10 @@ public class JWTFilter extends OncePerRequestFilter {
             "/ws-chat/**"
     );
 
+    private static final List<String> BLACKLIST = List.of(
+            "/api/auth/logout"
+    );
+
     private boolean matchesAny(String uri, List<String> patterns) {
         for (String p : patterns) if (PATH_MATCHER.match(p, uri)) return true;
         return false;
@@ -57,6 +61,7 @@ public class JWTFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
         String uri = request.getRequestURI();
+        if (matchesAny(uri, BLACKLIST)) return false;
         return matchesAny(uri, WHITELIST);
     }
 
