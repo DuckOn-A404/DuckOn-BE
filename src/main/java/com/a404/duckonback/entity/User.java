@@ -106,6 +106,10 @@ public class User {
     @OneToMany(mappedBy = "creator")
     private List<Room> rooms = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "creator")
+    private List<Meme> memes = new ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
