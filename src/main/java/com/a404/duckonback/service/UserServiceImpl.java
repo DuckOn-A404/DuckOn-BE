@@ -1208,4 +1208,9 @@ public class UserServiceImpl implements UserService {
         }
         return null;
     }
+
+    public User findByNickname(String nickname) {
+        return userRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("해당 닉네임의 사용자가 존재하지 않습니다: " + nickname));
+    }
 }
