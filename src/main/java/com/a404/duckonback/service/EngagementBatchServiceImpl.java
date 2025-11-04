@@ -69,13 +69,22 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
         """);
 
         // 4) chat 메시지 수 (MongoDB → tmp_counts 반영)
+        //    컬렉션명: artist_chats
+        final String collection = "artist_chats";
+        try {
+            long docs = mongoTemplate.getDb().getCollection(collection).countDocuments();
+            System.out.println("[Batch] Mongo collection '" + collection + "' docs = " + docs);
+        } catch (Exception ignored) {}
+
         Aggregation agg = Aggregation.newAggregation(
                 Aggregation.group("senderId").count().as("cnt")
         );
         AggregationResults<Document> results =
-                mongoTemplate.aggregate(agg, "chatMessage", Document.class);
+                mongoTemplate.aggregate(agg, collection, Document.class);
 
         List<Map.Entry<Long, Integer>> chatCounts = results.getMappedResults().stream()
+                // senderId가 Number인 문서만 집계(예: NumberLong)
+                .filter(d -> d.get("_id") instanceof Number && d.get("cnt") instanceof Number)
                 .map(d -> Map.entry(((Number) d.get("_id")).longValue(),
                         ((Number) d.get("cnt")).intValue()))
                 .toList();
@@ -124,22 +133,16 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
             FROM user_engagement_stats
         """);
 
-        // 7) 최종 p/grade 갱신
-        //  - 주의: tmp_stats는 단일 행이므로 CROSS JOIN 으로 조인
+        // 7) 최종 p/grade 갱신 (가중치 + 재정규화 포함)
         jdbcTemplate.update("""
             UPDATE user_engagement_stats s
             JOIN tmp_percentiles p ON p.user_id = s.user_id
             CROSS JOIN tmp_stats t
             SET
-              -- ① 각 메트릭 p (무변동이면 0, 변동 있으면 1 - percent_rank)
-              s.p_room = ROUND(
-                  CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END, 2),
-              s.p_chat = ROUND(
-                  CASE WHEN t.max_chat = t.min_chat THEN 0 ELSE (1 - p.pc) * 100 END, 2),
-              s.p_meme = ROUND(
-                  CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END, 2),
+              s.p_room = ROUND(CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END, 2),
+              s.p_chat = ROUND(CASE WHEN t.max_chat = t.min_chat THEN 0 ELSE (1 - p.pc) * 100 END, 2),
+              s.p_meme = ROUND(CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END, 2),
 
-              -- ② 합성 p: 변동 있는 메트릭만 가중치 반영 후 전체 가중치로 재정규화
               s.p_composite = ROUND(
                 (
                   (CASE WHEN t.max_room <> t.min_room THEN 0.5 * (1 - p.pr) ELSE 0 END) +
@@ -153,7 +156,6 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
                 ,0) * 100
               , 2),
 
-              -- ③ 등급 매핑 (VIP≥95, GOLD≥80, PURPLE≥70, YELLOW≥60, else NORMAL)
               s.grade_room = CASE
                 WHEN (CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END) >= 95 THEN 'VIP'
                 WHEN (CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END) >= 80 THEN 'GOLD'
@@ -207,7 +209,7 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
                     (CASE WHEN t.max_meme <> t.min_meme THEN 0.2 * (1 - p.pm) ELSE 0 END)
                   )
                   / NULLIF(
-                    (CASE WHEN t.max_room <> t.min_room THEN 0.5 ELSE 0 END) +
+                    (CASE WHEN t.max_room <> t.min_meme THEN 0.5 ELSE 0 END) +
                     (CASE WHEN t.max_chat <> t.min_chat THEN 0.3 ELSE 0 END) +
                     (CASE WHEN t.max_meme <> t.min_meme THEN 0.2 ELSE 0 END)
                   ,0) * 100
