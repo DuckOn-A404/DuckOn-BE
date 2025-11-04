@@ -33,10 +33,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     // 리더보드 쿼리
     @Query(value = """
-        SELECT r.creator_id AS userId, COUNT(*) AS cnt
+        SELECT r.creator_id AS id, COUNT(*) AS cnt
         FROM room r
         GROUP BY r.creator_id
-        ORDER BY cnt DESC, userId ASC
+        ORDER BY cnt DESC, id ASC
         LIMIT :limit OFFSET :offset
     """, nativeQuery = true)
     List<Object[]> findLeaderboard(@Param("limit") int limit, @Param("offset") int offset);

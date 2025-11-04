@@ -705,6 +705,7 @@ public class UserServiceImpl implements UserService {
                 .socialLogin(isSocial)
                 .penaltyList(pennaltyList)
                 .roomList(roomList)
+                .userRank(userRankService.getUserRank(user.getId()))
                 .build();
     }
 
@@ -806,6 +807,7 @@ public class UserServiceImpl implements UserService {
                         .nickname(f.getNickname())
                         .profileImgUrl(f.getImgUrl())
                         .following(followService.isFollowing(userId, f.getUserId()))
+                        .userRankDTO(userRankService.getUserRank(f.getId()))
                         .build())
                 .toList();
 
@@ -833,6 +835,7 @@ public class UserServiceImpl implements UserService {
                         .userId(f.getUserId())
                         .nickname(f.getNickname())
                         .profileImgUrl(f.getImgUrl())
+                        .userRank(userRankService.getUserRank(f.getId()))
                         .build())
                 .toList();
 

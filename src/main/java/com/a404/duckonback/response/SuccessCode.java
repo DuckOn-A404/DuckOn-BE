@@ -12,6 +12,9 @@ public enum SuccessCode {
     USER_SIGNUP_SUCCESS(201, HttpStatus.CREATED, "회원가입이 완료되었습니다."),
     EMAIL_AVAILABLE(200, HttpStatus.OK, "사용 가능한 이메일입니다."),
 
+    // 관리자 api 관련
+    ADMIN_GET_USER_LEADERBOARD_SUCCESS(200, HttpStatus.OK, "유저 리더보드 조회에 성공했습니다."),
+    ADMIN_REBUILD_ENGAGEMENT_SUCCESS(200, HttpStatus.OK, "유저 참여도 지표 재생성에 성공했습니다.")
     ;
 
 

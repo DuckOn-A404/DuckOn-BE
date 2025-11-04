@@ -1,5 +1,6 @@
 package com.a404.duckonback.dto;
 
+import com.a404.duckonback.enums.RankLevel;
 import lombok.*;
 
 @Getter
@@ -8,7 +9,6 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserRankDTO {
-    private Long id;
     private Long roomCreateCount;
-    private String rankLevel;
+    private RankLevel rankLevel;
 }

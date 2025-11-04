@@ -1,8 +1,16 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.UserRankDTO;
-import com.a404.duckonback.repository.RoomRepository;
+import com.a404.duckonback.dto.UserRankLeaderboardDTO;
+import com.a404.duckonback.entity.User;
+import com.a404.duckonback.enums.RankLevel;
+import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.repository.UserEngagementStatsJdbcRepository;
+import com.a404.duckonback.repository.UserEngagementStatsJdbcRepository.LeaderboardRow;
+import com.a404.duckonback.repository.UserEngagementStatsJdbcRepository.SnapshotRow;
+import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,36 +19,53 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserRankServiceImpl implements UserRankService{
-    private final RoomRepository roomRepository;
-    private final RankPolicyService rankPolicyService;
 
-    /** 단일 유저 등급 조회 **/
+    private final UserRepository userRepository;
+    private final UserEngagementStatsJdbcRepository userEngagementStatsJdbcRepository;
+
+    /** 단일 유저 등급 조회: userEngagementStats 스냅샷 사용 */
     @Override
     @Transactional(readOnly = true)
-    public UserRankDTO getUserRank(Long userId) {
-        long createCount = roomRepository.countByCreator_Id(userId);
-        String rankLevel = rankPolicyService.resolveRankLevel(createCount);
+    public UserRankDTO getUserRank(Long userPk) {
+        User user = userRepository.findByIdAndDeletedFalse(userPk);
+        if(user == null) {
+            throw new CustomException("User not found", HttpStatus.NOT_FOUND);
+        }
+
+        SnapshotRow snapshotRow = userEngagementStatsJdbcRepository.findByUserPk(userPk)
+                .orElseGet(() -> {
+                    SnapshotRow newRow = new SnapshotRow();
+                    newRow.userIdPk = userPk;
+                    newRow.roomCreateCount = 0L;
+                    newRow.gradeComposite = RankLevel.NORMAL.name();
+                    return newRow;
+                });
+
         return UserRankDTO.builder()
-                .id(userId)
-                .rankLevel(rankLevel)
-                .roomCreateCount(createCount)
+                .roomCreateCount(snapshotRow.roomCreateCount)
+                .rankLevel(RankLevel.fromString(snapshotRow.gradeComposite))
                 .build();
     }
 
-    /** 리더보드 조회 **/
+    /** 리더보드 조회: 스냅샷 기반 */
     @Override
-    public List<UserRankDTO> getLeaderboard(int page, int size) {
-        int offset = Math.max(0, page) * Math.max(1, size);
-        List<Object[]> rows = roomRepository.findLeaderboard(size, offset);
-        return rows.stream().map(row -> {
-            Long userId = ((Number) row[0]).longValue();
-            Long createCount = ((Number) row[1]).longValue();
-            String rankLevel = rankPolicyService.resolveRankLevel(createCount);
-            return UserRankDTO.builder()
-                    .id(userId)
-                    .rankLevel(rankLevel)
-                    .roomCreateCount(createCount)
-                    .build();
-        }).toList();
+    @Transactional(readOnly = true)
+    public List<UserRankLeaderboardDTO> getUserRankLeaderboard(int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 100); // 최대 100개 제한
+        int offset = safePage * safeSize;
+
+        List<LeaderboardRow> leaderboardRows = userEngagementStatsJdbcRepository.findLeaderboard(safeSize, offset);
+
+        return leaderboardRows.stream().map(row -> UserRankLeaderboardDTO.builder()
+                        .userId(row.publicUserId)
+                        .nickname(row.nickname)
+                        .profileImgUrl(row.imgUrl)
+                        .userRank(UserRankDTO.builder()
+                                .roomCreateCount(row.roomCreateCount)
+                                .rankLevel(RankLevel.fromString(row.gradeComposite))
+                        .build())
+                .build()
+                ).toList();
     }
 }

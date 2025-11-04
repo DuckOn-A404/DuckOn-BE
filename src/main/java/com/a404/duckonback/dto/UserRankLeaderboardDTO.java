@@ -7,10 +7,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class FollowerInfoDTO {
+public class UserRankLeaderboardDTO {
     private String nickname;
     private String userId;
-    private boolean following;
     private String profileImgUrl;
-    private UserRankDTO userRankDTO;
+    private UserRankDTO userRank;
 }

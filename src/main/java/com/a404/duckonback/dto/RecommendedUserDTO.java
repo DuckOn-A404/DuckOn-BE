@@ -9,4 +9,5 @@ public class RecommendedUserDTO {
     private String nickname;
     private String imgUrl;
     private List<String> reasons;   // includeReasons=true 일 때만 채움
+    private UserRankDTO userRank;
 }
