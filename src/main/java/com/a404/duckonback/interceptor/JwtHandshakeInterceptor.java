@@ -98,58 +98,6 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
         return false;
     }
 
-
-//    @Override
-//    public boolean beforeHandshake(ServerHttpRequest request,
-//                                   ServerHttpResponse response,
-//                                   WebSocketHandler wsHandler,
-//                                   Map<String, Object> attributes) throws Exception {
-//        if (request instanceof ServletServerHttpRequest servletRequest) {
-//            String query = servletRequest.getServletRequest().getQueryString();
-//            String token = null;
-//
-//            if (query != null && query.contains("token=")) {
-//                token = query.replaceFirst(".*token=", "");
-//            }
-//
-//
-//            if (token == null) {
-//                String authHeader = servletRequest.getServletRequest().getHeader("Authorization");
-//                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-//                    token = authHeader.substring(7);
-//                }
-//            }
-//
-//            if (token != null) {
-//                TokenStatus status = jwtUtil.getTokenValidationStatus(token);
-//                if (status == TokenStatus.VALID) {
-//                    var auth = jwtUtil.getAuthentication(token);
-//                    if (auth != null && auth.isAuthenticated()) {
-//                        Object principal = auth.getPrincipal();
-//                        if (principal instanceof User u) {
-//                            attributes.put("user", u);
-//                        } else if (principal instanceof UserDetails ud) {
-//                            User u = userRepository.findByUserIdAndDeletedFalse(ud.getUsername());
-//                            attributes.put("user", u);
-//                        }
-//                        return true;
-//                    }
-//                }
-//
-//                response.setStatusCode(HttpStatus.UNAUTHORIZED);
-//                response.getHeaders().add("X-Auth-Error", "TOKEN_EXPIRED_OR_INVALID");
-//                return false;
-//            }
-//
-//            attributes.put("guest", Boolean.TRUE);
-//            return true;
-//        }
-//
-//        // 비정상 요청일 때만 차단
-//        response.setStatusCode(HttpStatus.BAD_REQUEST);
-//        return false;
-//    }
-
     @Override
     public void afterHandshake(ServerHttpRequest request,
                                ServerHttpResponse response,
