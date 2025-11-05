@@ -35,4 +35,6 @@ public interface UserService {
     default Optional<User> findActiveByProviderAndProviderId(SocialProvider provider, String providerId) { return Optional.empty(); }
 
     RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
+
+    User findByNickname(String nickname);
 }

@@ -1,12 +1,14 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.*;
+import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.RoomSyncEventType;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
+import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class RoomController {
     private final RedisService redisService;
     private final ArtistService artistService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserService userService;
 
     @Operation(summary = "방 생성",
             description = "새로운 라이브 방송 방을 생성합니다. 프로필 사진과 배경 이미지를 포함할 수 있습니다.")
@@ -280,12 +283,6 @@ public class RoomController {
             redisService.decreaseParticipantCountFromRoom(roomId.toString());
         }
 
-//        if (principal == null) {
-//            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
-//        }
-//
-//        redisService.removeUserFromRoom(artistId.toString(), roomId.toString(), principal.getUser());
-
         long participantCount = redisService.getRoomUserCount(roomId.toString());
         messagingTemplate.convertAndSend(
                 "/topic/room/" + roomId + "/presence",
@@ -293,6 +290,48 @@ public class RoomController {
         );
 
         return ResponseEntity.ok("방에서 퇴장하였습니다.");
+    }
+
+    @Operation(summary = "방 강퇴", description = "방장이 현재 접속한 사용자를 방에서 강제 퇴장합니다.")
+    @PostMapping("/{roomId}/eject/{nickname}")
+    public ResponseEntity<?> ejectUserFromRoom(
+            @PathVariable Long roomId,
+            @PathVariable String nickname,
+            @RequestParam Long artistId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+
+        // Redis에서 현재 방 정보 조회 (없으면 내부에서 404 throw)
+        LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
+
+        // 호스트만 강제퇴장 가능
+        if (!principal.getUser().getUserId().equals(room.getHostId())) {
+            throw new CustomException("호스트만 강제퇴장 시킬 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        User target = userService.findByNickname(nickname);
+        
+        
+        //강퇴 대상 user에게 강퇴 메세지 전송
+        messagingTemplate.convertAndSendToUser(target.getUserId(),"/queue/kick",roomId);
+
+        redisService.removeUserFromRoom(
+                artistId.toString(),
+                roomId.toString(),
+                target
+        );
+
+        long participantCount = redisService.getRoomUserCount(roomId.toString());
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId + "/presence",
+                new RoomPresenceDTO(roomId, participantCount)
+        );
+
+        return ResponseEntity.ok("방에서 강퇴하였습니다.");
     }
 
     @Operation(summary = "방 목록 조회", description = "현재 존재하는 모든 방 목록을 조회합니다.")

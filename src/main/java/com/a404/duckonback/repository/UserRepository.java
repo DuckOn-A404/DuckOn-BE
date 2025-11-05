@@ -25,6 +25,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUserIdAndDeletedFalse(String userId);
     boolean existsByNicknameAndDeletedFalse(String nickname);
 
+    Optional<User> findByNickname(String nickname);
+
     // 소셜 로그인용: deleted=false 버전 추가 (기존 메서드는 점진적 교체)
     Optional<User> findByProviderAndProviderIdAndDeletedFalse(SocialProvider provider, String providerId);
 
