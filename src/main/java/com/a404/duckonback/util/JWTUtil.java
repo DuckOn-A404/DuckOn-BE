@@ -144,7 +144,7 @@ public class JWTUtil {
     public String generateAccessToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getUserId())
-                .claim("role", user.getRole())
+                .claim("role", user.getRole().name())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + serviceProperties.getAccessTokenExpiration()))
                 .signWith(key)

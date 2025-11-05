@@ -17,10 +17,13 @@ public enum ErrorCode {
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
 
     // JWT 관련 에러 코드
-    INVALID_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
-    EXPIRED_TOKEN(401, HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
+    INVALID_JWT_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    EXPIRED_JWT_TOKEN(401, HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
     INVALID_CREDENTIALS(401, HttpStatus.UNAUTHORIZED, "잘못된 인증 정보입니다."),
 
+
+    // 403
+    FORBIDDEN(403, HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
 
 
     //404 NOT FOUND
