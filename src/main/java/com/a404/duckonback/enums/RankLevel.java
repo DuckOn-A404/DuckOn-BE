@@ -10,14 +10,14 @@ public enum RankLevel {
     GOLD("GOLD", "amber"),
     PURPLE("PURPLE", "purple"),
     YELLOW("YELLOW", "yellow"),
-    NORMAL("NORMAL", "gray");
+    GREEN("GREEN", "green");
 
     private final String label;
     private final String color;
 
     public static RankLevel fromString(String s) {
-        if (s == null) return NORMAL;
+        if (s == null) return GREEN;
         try { return RankLevel.valueOf(s.toUpperCase()); }
-        catch (IllegalArgumentException e) { return NORMAL; }
+        catch (IllegalArgumentException e) { return GREEN; }
     }
 }

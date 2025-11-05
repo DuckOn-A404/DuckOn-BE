@@ -37,7 +37,7 @@ public class UserRankServiceImpl implements UserRankService{
                     SnapshotRow newRow = new SnapshotRow();
                     newRow.userIdPk = userPk;
                     newRow.roomCreateCount = 0L;
-                    newRow.gradeComposite = RankLevel.NORMAL.name();
+                    newRow.gradeComposite = RankLevel.GREEN.name();
                     return newRow;
                 });
 

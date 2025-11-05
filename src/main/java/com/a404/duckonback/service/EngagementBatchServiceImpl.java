@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -13,11 +14,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * 매일 00:00 (Asia/Seoul) 에 유저 참여도 통계(user_engagement_stats) 재집계 배치
  * - room / meme MySQL
  * - chat MongoDB
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EngagementBatchServiceImpl implements EngagementBatchService {
@@ -32,8 +35,7 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
     @Transactional
     @Override
     public void rebuildEngagementSnapshot() {
-        System.out.println("[Batch] 유저 참여도 통계 재집계 시작");
-
+        log.info("[Batch] Rebuilding user engagement stats snapshot...");
         // 1) 임시 테이블: 전체 활성 유저 초기화
         jdbcTemplate.update("DROP TEMPORARY TABLE IF EXISTS tmp_counts");
         jdbcTemplate.update("""
@@ -161,21 +163,21 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
                 WHEN (CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END) >= 80 THEN 'GOLD'
                 WHEN (CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END) >= 70 THEN 'PURPLE'
                 WHEN (CASE WHEN t.max_room = t.min_room THEN 0 ELSE (1 - p.pr) * 100 END) >= 60 THEN 'YELLOW'
-                ELSE 'NORMAL' END,
+                ELSE 'GREEN' END,
 
               s.grade_chat = CASE
                 WHEN (CASE WHEN t.max_chat = t.min_chat THEN 0 ELSE (1 - p.pc) * 100 END) >= 95 THEN 'VIP'
                 WHEN (CASE WHEN t.max_chat = t.min_chat THEN 0 ELSE (1 - p.pc) * 100 END) >= 80 THEN 'GOLD'
                 WHEN (CASE WHEN t.max_chat = t.min_chat THEN 0 ELSE (1 - p.pc) * 100 END) >= 70 THEN 'PURPLE'
                 WHEN (CASE WHEN t.max_chat = t.min_chat THEN 0 ELSE (1 - p.pc) * 100 END) >= 60 THEN 'YELLOW'
-                ELSE 'NORMAL' END,
+                ELSE 'GREEN' END,
 
               s.grade_meme = CASE
                 WHEN (CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END) >= 95 THEN 'VIP'
                 WHEN (CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END) >= 80 THEN 'GOLD'
                 WHEN (CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END) >= 70 THEN 'PURPLE'
                 WHEN (CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END) >= 60 THEN 'YELLOW'
-                ELSE 'NORMAL' END,
+                ELSE 'GREEN' END,
 
               s.grade_composite = CASE
                 WHEN ROUND(
@@ -226,9 +228,8 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
                     (CASE WHEN t.max_meme <> t.min_meme THEN 0.2 ELSE 0 END)
                   ,0) * 100
                 , 2) >= 60 THEN 'YELLOW'
-                ELSE 'NORMAL' END
+                ELSE 'GREEN' END
         """);
-
-        System.out.println("[Batch] 유저 참여도 통계 재집계 완료");
+        log.info("[Batch] User engagement stats snapshot rebuilt successfully.");
     }
 }
