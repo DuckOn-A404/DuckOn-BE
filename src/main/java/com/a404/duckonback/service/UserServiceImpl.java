@@ -1071,7 +1071,7 @@ public class UserServiceImpl implements UserService {
 
         List<UserBrief> briefs = candidateIds.isEmpty()
                 ? List.of()
-                : userRepository.findBriefsByUserIdIn(candidateIds);
+                : userRepository.findBriefsByIdIn(candidateIds);
 
         // 4) 정렬 및 DTO 변환  >>> CHANGED: 안전 가드(safeCand)로 NPE 방지
         List<RecommendedUserDTO> list = briefs.stream()
@@ -1082,6 +1082,7 @@ public class UserServiceImpl implements UserService {
                             .nickname(b.getNickname())
                             .imgUrl(b.getImgUrl())
                             .reasons(includeReasons ? new ArrayList<>(c.reasons) : null)
+                            .userRank(userRankService.getUserRank(b.getId()))
                             .build();
                 })
                 .sorted((a, b) -> {
@@ -1116,13 +1117,14 @@ public class UserServiceImpl implements UserService {
                     .collect(Collectors.toSet());
 
             if (!extrasIds.isEmpty()) {
-                var extraBriefs = userRepository.findBriefsByUserIdIn(extrasIds);
+                var extraBriefs = userRepository.findBriefsByIdIn(extrasIds);
                 var extraDtos = extraBriefs.stream()
                         .map(b -> RecommendedUserDTO.builder()
                                 .userId(b.getUserId())
                                 .nickname(b.getNickname())
                                 .imgUrl(b.getImgUrl())
                                 .reasons(includeReasons ? List.of("랜덤 보충") : null)
+                                .userRank(userRankService.getUserRank(b.getId()))
                                 .build())
                         .toList();
 
