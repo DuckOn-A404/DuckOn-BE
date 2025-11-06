@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.dto.ChatMessageResponseDTO;
+import com.a404.duckonback.dto.UserRankDTO;
 import com.a404.duckonback.entity.ChatMessage;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -21,6 +23,8 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ArtistFollowService artistFollowService;
+    private final UserRankService userRankService;
+    private final UserService userService;
 
     public ChatMessage sendMessage(Long userPk, String artistId, ChatMessageRequestDTO dto) {
         // 1) 팔로우 여부 체크
@@ -48,15 +52,31 @@ public class ChatService {
     }
 
     public List<ChatMessageResponseDTO> getHistory(String artistId) {
-        return chatMessageRepository.findByArtistIdOrderBySentAtAsc(artistId).stream()
+        List<ChatMessageResponseDTO> response = chatMessageRepository.findByArtistIdOrderBySentAtAsc(artistId).stream()
                 .map(ChatMessageResponseDTO::fromEntity)
                 .toList();
+
+        for(ChatMessageResponseDTO dto : response) {
+            User user = userService.findByUserId(dto.getUserId());
+            UserRankDTO rankDTO = userRankService.getUserRank(user.getId());
+            dto.setUserRank(rankDTO);
+        }
+
+        return response;
     }
 
     public List<ChatMessageResponseDTO> getHistorySince(String artistId, Instant since) {
-        return chatMessageRepository.findByArtistIdAndSentAtAfterOrderBySentAtAsc(artistId, since)
+        List<ChatMessageResponseDTO> response = chatMessageRepository.findByArtistIdAndSentAtAfterOrderBySentAtAsc(artistId, since)
                 .stream()
                 .map(ChatMessageResponseDTO::fromEntity)
                 .toList();
+
+        for(ChatMessageResponseDTO dto : response) {
+            User user = userService.findByUserId(dto.getUserId());
+            UserRankDTO rankDTO = userRankService.getUserRank(user.getId());
+            dto.setUserRank(rankDTO);
+        }
+
+        return response;
     }
 }

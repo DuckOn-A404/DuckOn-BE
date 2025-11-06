@@ -15,6 +15,7 @@ public class ChatMessageDTO {
     private String senderId;
     private String senderNickName;
     private String content; // isImage == true -> url / false -> String(일반 메시지)
+    private UserRankDTO userRank;
 
     @Getter(onMethod_ = {@JsonProperty("isImage")})
     @Setter

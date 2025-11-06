@@ -13,6 +13,7 @@ public class ChatMessageResponseDTO {
     private String userNickname;  // User.nickname
     private String content;
     private Instant sentAt;
+    private UserRankDTO userRank;
 
     public static ChatMessageResponseDTO fromEntity(ChatMessage e) {
         return ChatMessageResponseDTO.builder()
