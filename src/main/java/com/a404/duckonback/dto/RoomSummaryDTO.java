@@ -12,4 +12,6 @@ public class RoomSummaryDTO {
     private String title;
     private String imgUrl;
     private LocalDateTime createdAt;
+    private String artistNameKr;
+    private String artistNameEn;
 }

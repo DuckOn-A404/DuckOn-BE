@@ -17,15 +17,35 @@ import java.util.List;
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findByCreator_IdOrderByCreatedAtDesc(Long creatorId, Pageable pageable);
+
+//    @Query("""
+//            SELECT new com.a404.duckonback.dto.RoomSummaryDTO(
+//                        r.roomId, r.title, r.imgUrl, r.createdAt,
+//            )
+//            FROM Room r
+//            WHERE r.creator.id = :creatorId
+//            ORDER BY r.createdAt DESC
+//            """)
+//    Page<RoomSummaryDTO> findRoomSummariesByCreatorIdOrderByCreatedAtDesc(@Param("creatorId") Long creatorId, Pageable pageable);
+
     @Query("""
-            SELECT new com.a404.duckonback.dto.RoomSummaryDTO(
-                        r.roomId, r.title, r.imgUrl, r.createdAt
-            )
-            FROM Room r
-            WHERE r.creator.id = :creatorId
-            ORDER BY r.createdAt DESC
-            """)
-    Page<RoomSummaryDTO> findRoomSummariesByCreatorIdOrderByCreatedAtDesc(@Param("creatorId") Long creatorId, Pageable pageable);
+       SELECT new com.a404.duckonback.dto.RoomSummaryDTO(
+           r.roomId,
+           r.title,
+           r.imgUrl,
+           r.createdAt,
+           a.nameKr,
+           a.nameEn
+       )
+       FROM Room r
+       JOIN r.artist a
+       WHERE r.creator.id = :creatorId
+       ORDER BY r.createdAt DESC
+       """)
+    Page<RoomSummaryDTO> findRoomSummariesByCreatorIdOrderByCreatedAtDesc(
+            @Param("creatorId") Long creatorId,
+            Pageable pageable
+    );
 
     long countByCreator_Id(Long creatorId);    // 해당 유저가 만든 방 개수
 
