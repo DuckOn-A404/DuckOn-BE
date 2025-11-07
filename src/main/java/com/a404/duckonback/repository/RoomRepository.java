@@ -35,7 +35,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
            r.imgUrl,
            r.createdAt,
            a.nameKr,
-           a.nameEn
+           a.nameEn,
+           r.creator.id,
+           a.artistId
        )
        FROM Room r
        JOIN r.artist a

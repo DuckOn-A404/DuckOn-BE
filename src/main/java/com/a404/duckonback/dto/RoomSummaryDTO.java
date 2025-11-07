@@ -14,4 +14,6 @@ public class RoomSummaryDTO {
     private LocalDateTime createdAt;
     private String artistNameKr;
     private String artistNameEn;
+    private Long creatorId;
+    private Long artistId;
 }
