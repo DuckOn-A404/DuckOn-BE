@@ -11,10 +11,17 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class MemeServiceImpl {
+public class MemeServiceImpl implements MemeService {
+    private final S3Service s3Service;
+
     public void createMeme(Long userId, MemeCreateRequestDTO request){
         for(MemeItem memeItem : request.getMemes()){
-            MultipartFile image = memeItem.getImage();
+            MultipartFile file = memeItem.getImage();
+
+            String imgUrl = null;
+            if (file != null && !file.isEmpty()) {
+                imgUrl = s3Service.uploadFile(file);
+            }
 
             Set<String> tags = memeItem.getTags();
         }
