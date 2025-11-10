@@ -102,7 +102,8 @@ public class SecurityConfig {
                                         "/webjars/**",
                                         "/api/rooms/{roomId}/enter",
                                         "/ws-chat/**",
-                                        "/api/memes/random"
+                                        "/api/memes/random",
+                                        "/api/memes/top/hourly"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)

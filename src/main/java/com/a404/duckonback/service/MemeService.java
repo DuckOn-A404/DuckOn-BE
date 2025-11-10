@@ -9,4 +9,5 @@ public interface MemeService {
     RandomMemeResponseDTO getRandomMemes(int page, int size);
     void createFavorite(Long userId, Long memeId);
     void deleteFavorite(Long userId, Long memeId);
+    RandomMemeResponseDTO getHourlyTop10Memes();
 }

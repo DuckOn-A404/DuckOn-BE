@@ -108,5 +108,17 @@ public class MemeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_DELETED, null));
     }
 
+    @Operation(
+            summary = "시간별 TOP10 밈 조회",
+            description = "가장 최근 집계된 1시간 구간 기준 TOP10 밈을 반환합니다."
+    )
+    @GetMapping("/top/hourly")
+    public ResponseEntity<ApiResponseDTO<RandomMemeResponseDTO>> getHourlyTop10Memes() {
+        RandomMemeResponseDTO res = memeService.getHourlyTop10Memes();
+        return ResponseEntity.ok(
+                ApiResponseDTO.success(SuccessCode.MEME_TOP10_RETRIEVE_SUCCESS, res)
+        );
+    }
+
 
 }
