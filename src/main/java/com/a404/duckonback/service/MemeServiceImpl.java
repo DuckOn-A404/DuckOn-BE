@@ -3,6 +3,12 @@ package com.a404.duckonback.service;
 import com.a404.duckonback.dto.MemeCreateRequestDTO;
 import com.a404.duckonback.dto.MemeCreateResponseDTO;
 import com.a404.duckonback.entity.*;
+import com.a404.duckonback.dto.RandomMemeItemDTO;
+import com.a404.duckonback.dto.RandomMemeResponseDTO;
+import com.a404.duckonback.entity.Meme;
+import com.a404.duckonback.entity.MemeTag;
+import com.a404.duckonback.entity.Tag;
+import com.a404.duckonback.entity.User;
 import com.a404.duckonback.dto.MemeCreateResponseDTO.MemeInfoDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.*;
@@ -46,6 +52,66 @@ public class MemeServiceImpl implements MemeService {
 
         return MemeCreateResponseDTO.builder()
                 .memes(resultList)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RandomMemeResponseDTO getRandomMemes(int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+
+        long totalCount = memeRepository.count();
+
+        // 아무 밈도 없을 때
+        if (totalCount == 0) {
+            return RandomMemeResponseDTO.builder()
+                    .page(safePage)
+                    .size(safeSize)
+                    .total(0)
+                    .items(Collections.emptyList())
+                    .build();
+        }
+
+        // 최대 페이지 넘으면 마지막 페이지로 보정
+        long maxPage = (totalCount - 1) / safeSize + 1;
+        if (safePage > maxPage) {
+            safePage = (int) maxPage;
+        }
+
+        // 기본 페이지네이션 조회
+        var pageable = org.springframework.data.domain.PageRequest.of(safePage - 1, safeSize);
+        var memePage = memeRepository.findAll(pageable);
+
+        // 해당 페이지 내에서만 랜덤 셔플 (호출할 때마다 순서 랜덤)
+        List<Meme> memes = new ArrayList<>(memePage.getContent());
+        java.util.Collections.shuffle(memes);
+
+        // 엔티티 -> DTO 변환
+        List<RandomMemeItemDTO> items = memes.stream()
+                .map(meme -> {
+                    // 태그 목록
+                    List<String> tags = java.util.Optional.ofNullable(meme.getMemeTags())
+                            .orElse(java.util.Collections.emptySet())
+                            .stream()
+                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
+                            .filter(java.util.Objects::nonNull)
+                            .distinct()
+                            .toList();
+
+                    return RandomMemeItemDTO.builder()
+                            .memeId(meme.getId())
+                            .memeUrl(meme.getImageUrl())
+                            .tags(tags)
+                            .build();
+                })
+                .toList();
+
+        return RandomMemeResponseDTO.builder()
+                .page(safePage)
+                .size(safeSize)
+                .total((int) totalCount)
+                .items(items)
                 .build();
     }
 
