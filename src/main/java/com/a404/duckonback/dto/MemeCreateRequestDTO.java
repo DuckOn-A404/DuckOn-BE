@@ -1,11 +1,11 @@
 package com.a404.duckonback.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -15,9 +15,21 @@ import java.util.List;
 @Schema(description = "밈 생성 요청: 한 번에 최대 3개의 밈 업로드")
 public class MemeCreateRequestDTO {
 
-    @Schema(description = "업로드할 밈 목록(1~3개)")
-    @Valid
-    @Size(min = 1, max = 3, message = "밈은 1개 이상 3개 이하로 업로드할 수 있습니다.")
-    private List<@Valid MemeItem> memes;
+    @Schema(type = "string", format = "binary", description = "1번 밈 이미지 파일")
+    private MultipartFile image1;
+    @Schema(description = "1번 밈 태그들", example = "[\"funny\",\"idol\"]")
+    @Size(max = 20, message = "태그는 최대 20개까지 허용됩니다.")
+    private Set<String> tags1;
 
+    @Schema(type = "string", format = "binary", description = "2번 밈 이미지 파일(선택)")
+    private MultipartFile image2;
+    @Schema(description = "2번 밈 태그들")
+    @Size(max = 20, message = "태그는 최대 20개까지 허용됩니다.")
+    private Set<String> tags2;
+
+    @Schema(type = "string", format = "binary", description = "3번 밈 이미지 파일(선택)")
+    private MultipartFile image3;
+    @Schema(description = "3번 밈 태그들")
+    @Size(max = 20, message = "태그는 최대 20개까지 허용됩니다.")
+    private Set<String> tags3;
 }

@@ -14,7 +14,11 @@ public enum SuccessCode {
 
     // 관리자 api 관련
     ADMIN_GET_USER_LEADERBOARD_SUCCESS(200, HttpStatus.OK, "유저 리더보드 조회에 성공했습니다."),
-    ADMIN_REBUILD_ENGAGEMENT_SUCCESS(200, HttpStatus.OK, "유저 참여도 지표 재생성에 성공했습니다.")
+    ADMIN_REBUILD_ENGAGEMENT_SUCCESS(200, HttpStatus.OK, "유저 참여도 지표 재생성에 성공했습니다."),
+
+    // 밈 api 관련
+    MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
+    FILE_S3_UPLOAD_SUCCESS(200, HttpStatus.OK, "파일을 성공적으로 S3에 업로드했습니다.")
     ;
 
 

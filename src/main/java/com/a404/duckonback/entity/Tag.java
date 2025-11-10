@@ -24,7 +24,7 @@ public class Tag {
     private Long id;
 
     @Column(name = "tag_name", nullable = false, length = 100)
-    private String name;
+    private String tagName;
 
     @Builder.Default
     @OneToMany(mappedBy = "tag")

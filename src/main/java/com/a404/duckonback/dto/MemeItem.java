@@ -15,11 +15,20 @@ import java.util.Set;
 @Builder
 @Schema(description = "단일 밈 업로드 항목")
 public class MemeItem {
-    @Schema(description = "밈 이미지 파일(jpeg/png/webp 등)", requiredMode = Schema.RequiredMode.REQUIRED)
+
+    @Schema(
+            description = "밈 이미지 파일(jpeg/png/webp 등)",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            type = "string",
+            format = "binary"
+    )
     @NotNull(message = "이미지 파일은 필수입니다.")
     private MultipartFile image;
 
-    @Schema(description = "태그들(중복 불가). 비워두어도 됨", example = "[\"funny\",\"idol\",\"stage\"]")
+    @Schema(
+            description = "태그들(중복 불가). 비워두어도 됨",
+            example = "[\"funny\",\"idol\",\"stage\"]"
+    )
     @Size(max = 20, message = "태그는 최대 20개까지 허용됩니다.")
     private Set<String> tags;
 }

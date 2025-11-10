@@ -1,7 +1,8 @@
 package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.MemeCreateRequestDTO;
+import com.a404.duckonback.dto.MemeCreateResponseDTO;
 
 public interface MemeService {
-    void createMeme(Long userId, MemeCreateRequestDTO request);
+    MemeCreateResponseDTO createMeme(Long userId, MemeCreateRequestDTO request);
 }
