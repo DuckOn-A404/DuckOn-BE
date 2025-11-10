@@ -1,8 +1,10 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.*;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
+import com.a404.duckonback.response.ErrorCode;
 import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.MemeS3Service;
 import com.a404.duckonback.service.MemeService;
@@ -120,6 +122,7 @@ public class MemeController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+        if(principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
         List<FavoriteMemeDTO> favorites = memeService.getMyFavoriteMemes(principal.getId(), page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, favorites));
     }

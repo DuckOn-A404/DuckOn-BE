@@ -112,6 +112,8 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated() // 팔로우/언팔로우
                                 .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글
                                 .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated() // 채팅 메시지 전송
+                                .requestMatchers(HttpMethod.GET, "/api/memes/favorites").authenticated() // 즐겨찾기 밈 조회
+
                                 // 2) 누구나 볼 수 있는 조회 API
                                 .requestMatchers(HttpMethod.GET, "/api/artists").permitAll()           // 페이징 조회 & 키워드
                                 .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
