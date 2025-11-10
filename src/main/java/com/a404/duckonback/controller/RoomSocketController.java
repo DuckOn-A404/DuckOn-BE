@@ -3,10 +3,12 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.ChatMessageDTO;
 import com.a404.duckonback.dto.LiveRoomDTO;
 import com.a404.duckonback.dto.LiveRoomSyncDTO;
+import com.a404.duckonback.dto.UserRankDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.RoomSyncEventType;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.RedisService;
+import com.a404.duckonback.service.UserRankService;
 import com.a404.duckonback.util.ChatRateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,6 +29,7 @@ public class RoomSocketController {
     private final SimpMessagingTemplate messagingTemplate;
     private final RedisService redisService;
     private final ChatRateLimiter chatRateLimiter;
+    private final UserRankService userRankService;
 
     // 영상 동기화 메시지
     @MessageMapping("/room/update")
@@ -72,6 +75,8 @@ public class RoomSocketController {
         if (user != null && !isGuest) {
             message.setSenderId(user.getUserId());
             message.setSenderNickName(user.getNickname());
+            UserRankDTO userRankDTO = userRankService.getUserRank(user.getId());
+            message.setUserRank(userRankDTO);
             rateKey = chatRateLimiter.userKey(user.getUserId());
         } else {
             // 게스트

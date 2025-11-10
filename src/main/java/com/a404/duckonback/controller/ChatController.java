@@ -2,10 +2,12 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.dto.ChatMessageResponseDTO;
+import com.a404.duckonback.dto.UserRankDTO;
 import com.a404.duckonback.entity.ChatMessage;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.ChatService;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.service.UserRankService;
 import com.a404.duckonback.util.ChatRateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import java.util.Map;
 public class ChatController {
     private final ChatService chatService;
     private final ChatRateLimiter chatRateLimiter;
+    private final UserRankService userRankService;
 
     /**
      * 클라이언트가 메시지를 보낼 때 호출하는 엔드포인트
@@ -59,7 +62,12 @@ public class ChatController {
                 artistId,
                 dto
         );
-        return ResponseEntity.ok(ChatMessageResponseDTO.fromEntity(saved));
+
+        ChatMessageResponseDTO responseDTO = ChatMessageResponseDTO.fromEntity(saved);
+        UserRankDTO rankDTO = userRankService.getUserRank(principal.getUser().getId());
+
+        responseDTO.setUserRank(rankDTO);
+        return ResponseEntity.ok(responseDTO);
     }
 
     /**
