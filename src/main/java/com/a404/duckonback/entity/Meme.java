@@ -3,6 +3,8 @@ package com.a404.duckonback.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -44,4 +46,8 @@ public class Meme {
             foreignKey = @ForeignKey(name = "fk_meme_creator_user")
     )
     private User creator;
+
+    @OneToMany(mappedBy = "meme", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<MemeTag> memeTags = new HashSet<>();
 }
