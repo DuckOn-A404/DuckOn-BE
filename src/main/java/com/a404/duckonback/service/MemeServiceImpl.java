@@ -2,6 +2,7 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.MemeCreateRequestDTO;
 import com.a404.duckonback.dto.MemeCreateResponseDTO;
+import com.a404.duckonback.entity.*;
 import com.a404.duckonback.dto.RandomMemeItemDTO;
 import com.a404.duckonback.dto.RandomMemeResponseDTO;
 import com.a404.duckonback.entity.Meme;
@@ -9,12 +10,11 @@ import com.a404.duckonback.entity.MemeTag;
 import com.a404.duckonback.entity.Tag;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.dto.MemeCreateResponseDTO.MemeInfoDTO;
-import com.a404.duckonback.repository.MemeRepository;
-import com.a404.duckonback.repository.MemeTagRepository;
-import com.a404.duckonback.repository.TagRepository;
-import com.a404.duckonback.repository.UserRepository;
+import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +34,7 @@ public class MemeServiceImpl implements MemeService {
     private final TagRepository tagRepository;
     private final MemeTagRepository memeTagRepository;
     private final UserRepository userRepository;
+    private final MemeFavoriteRepository memeFavoriteRepository;
 
     @Override
     public MemeCreateResponseDTO createMeme(Long userId, MemeCreateRequestDTO req) {
@@ -162,5 +163,35 @@ public class MemeServiceImpl implements MemeService {
                 .build();
 
         return Optional.of(dto);
+    }
+
+    public void createFavorite(Long userId, Long memeId){
+        if (memeFavoriteRepository.existsByUser_IdAndMeme_Id(userId, memeId)) {
+            return;
+        }
+
+        // 존재 유효성 체크
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException("존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND));
+        Meme meme = memeRepository.findById(memeId)
+                .orElseThrow(() -> new CustomException("존재하지 않는 밈 입니다.", HttpStatus.NOT_FOUND));
+
+        // 저장
+        MemeFavorite mf = MemeFavorite.builder()
+                .user(user)
+                .meme(meme)
+                .build();
+
+        memeFavoriteRepository.save(mf);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFavorite(Long userId, Long memeId) {
+
+        if (!memeFavoriteRepository.existsByUser_IdAndMeme_Id(userId, memeId)) {
+            throw new CustomException("존재하지 않는 즐겨찾기입니다.",HttpStatus.NOT_FOUND);
+        }
+        memeFavoriteRepository.deleteByUser_IdAndMeme_Id(userId, memeId);
     }
 }
