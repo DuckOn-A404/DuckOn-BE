@@ -60,7 +60,8 @@ public class SecurityConfig {
                 "https://d3jjanh0vyc8he.cloudfront.net",
                 "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
                 "http://localhost:3000",
-                "http://127.0.0.1:3000"
+                "http://127.0.0.1:3000",
+                "http://localhost:5173/"
         ));
         configuration.setAllowedMethods(List.of("*"));        // 모든 Method 허용
         configuration.setAllowedHeaders(List.of("*"));        // 모든 Header 허용
