@@ -25,6 +25,8 @@ public enum SuccessCode {
     MEME_FAVORITE_CREATED(200, HttpStatus.OK, "밈을 성공적으로 즐겨찾기했습니다."),
     MEME_FAVORITE_DELETED(200, HttpStatus.OK,"밈 즐겨찾기를 성공적으로 취소하였습니다."),
     MEME_TOP10_RETRIEVE_SUCCESS(200, HttpStatus.OK, "밈 TOP10 조회에 성공했습니다."),
+    TAG_TRENDING_RETRIEVE_SUCCESS(200, HttpStatus.OK, "실시간 인기 태그 조회에 성공했습니다."),
+    TAG_SEARCH_LOG_SUCCESS(200, HttpStatus.OK, "태그 검색 로그 기록에 성공했습니다."),
     ;
 
 

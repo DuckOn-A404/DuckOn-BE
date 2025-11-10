@@ -103,13 +103,14 @@ public class SecurityConfig {
                                         "/api/rooms/{roomId}/enter",
                                         "/ws-chat/**",
                                         "/api/memes/random",
-                                        "/api/memes/top/hourly"
+                                        "/api/memes/top/hourly",
+                                        "/api/tags/**"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
                                 .requestMatchers("/api/artists/me").authenticated()
                                 .requestMatchers(HttpMethod.POST,   "/api/artists/*/follow").authenticated() // 팔로우
-                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated() // 팔로우/언팔로우
+                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").   authenticated() // 팔로우/언팔로우
                                 .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글
                                 .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated() // 채팅 메시지 전송
                                 .requestMatchers(HttpMethod.GET, "/api/memes/favorites").authenticated() // 즐겨찾기 밈 조회
