@@ -1,10 +1,7 @@
 package com.a404.duckonback.service;
 
-import com.a404.duckonback.dto.MemeCreateRequestDTO;
-import com.a404.duckonback.dto.MemeCreateResponseDTO;
+import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.*;
-import com.a404.duckonback.dto.RandomMemeItemDTO;
-import com.a404.duckonback.dto.RandomMemeResponseDTO;
 import com.a404.duckonback.entity.Meme;
 import com.a404.duckonback.entity.MemeTag;
 import com.a404.duckonback.entity.Tag;
@@ -14,6 +11,8 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -195,6 +194,38 @@ public class MemeServiceImpl implements MemeService {
         }
         memeFavoriteRepository.deleteByUser_IdAndMeme_Id(userId, memeId);
     }
+
+    @Override
+    public List<FavoriteMemeDTO> getMyFavoriteMemes(Long userId, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+
+        // 페이지 요청
+        PageRequest pageable = PageRequest.of(safePage - 1, safeSize);
+        Page<MemeFavorite> favPage = memeFavoriteRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
+
+
+        return favPage.getContent().stream()
+                .map(mf -> {
+                    var meme = mf.getMeme();
+                    var tags = java.util.Optional.ofNullable(meme.getMemeTags())
+                            .orElse(java.util.Collections.emptySet())
+                            .stream()
+                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
+                            .filter(java.util.Objects::nonNull)
+                            .distinct()
+                            .toList();
+
+                    return FavoriteMemeDTO.builder()
+                            .memeId(meme.getId())
+                            .memeUrl(meme.getImageUrl())
+                            .tags(tags)
+                            .favoritedAt(mf.getCreatedAt())
+                            .build();
+                })
+                .toList();
+    }
+
 
     @Override
     @Transactional(readOnly = true)

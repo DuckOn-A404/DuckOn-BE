@@ -17,6 +17,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Tag(name = "밈 관리", description = "MemeDuck에서 사용되는 밈과 관련된 기능을 제공합니다.")
 @RestController
 @RequestMapping("/api/memes")
@@ -106,6 +108,20 @@ public class MemeController {
     ) {
         memeService.deleteFavorite(principal.getId(), memeId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_DELETED, null));
+    }
+
+    @Operation(
+            summary = "내 즐겨찾기 밈 목록 조회",
+            description = "내가 즐겨찾기한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
+    )
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponseDTO<List<FavoriteMemeDTO>>> getMyFavoriteMemes(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        List<FavoriteMemeDTO> favorites = memeService.getMyFavoriteMemes(principal.getId(), page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, favorites));
     }
 
     @Operation(
