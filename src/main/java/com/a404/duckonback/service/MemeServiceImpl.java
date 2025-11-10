@@ -118,4 +118,14 @@ public class MemeServiceImpl implements MemeService {
 
         memeFavoriteRepository.save(mf);
     }
+
+    @Override
+    @Transactional
+    public void deleteFavorite(Long userId, Long memeId) {
+
+        if (!memeFavoriteRepository.existsByUser_IdAndMeme_Id(userId, memeId)) {
+            throw new CustomException("존재하지 않는 즐겨찾기입니다.",HttpStatus.NOT_FOUND);
+        }
+        memeFavoriteRepository.deleteByUser_IdAndMeme_Id(userId, memeId);
+    }
 }
