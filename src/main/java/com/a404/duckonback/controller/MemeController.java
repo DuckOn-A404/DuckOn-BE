@@ -3,6 +3,7 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.MemeCreateRequestDTO;
 import com.a404.duckonback.dto.MemeCreateResponseDTO;
 import com.a404.duckonback.dto.MemeS3UploadResponseDTO;
+import com.a404.duckonback.dto.RandomMemeResponseDTO;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
@@ -18,9 +19,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "밈 관리", description = "")
+@Tag(name = "밈 관리", description = "MemeDuck에서 사용되는 밈과 관련된 기능을 제공합니다.")
 @RestController
-@RequestMapping("/api/meme")
+@RequestMapping("/api/memes")
 @RequiredArgsConstructor
 public class MemeController {
 
@@ -58,6 +59,19 @@ public class MemeController {
     ) {
         MemeS3UploadResponseDTO result = memeS3Service.uploadMeme(file);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.FILE_S3_UPLOAD_SUCCESS, result));
+    }
+
+    @Operation(
+            summary = "랜덤 밈 조회",
+            description = "랜덤으로 밈을 조회합니다. 페이지네이션을 지원합니다."
+    )
+    @GetMapping("/random")
+    public ResponseEntity<ApiResponseDTO<RandomMemeResponseDTO>> getRandomMeme(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        RandomMemeResponseDTO randomMemes = memeService.getRandomMemes(page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, randomMemes));
     }
 
 }
