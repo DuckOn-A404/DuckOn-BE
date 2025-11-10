@@ -74,4 +74,25 @@ public class MemeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, randomMemes));
     }
 
+    @Operation(summary = "밈 즐겨찾기 추가", description = "특정 밈을 즐겨찾기에 추가합니다. 이미 추가되어 있어도 에러 없이 성공 처리합니다(idempotent).")
+    @PostMapping("/{memeId}/favorite")
+    public ResponseEntity<ApiResponseDTO<Void>> createFavorite(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long memeId
+    ) {
+        memeService.createFavorite(principal.getId(), memeId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_CREATED, null));
+    }
+
+    @Operation(summary = "밈 즐겨찾기 취소", description = "특정 밈의 즐겨찾기를 취소합니다. 존재하지 않아도 에러 없이 성공 처리합니다(idempotent).")
+    @DeleteMapping("/{memeId}/favorite")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteFavorite(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long memeId
+    ) {
+        memeService.deleteFavorite(principal.getId(), memeId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_DELETED, null));
+    }
+
+
 }
