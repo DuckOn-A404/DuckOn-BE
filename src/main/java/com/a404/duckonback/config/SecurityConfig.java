@@ -52,7 +52,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); // 모든 Origin 허용 (임시)
+        configuration.setAllowedOrigins(List.of(
+                "https://memeduck.site",
+                "https://www.memeduck.site",
+                "https://d3jjanh0vyc8he.cloudfront.net",
+                "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+        ));
         configuration.setAllowedMethods(List.of("*"));        // 모든 Method 허용
         configuration.setAllowedHeaders(List.of("*"));        // 모든 Header 허용
         configuration.setAllowCredentials(true);              // 쿠키/인증정보 허용
