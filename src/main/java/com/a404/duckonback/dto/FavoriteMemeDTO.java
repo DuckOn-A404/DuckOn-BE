@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class FavoriteMemeItemDTO {
+public class FavoriteMemeDTO  {
     private Long memeId;
     private String memeUrl;
     private List<String> tags;
