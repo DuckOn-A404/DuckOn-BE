@@ -1,9 +1,6 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.MemeCreateRequestDTO;
-import com.a404.duckonback.dto.MemeCreateResponseDTO;
-import com.a404.duckonback.dto.MemeS3UploadResponseDTO;
-import com.a404.duckonback.dto.RandomMemeResponseDTO;
+import com.a404.duckonback.dto.*;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
@@ -92,6 +89,20 @@ public class MemeController {
     ) {
         memeService.deleteFavorite(principal.getId(), memeId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_DELETED, null));
+    }
+
+    @Operation(
+            summary = "내 즐겨찾기 밈 목록",
+            description = "내가 즐겨찾기한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
+    )
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponseDTO<FavoriteMemeResponseDTO>> getMyFavoriteMemes(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        FavoriteMemeResponseDTO data = memeService.getMyFavoriteMemes(principal.getId(), page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, data));
     }
 
 
