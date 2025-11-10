@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "밈 관리", description = "")
 @RestController
-@RequestMapping("/api/meme")
+@RequestMapping("/api/memes")
 @RequiredArgsConstructor
 public class MemeController {
 
@@ -59,5 +59,16 @@ public class MemeController {
         MemeS3UploadResponseDTO result = memeS3Service.uploadMeme(file);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.FILE_S3_UPLOAD_SUCCESS, result));
     }
+
+    @Operation(summary = "밈 즐겨찾기 추가", description = "특정 밈을 즐겨찾기에 추가합니다. 이미 추가되어 있어도 에러 없이 성공 처리합니다(idempotent).")
+    @PostMapping("/{memeId}/favorite")
+    public ResponseEntity<ApiResponseDTO<Void>> createFavorite(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long memeId
+    ) {
+        memeService.createFavorite(principal.getId(), memeId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_CREATED, null));
+    }
+
 
 }
