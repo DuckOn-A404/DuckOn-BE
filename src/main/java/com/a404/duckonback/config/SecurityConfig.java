@@ -52,7 +52,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); // 모든 Origin 허용 (임시)
+        configuration.setAllowedOrigins(List.of(
+                "https://memeduck.site",
+                "https://www.memeduck.site",
+                "https://duckon.site",
+                "https://www.duckon.site",
+                "https://d3janh0vyc8he.cloudfront.net",
+                "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:5173/"
+        ));
         configuration.setAllowedMethods(List.of("*"));        // 모든 Method 허용
         configuration.setAllowedHeaders(List.of("*"));        // 모든 Header 허용
         configuration.setAllowCredentials(true);              // 쿠키/인증정보 허용
@@ -91,7 +101,8 @@ public class SecurityConfig {
                                         "/swagger-resources/**",
                                         "/webjars/**",
                                         "/api/rooms/{roomId}/enter",
-                                        "/ws-chat/**"
+                                        "/ws-chat/**",
+                                        "/api/memes/random"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)

@@ -19,9 +19,10 @@ public enum SuccessCode {
     // 밈 api 관련
     MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
     FILE_S3_UPLOAD_SUCCESS(200, HttpStatus.OK, "파일을 성공적으로 S3에 업로드했습니다."),
+    MEME_RETRIEVE_SUCCESS(200, HttpStatus.OK, "밈 조회에 성공했습니다."),
+    MEME_USAGE_LOG_SUCCESS(200, HttpStatus.OK, "밈 사용 기록이 성공적으로 저장되었습니다."),
     MEME_FAVORITE_CREATED(200, HttpStatus.OK, "밈을 성공적으로 즐겨찾기했습니다."),
     MEME_FAVORITE_DELETED(200, HttpStatus.OK,"밈 즐겨찾기를 성공적으로 취소하였습니다."),
-    MEME_RETRIEVE_SUCCESS(200, HttpStatus.OK, "밈 조회에 성공했습니다."),
     ;
 
 

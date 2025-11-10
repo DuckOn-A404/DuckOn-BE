@@ -6,6 +6,7 @@ import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.MemeS3Service;
 import com.a404.duckonback.service.MemeService;
+import com.a404.duckonback.service.MemeUsageLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class MemeController {
 
     private final MemeService memeService;
     private final MemeS3Service memeS3Service;
+    private final MemeUsageLogService memeUsageLogService;
 
     @Operation(
             summary = "밈 생성(DB까지 저장)",
@@ -71,6 +73,21 @@ public class MemeController {
     ) {
         RandomMemeResponseDTO randomMemes = memeService.getRandomMemes(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, randomMemes));
+    }
+
+    @Operation(
+            summary = "밈 사용/다운로드 로그 기록",
+            description = "밈 사용(채팅에서 사용) 또는 다운로드 시 호출하여 로그와 집계 카운트를 기록합니다."
+    )
+    @PostMapping("/usage")
+    public ResponseEntity<ApiResponseDTO<Void>> logMemeUsage(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody MemeUsageLogRequestDTO request
+    ) {
+        Long userId = principal.getId();
+        memeUsageLogService.logMemeUsage(userId, request.getMemeId(), request.getUsageType());
+
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_USAGE_LOG_SUCCESS, null));
     }
 
     @Operation(summary = "밈 즐겨찾기 추가", description = "특정 밈을 즐겨찾기에 추가합니다. 이미 추가되어 있어도 에러 없이 성공 처리합니다(idempotent).")
