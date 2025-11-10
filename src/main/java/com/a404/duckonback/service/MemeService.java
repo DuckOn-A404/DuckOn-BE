@@ -11,4 +11,5 @@ public interface MemeService {
     void deleteFavorite(Long userId, Long memeId);
     List<FavoriteMemeDTO> getMyFavoriteMemes(Long userId, int page, int size);
     RandomMemeResponseDTO getHourlyTop10Memes();
+    RandomMemeResponseDTO getTop10MemesByTotalUsage();
 }

@@ -139,5 +139,17 @@ public class MemeController {
         );
     }
 
+    @Operation(
+            summary = "누적 TOP10 밈 조회",
+            description = "meme 테이블의 usageCnt + downloadCnt 누적 합 기준으로 상위 10개의 밈을 반환합니다."
+    )
+    @GetMapping("/top/total")
+    public ResponseEntity<ApiResponseDTO<RandomMemeResponseDTO>> getTop10MemesByTotalUsage() {
+        RandomMemeResponseDTO res = memeService.getTop10MemesByTotalUsage();
+        return ResponseEntity.ok(
+                ApiResponseDTO.success(SuccessCode.MEME_TOP10_RETRIEVE_SUCCESS, res)
+        );
+    }
+
 
 }

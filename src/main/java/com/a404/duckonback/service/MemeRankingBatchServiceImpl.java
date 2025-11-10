@@ -43,9 +43,18 @@ public class MemeRankingBatchServiceImpl implements MemeRankingBatchService {
     @Override
     @Transactional
     public void aggregateHourlyTopMemes() {
-        var now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        LocalDateTime end = now.toLocalDateTime();          // ex) 14:32
-        LocalDateTime start = end.minusHours(1);            // ex) 13:32
+        // 가장 최근 로그 시간 기준으로 직전 1시간 구간 계산
+        LocalDateTime last = jdbcTemplate.queryForObject(
+                "SELECT MAX(created_at) FROM meme_usage_log",
+                LocalDateTime.class
+        );
+        if (last == null) {
+            log.info("[Batch] No logs found. Skip.");
+            return;
+        }
+
+        LocalDateTime end = last.withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime start = end.minusHours(1);
 
         aggregateForRange(start, end);
     }

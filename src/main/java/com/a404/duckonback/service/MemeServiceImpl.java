@@ -271,4 +271,47 @@ public class MemeServiceImpl implements MemeService {
                 .items(items)
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RandomMemeResponseDTO getTop10MemesByTotalUsage() {
+        // usageCnt + downloadCnt 기준 상위 10개
+        var memes = memeRepository.findTopByUsageAndDownload(PageRequest.of(0, 10));
+
+        if (memes.isEmpty()) {
+            return RandomMemeResponseDTO.builder()
+                    .page(1)
+                    .size(0)
+                    .total(0)
+                    .items(List.of())
+                    .build();
+        }
+
+        List<RandomMemeItemDTO> items = memes.stream()
+                .map(meme -> {
+                    List<String> tags = Optional.ofNullable(meme.getMemeTags())
+                            .orElseGet(Collections::emptySet)
+                            .stream()
+                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .toList();
+
+                    return RandomMemeItemDTO.builder()
+                            .memeId(meme.getId())
+                            .memeUrl(meme.getImageUrl())
+                            .tags(tags)
+                            .build();
+                })
+                .toList();
+
+        int size = items.size();
+
+        return RandomMemeResponseDTO.builder()
+                .page(1)
+                .size(size)
+                .total(size)
+                .items(items)
+                .build();
+    }
 }

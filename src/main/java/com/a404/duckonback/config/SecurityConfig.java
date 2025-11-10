@@ -103,7 +103,7 @@ public class SecurityConfig {
                                         "/api/rooms/{roomId}/enter",
                                         "/ws-chat/**",
                                         "/api/memes/random",
-                                        "/api/memes/top/hourly",
+                                        "/api/memes/top/**",
                                         "/api/tags/**"
                                 ).permitAll()
 
