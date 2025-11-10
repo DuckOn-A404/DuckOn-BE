@@ -55,6 +55,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
                 "https://memeduck.site",
                 "https://www.memeduck.site",
+                "https://duckon.site",
+                "https://www.duckon.site",
                 "https://d3jjanh0vyc8he.cloudfront.net",
                 "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
                 "http://localhost:3000",
