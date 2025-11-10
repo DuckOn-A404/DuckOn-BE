@@ -8,6 +8,7 @@ import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.EngagementBatchService;
+import com.a404.duckonback.service.MemeRankingBatchService;
 import com.a404.duckonback.service.UserRankService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,7 @@ public class AdminController {
     private final ArtistService artistService;
     private final UserRankService userRankService;
     private final EngagementBatchService engagementBatchService;
+    private final MemeRankingBatchService memeRankingBatchService;
 
     @Operation(summary = "아티스트 등록", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
@@ -70,5 +72,15 @@ public class AdminController {
     public ResponseEntity<ApiResponseDTO> rebuildEngagement() {
         engagementBatchService.rebuildEngagementSnapshot();
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_REBUILD_ENGAGEMENT_SUCCESS));
+    }
+
+    @Operation(
+            summary = "시간별 밈 TOP10 집계(직전 1시간) 수동 실행",
+            description = "meme_usage_log 기반으로 직전 1시간 구간의 밈 사용/다운로드 로그를 집계하여 meme_hourly_top10에 저장합니다."
+    )
+    @PostMapping("/batch/meme/hourly-top10")
+    public ResponseEntity<ApiResponseDTO<Void>> runMemeHourlyTop10Batch() {
+        memeRankingBatchService.aggregateHourlyTopMemes();
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_BUILD_MEME_HOURLY_TOP10_SUCCESS));
     }
 }
