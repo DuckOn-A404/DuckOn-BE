@@ -57,16 +57,6 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "아티스트 정보가 성공적으로 수정되었습니다."));
     }
 
-    @Operation(summary = "유저 리더보드 조회", description = "유저 참여도 지표 기반 리더보드를 조회합니다.")
-    @GetMapping("/users/leaderboard")
-    public ResponseEntity<ApiResponseDTO<List<UserRankLeaderboardDTO>>> getUserLeaderboard(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        List<UserRankLeaderboardDTO> leaderboard = userRankService.getUserRankLeaderboard(page, size);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_USER_LEADERBOARD_SUCCESS, leaderboard));
-    }
-
     @Operation(summary = "유저 참여도 지표 재생성", description = "유저 참여도 지표 스냅샷을 재생성합니다.")
     @PostMapping("/batch/engagement/rebuild")
     public ResponseEntity<ApiResponseDTO> rebuildEngagement() {

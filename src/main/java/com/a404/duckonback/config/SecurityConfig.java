@@ -132,6 +132,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
                                 .requestMatchers(HttpMethod.GET, "/api/users/recommendations").permitAll() // 추천 유저 조회
                                 .requestMatchers(HttpMethod.GET, "/api/public/youtube/meta/*").permitAll() // 유튜브 메타데이터 조회
+                                .requestMatchers(HttpMethod.GET, "/api/users/leaderboard").permitAll() // 유저 리더보드 조회
 
                                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Admin API
                                 // Auth API
