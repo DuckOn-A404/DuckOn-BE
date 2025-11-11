@@ -41,6 +41,8 @@ public class MemeController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @ModelAttribute MemeCreateRequestDTO request
     ) {
+        if(principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+
         Long userId = principal.getId();
         MemeCreateResponseDTO res = memeService.createMeme(userId, request);
 
@@ -98,6 +100,8 @@ public class MemeController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long memeId
     ) {
+        if(principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+
         memeService.createFavorite(principal.getId(), memeId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_CREATED, null));
     }
@@ -108,6 +112,8 @@ public class MemeController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long memeId
     ) {
+        if(principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+
         memeService.deleteFavorite(principal.getId(), memeId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_DELETED, null));
     }
