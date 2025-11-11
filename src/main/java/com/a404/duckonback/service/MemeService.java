@@ -5,7 +5,7 @@ import com.a404.duckonback.dto.*;
 import java.util.List;
 
 public interface MemeService {
-    MemeCreateResponseDTO createMeme(Long userId, MemeCreateRequestDTO request);
+    MemeCreateResponseDTO createMemes(Long userId, MemeCreateRequestDTO request);
     RandomMemeResponseDTO getRandomMemes(int page, int size);
     void createFavorite(Long userId, Long memeId);
     void deleteFavorite(Long userId, Long memeId);
