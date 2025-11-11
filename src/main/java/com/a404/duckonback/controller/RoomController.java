@@ -11,6 +11,7 @@ import com.a404.duckonback.service.RedisService;
 import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -218,10 +219,12 @@ public class RoomController {
             description = "특정 방을 입장합니다. 로그인한 유저, 로그인하지 않은 유저 모두 입장 가능합니다.\n"
                             + "잠겨있는 경우 에러 반환(입장질문 포함)하며 정답을 포함하여 재요청을 수행하면 됩니다.")
     @PostMapping("/{roomId}/enter")
-    public ResponseEntity<LiveRoomDTO> enterRoom(
+    public ResponseEntity<Map<String,Object>> enterRoom(
+//    public ResponseEntity<LiveRoomDTO> enterRoom(
             @PathVariable Long roomId,
             @RequestBody(required = false) EntryAnswerRequestDTO request,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            HttpServletRequest http
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
         String entryAnswer = (request != null) ? request.getEntryAnswer() : null;
@@ -248,10 +251,19 @@ public class RoomController {
             }
         }
 
+        Map<String, Object> result = new HashMap<>();
+
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
+            result.put("userId", principal.getUser().getUserId());
+            result.put("nickname", principal.getUser().getNickname());
         }else{// 로그인 하지 않더라도 참여자 수 증가
+            String sessionId = http.getSession(true).getId();
+            String guestId = "guest:" + sessionId;
+            String nickname = "익명의 오리#" + java.util.UUID.randomUUID().toString().substring(0, 6);;
+            result.put("userId", guestId);
+            result.put("nickname", nickname);
             redisService.addParticipantCountToRoom(roomId.toString());
         }
 
@@ -262,7 +274,9 @@ public class RoomController {
         );
         room.setParticipantCount(participantCount);
 
-        return ResponseEntity.ok(room);
+        result.put("room", room);
+
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "방 퇴장", description = "현재 로그인한 사용자가 방에서 퇴장합니다.")
