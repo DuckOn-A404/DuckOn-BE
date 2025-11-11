@@ -36,24 +36,6 @@ public class MemeServiceImpl implements MemeService {
     private final MemeFavoriteRepository memeFavoriteRepository;
     private final MemeHourlyTop10Repository memeHourlyTop10Repository;
 
-    @Override
-    public MemeCreateResponseDTO createMeme(Long userId, MemeCreateRequestDTO req) {
-        User creator = userRepository.getReferenceById(userId);
-
-        List<MemeInfoDTO> resultList = new ArrayList<>();
-
-        handleOne(creator, req.getImage1(), req.getTags1()).ifPresent(resultList::add);
-        handleOne(creator, req.getImage2(), req.getTags2()).ifPresent(resultList::add);
-        handleOne(creator, req.getImage3(), req.getTags3()).ifPresent(resultList::add);
-
-        if (resultList.isEmpty()) {
-            throw new IllegalArgumentException("업로드할 밈 이미지가 최소 1개 이상 필요합니다.");
-        }
-
-        return MemeCreateResponseDTO.builder()
-                .memes(resultList)
-                .build();
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -115,17 +97,38 @@ public class MemeServiceImpl implements MemeService {
                 .build();
     }
 
-    private Optional<MemeInfoDTO> handleOne(User creator,
-                                            MultipartFile file,
-                                            Set<String> rawTags) {
+    @Override
+    public MemeCreateResponseDTO createMemes(Long userId, MemeCreateRequestDTO req) {
+        User creator = userRepository.getReferenceById(userId);
+
+        List<MemeCreateResponseDTO.MemeInfoDTO> resultList = new ArrayList<>();
+
+        handleOne(creator, req.getImage1(), req.getTags1()).ifPresent(resultList::add);
+        handleOne(creator, req.getImage2(), req.getTags2()).ifPresent(resultList::add);
+        handleOne(creator, req.getImage3(), req.getTags3()).ifPresent(resultList::add);
+
+        if (resultList.isEmpty()) {
+            throw new IllegalArgumentException("업로드할 밈 이미지가 최소 1개 이상 필요합니다.");
+        }
+
+        return MemeCreateResponseDTO.builder()
+                .memes(resultList)
+                .build();
+    }
+
+    private Optional<MemeCreateResponseDTO.MemeInfoDTO> handleOne(
+            User creator,
+            MultipartFile file,
+            Set<String> rawTags
+    ) {
         if (file == null || file.isEmpty()) {
             return Optional.empty();
         }
 
-        // 1) S3 업로드 → CDN URL
+        // 1) S3 업로드
         var upload = memeS3Service.uploadMeme(file);
 
-        // 2) Meme 엔티티 저장
+        // 2) Meme 저장
         Meme meme = Meme.builder()
                 .creator(creator)
                 .imageUrl(upload.getCdnUrl())
@@ -136,19 +139,19 @@ public class MemeServiceImpl implements MemeService {
 
         meme = memeRepository.save(meme);
 
-        // 3) 태그 처리 (null-safe + trim + 중복 제거)
-        Set<String> normalizedTags = Optional.ofNullable(rawTags)
+        // 3) 태그 정리
+        LinkedHashSet<String> normalizedTags = Optional.ofNullable(rawTags)
                 .orElse(Collections.emptySet())
                 .stream()
                 .map(t -> t == null ? "" : t.trim())
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toCollection(LinkedHashSet::new)); // 순서 유지
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         for (String tagName : normalizedTags) {
             Tag tag = tagRepository.findByTagName(tagName)
-                    .orElseGet(() -> tagRepository.save(
-                            Tag.builder().tagName(tagName).build()
-                    ));
+                    .orElseGet(() -> tagRepository.save(Tag.builder()
+                            .tagName(tagName)
+                            .build()));
 
             MemeTag mt = MemeTag.of(meme, tag);
             memeTagRepository.save(mt);
@@ -156,14 +159,16 @@ public class MemeServiceImpl implements MemeService {
 
         log.info("✅ Meme created: id={}, url={}", meme.getId(), meme.getImageUrl());
 
-        MemeInfoDTO dto = MemeInfoDTO.builder()
+        // 4) 응답용 DTO 생성 (프론트와 1:1 매칭)
+        MemeCreateResponseDTO.MemeInfoDTO dto = MemeCreateResponseDTO.MemeInfoDTO.builder()
                 .memeId(meme.getId())
                 .imageUrl(meme.getImageUrl())
-                .tags(normalizedTags)
+                .tags(new ArrayList<>(normalizedTags))
                 .build();
 
         return Optional.of(dto);
     }
+
 
     public void createFavorite(Long userId, Long memeId){
         if (memeFavoriteRepository.existsByUser_IdAndMeme_Id(userId, memeId)) {
