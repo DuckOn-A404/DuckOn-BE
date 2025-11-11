@@ -1,6 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.*;
+import com.a404.duckonback.entity.Meme;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
@@ -19,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Tag(name = "밈 관리", description = "MemeDuck에서 사용되는 밈과 관련된 기능을 제공합니다.")
@@ -31,23 +33,34 @@ public class MemeController {
     private final MemeS3Service memeS3Service;
     private final MemeUsageLogService memeUsageLogService;
 
-    @Operation(
-            summary = "밈 생성(DB까지 저장)",
-            description = "새로운 밈을 등록합니다. 최대 3개의 밈을 업로드할 수 있으며 각 밈마다 태그를 지정할 수 있습니다." +
-                    "‼️스웨거에서 'Send empty value'를 체크하면 에러가 납니다. 체크를 해제하고 빈값을 보내주세요‼️"
-    )
-    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponseDTO<MemeCreateResponseDTO>> create(
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponseDTO<MemeCreateResponseDTO>> createMemes(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @ModelAttribute MemeCreateRequestDTO request
+            @RequestParam("image1") MultipartFile image1,
+            @RequestParam(value = "image2", required = false) MultipartFile image2,
+            @RequestParam(value = "image3", required = false) MultipartFile image3,
+            @RequestParam("tags1") List<String> tags1,
+            @RequestParam(value = "tags2", required = false) List<String> tags2,
+            @RequestParam(value = "tags3", required = false) List<String> tags3
     ) {
-        Long userId = principal.getId();
-        MemeCreateResponseDTO res = memeService.createMeme(userId, request);
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+        }
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponseDTO.success(SuccessCode.MEME_UPLOAD_SUCCESS, res));
+        MemeCreateRequestDTO req = MemeCreateRequestDTO.builder()
+                .image1(image1)
+                .image2(image2)
+                .image3(image3)
+                .tags1(tags1 != null ? new LinkedHashSet<>(tags1) : null)
+                .tags2(tags2 != null ? new LinkedHashSet<>(tags2) : null)
+                .tags3(tags3 != null ? new LinkedHashSet<>(tags3) : null)
+                .build();
+
+        MemeCreateResponseDTO res = memeService.createMemes(principal.getId(), req);
+
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_UPLOAD_SUCCESS, res));
     }
+
 
     @Operation(
             summary = "밈 S3에 업로드(테스트용)",
