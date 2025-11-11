@@ -164,5 +164,20 @@ public class MemeController {
         );
     }
 
+    @Operation(
+            summary = "내가 만든 밈 목록 조회",
+            description = "내가 생성한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
+    )
+    @GetMapping("/mine")
+    public ResponseEntity<ApiResponseDTO<List<MyMemeDTO>>> getMyMemes(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+        List<MyMemeDTO> myMemes = memeService.getMyMemes(principal.getId(), page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, myMemes));
+    }
+
 
 }

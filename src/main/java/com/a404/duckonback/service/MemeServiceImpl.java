@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -318,5 +319,13 @@ public class MemeServiceImpl implements MemeService {
                 .total(size)
                 .items(items)
                 .build();
+    }
+
+    @Override
+    public List<MyMemeDTO> getMyMemes(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size);
+        return memeRepository
+                .findMyMemesByCreatorIdOrderByCreatedAtDesc(userId, pageable)
+                .getContent();
     }
 }
