@@ -18,4 +18,6 @@ public interface MemeFavoriteRepository  extends JpaRepository<MemeFavorite, Lon
             "meme.memeTags.tag"
     })
     Page<MemeFavorite> findByUser_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    long countByMemeId(Long memeId);
 }

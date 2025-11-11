@@ -12,6 +12,7 @@ public class MemeDetailDTO {
     private LocalDateTime createdAt;
     private int usageCnt;
     private int downloadCnt;
+    private int favoriteCnt;
 
     private MemeCreatorDTO creator;
     private List<String> tags;

@@ -333,11 +333,14 @@ public class MemeServiceImpl implements MemeService {
                 .distinct()
                 .toList();
 
+        int favoriteCnt = (int) memeFavoriteRepository.countByMemeId(memeId);
+
         return MemeDetailDTO.builder()
                 .memeId(meme.getId())
                 .imageUrl(meme.getImageUrl())
                 .createdAt(meme.getCreatedAt())
                 .usageCnt(meme.getUsageCnt())
+                .favoriteCnt(favoriteCnt)
                 .downloadCnt(meme.getDownloadCnt())
                 .creator(creatorDTO)
                 .tags(tags)
