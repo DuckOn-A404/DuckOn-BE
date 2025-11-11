@@ -99,8 +99,7 @@ public class MemeController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody MemeUsageLogRequestDTO request
     ) {
-        Long userId = principal.getId();
-        memeUsageLogService.logMemeUsage(userId, request.getMemeId(), request.getUsageType());
+        memeUsageLogService.logMemeUsage(principal, request.getMemeId(), request.getUsageType());
 
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_USAGE_LOG_SUCCESS, null));
     }
