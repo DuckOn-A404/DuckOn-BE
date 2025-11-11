@@ -151,5 +151,17 @@ public class MemeController {
         );
     }
 
+    @Operation(
+            summary = "밈 상세 조회",
+            description = "밈 기본정보, 태그 이름 리스트, 생성자 정보를 반환합니다."
+    )
+    @GetMapping("/{memeId}/detail")
+    public ResponseEntity<ApiResponseDTO<MemeDetailDTO>> getMemeDetail(
+            @PathVariable Long memeId
+    ) {
+        MemeDetailDTO detail = memeService.getMemeDetail(memeId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, detail));
+    }
+
 
 }

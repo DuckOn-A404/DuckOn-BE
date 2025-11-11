@@ -104,11 +104,15 @@ public class SecurityConfig {
                                         "/ws-chat/**",
                                         "/api/memes/random",
                                         "/api/memes/top/**",
-                                        "/api/tags/**"
+                                        "/api/tags/**",
+                                        "/api/memes/**"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
                                 .requestMatchers("/api/artists/me").authenticated()
+                                .requestMatchers("/api/memes/create").authenticated()
+                                .requestMatchers("/api/memes/*/favorite").authenticated()
+                                .requestMatchers("/api/memes/favorites").authenticated()
                                 .requestMatchers(HttpMethod.POST,   "/api/artists/*/follow").authenticated() // 팔로우
                                 .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").   authenticated() // 팔로우/언팔로우
                                 .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글

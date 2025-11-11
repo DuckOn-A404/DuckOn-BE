@@ -314,4 +314,33 @@ public class MemeServiceImpl implements MemeService {
                 .items(items)
                 .build();
     }
+
+    @Override
+    public MemeDetailDTO getMemeDetail(Long memeId) {
+        Meme meme = memeRepository.findByIdWithCreatorAndTags(memeId)
+                .orElseThrow(() -> new CustomException("해당 밈을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+
+        User creator = meme.getCreator();
+        MemeCreatorDTO creatorDTO = MemeCreatorDTO.builder()
+                .id(creator.getId())
+                .userId(creator.getUserId())
+                .nickname(creator.getNickname())
+                .imgUrl(creator.getImgUrl())
+                .build();
+
+        List<String> tags = meme.getMemeTags().stream()
+                .map(mt -> mt.getTag().getTagName())
+                .distinct()
+                .toList();
+
+        return MemeDetailDTO.builder()
+                .memeId(meme.getId())
+                .imageUrl(meme.getImageUrl())
+                .createdAt(meme.getCreatedAt())
+                .usageCnt(meme.getUsageCnt())
+                .downloadCnt(meme.getDownloadCnt())
+                .creator(creatorDTO)
+                .tags(tags)
+                .build();
+    }
 }

@@ -12,4 +12,5 @@ public interface MemeService {
     List<FavoriteMemeDTO> getMyFavoriteMemes(Long userId, int page, int size);
     RandomMemeResponseDTO getHourlyTop10Memes();
     RandomMemeResponseDTO getTop10MemesByTotalUsage();
+    MemeDetailDTO getMemeDetail(Long memeId);
 }
