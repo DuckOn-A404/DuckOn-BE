@@ -110,6 +110,7 @@ public class SecurityConfig {
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
                                 .requestMatchers("/api/artists/me").authenticated()
+                                .requestMatchers("/api/memes/mine").authenticated()
                                 .requestMatchers("/api/memes/create").authenticated()
                                 .requestMatchers("/api/memes/*/favorite").authenticated()
                                 .requestMatchers("/api/memes/favorites").authenticated()

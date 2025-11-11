@@ -4,11 +4,9 @@ import com.a404.duckonback.entity.Meme;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface MemeRepository extends JpaRepository<Meme, Long> {
     @Query("""
@@ -27,4 +25,21 @@ public interface MemeRepository extends JpaRepository<Meme, Long> {
        where m.id = :id
        """)
     Optional<Meme> findByIdWithCreatorAndTags(@Param("id") Long id);
+
+    @Query("""
+           select new com.a404.duckonback.dto.MyMemeDTO(
+               m.id,
+               m.imageUrl,
+               m.createdAt,
+               m.usageCnt,
+               m.downloadCnt
+           )
+           from Meme m
+           where m.creator.id = :creatorId
+           order by m.createdAt desc
+           """)
+    Page<MyMemeDTO> findMyMemesByCreatorIdOrderByCreatedAtDesc(
+            @Param("creatorId") Long creatorId,
+            Pageable pageable
+    );
 }
