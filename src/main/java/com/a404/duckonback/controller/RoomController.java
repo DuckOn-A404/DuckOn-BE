@@ -255,8 +255,14 @@ public class RoomController {
 
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
+            String userId = principal.getUser().getUserId();
+
+            if (redisService.isUserBanned(roomId.toString(), userId)) {
+                throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.", HttpStatus.FORBIDDEN);
+            }
+
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
-            result.put("userId", principal.getUser().getUserId());
+            result.put("userId", userId);
             result.put("nickname", principal.getUser().getNickname());
         }else{// 로그인 하지 않더라도 참여자 수 증가
             String sessionId = http.getSession(true).getId();

@@ -505,6 +505,9 @@ public class RedisServiceImpl implements RedisService {
         Boolean usersDeleted = stringRedisTemplate.delete(uKey);
         stringRedisTemplate.delete(cKey); // 카운터 정리
 
+        String bKey = "room:" + roomId + ":banned";
+        stringRedisTemplate.delete(bKey); // 방 블랙리스트 정리
+
         if (roomDeleted != null && !roomDeleted) {
             throw new CustomException("roomId에 대한 방이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
         }
@@ -592,6 +595,8 @@ public class RedisServiceImpl implements RedisService {
         String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
         String cKey = roomCountKey(roomId);
 
+        String bannedKey = "room:" + roomId + ":banned";
+
         // 롤백 대비 백업
         Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
                 .orElseGet(Collections::emptySet);
@@ -605,6 +610,9 @@ public class RedisServiceImpl implements RedisService {
             if (after != null && after < 0) {
                 stringRedisTemplate.opsForValue().set(cKey, "0");
             }
+
+            stringRedisTemplate.opsForSet().add(bannedKey, user.getUserId());
+            stringRedisTemplate.expire(bannedKey, ROOM_TTL);
         }
 
         Long size = stringRedisTemplate.opsForSet().size(uKey);
@@ -930,5 +938,13 @@ public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
     }
     return null;
 }
+
+    @Override
+    public boolean isUserBanned(String roomId, String userId) {
+        String bKey = "room:" + roomId + ":banned";
+        return Boolean.TRUE.equals(
+                stringRedisTemplate.opsForSet().isMember(bKey, userId)
+        );
+    }
 
 }
