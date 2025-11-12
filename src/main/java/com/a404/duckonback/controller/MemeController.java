@@ -198,8 +198,8 @@ public class MemeController {
             summary = "태그 기반 밈 검색",
             description = "입력한 키워드를 포함(부분 일치)하는 태그명을 가진 밈들을 조회합니다. 결과는 usageCnt 내림차순으로 정렬됩니다."
     )
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> searchMemesByTag(
+    @GetMapping("/search-basic")
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> searchMemesByTagBasic(
             @RequestParam String tag,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
