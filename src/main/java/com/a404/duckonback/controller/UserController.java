@@ -3,7 +3,11 @@ package com.a404.duckonback.controller;
 import com.a404.duckonback.dto.RecommendUsersResponseDTO;
 import com.a404.duckonback.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.dto.UserInfoResponseDTO;
+import com.a404.duckonback.dto.UserRankLeaderboardDTO;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.response.ApiResponseDTO;
+import com.a404.duckonback.response.SuccessCode;
+import com.a404.duckonback.service.UserRankService;
 import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "사용자 관리", description = "사용자 정보 조회, 팔로우/언팔로우, 회원 탈퇴 등의 기능을 제공합니다.")
@@ -23,6 +28,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserRankService userRankService;
 
     @Operation(summary = "내 정보 조회", description = "로그인한 사용자의 상세 정보를 조회합니다.")
     @GetMapping("/me")
@@ -123,6 +129,17 @@ public class UserController {
 
         RecommendUsersResponseDTO res = userService.recommendUsers(myUserId, artistId, size, includeReasons);
         return ResponseEntity.ok(res);
+    }
+
+
+    @Operation(summary = "유저 리더보드 조회", description = "유저 참여도 지표 기반 리더보드를 조회합니다.")
+    @GetMapping("/leaderboard")
+    public ResponseEntity<ApiResponseDTO<List<UserRankLeaderboardDTO>>> getUserLeaderboard(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        List<UserRankLeaderboardDTO> leaderboard = userRankService.getUserRankLeaderboard(page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_USER_LEADERBOARD_SUCCESS, leaderboard));
     }
 
 

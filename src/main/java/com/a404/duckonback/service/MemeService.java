@@ -1,12 +1,18 @@
 package com.a404.duckonback.service;
 
-import com.a404.duckonback.dto.MemeCreateRequestDTO;
-import com.a404.duckonback.dto.MemeCreateResponseDTO;
-import com.a404.duckonback.dto.RandomMemeResponseDTO;
+import com.a404.duckonback.dto.*;
+
+import java.util.List;
 
 public interface MemeService {
-    MemeCreateResponseDTO createMeme(Long userId, MemeCreateRequestDTO request);
+    MemeCreateResponseDTO createMemes(Long userId, MemeCreateRequestDTO request);
     RandomMemeResponseDTO getRandomMemes(int page, int size);
     void createFavorite(Long userId, Long memeId);
     void deleteFavorite(Long userId, Long memeId);
+    List<FavoriteMemeDTO> getMyFavoriteMemes(Long userId, int page, int size);
+    RandomMemeResponseDTO getHourlyTop10Memes();
+    RandomMemeResponseDTO getTop10MemesByTotalUsage();
+    List<MyMemeDTO> getMyMemes(Long userId, int page, int size);
+
+    MemeDetailDTO getMemeDetail(Long memeId);
 }

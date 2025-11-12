@@ -24,4 +24,10 @@ public class CustomException extends RuntimeException {
         this.status = status;
         this.data = data != null ? data : Collections.emptyMap();
     }
+
+    public CustomException(String message, ErrorCode errorCode) {
+        super(message);
+        this.status = errorCode.getHttpStatus();
+        this.data = Collections.emptyMap();
+    }
 }

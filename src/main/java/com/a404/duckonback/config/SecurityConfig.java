@@ -57,7 +57,7 @@ public class SecurityConfig {
                 "https://www.memeduck.site",
                 "https://duckon.site",
                 "https://www.duckon.site",
-                "https://d3janh0vyc8he.cloudfront.net",
+                "https://d3jianh0vyc8he.cloudfront.net",
                 "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
@@ -102,15 +102,24 @@ public class SecurityConfig {
                                         "/webjars/**",
                                         "/api/rooms/{roomId}/enter",
                                         "/ws-chat/**",
-                                        "/api/memes/random"
+                                        "/api/memes/random",
+                                        "/api/memes/top/**",
+                                        "/api/tags/**",
+                                        "/api/memes/**"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
                                 .requestMatchers("/api/artists/me").authenticated()
+                                .requestMatchers("/api/memes/mine").authenticated()
+                                .requestMatchers("/api/memes/create").authenticated()
+                                .requestMatchers("/api/memes/*/favorite").authenticated()
+                                .requestMatchers("/api/memes/favorites").authenticated()
                                 .requestMatchers(HttpMethod.POST,   "/api/artists/*/follow").authenticated() // 팔로우
-                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").authenticated() // 팔로우/언팔로우
+                                .requestMatchers(HttpMethod.DELETE, "/api/artists/*/follow").   authenticated() // 팔로우/언팔로우
                                 .requestMatchers(HttpMethod.PUT,    "/api/artists/follow").authenticated() // 팔로우/언팔로우 토글
                                 .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated() // 채팅 메시지 전송
+                                .requestMatchers(HttpMethod.GET, "/api/memes/favorites").authenticated() // 즐겨찾기 밈 조회
+
                                 // 2) 누구나 볼 수 있는 조회 API
                                 .requestMatchers(HttpMethod.GET, "/api/artists").permitAll()           // 페이징 조회 & 키워드
                                 .requestMatchers(HttpMethod.GET, "/api/artists/random").permitAll()    // 랜덤
@@ -120,9 +129,11 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.POST,"/api/rooms/*/exit").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll() // 방 목록 조회
                                 .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // 방 상세 조회 // 막아야하지만 프론트가 처리했다고 막지 말라고 요청하심
-                                .requestMatchers(HttpMethod.GET, "/api/rooms/trending/*").permitAll() // 트렌딩 방 조회
+                                .requestMatchers(HttpMethod.GET, "/apis/rooms/trending/*").permitAll() // 트렌딩 방 조회
                                 .requestMatchers(HttpMethod.GET, "/api/users/recommendations").permitAll() // 추천 유저 조회
                                 .requestMatchers(HttpMethod.GET, "/api/public/youtube/meta/*").permitAll() // 유튜브 메타데이터 조회
+                                .requestMatchers(HttpMethod.GET, "/api/users/leaderboard").permitAll() // 유저 리더보드 조회
+                                .requestMatchers(HttpMethod.POST, "/api/memes/usage").permitAll() // 유저 정보 조회
 
                                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Admin API
                                 // Auth API

@@ -1,10 +1,7 @@
 package com.a404.duckonback.service;
 
-import com.a404.duckonback.dto.MemeCreateRequestDTO;
-import com.a404.duckonback.dto.MemeCreateResponseDTO;
+import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.*;
-import com.a404.duckonback.dto.RandomMemeItemDTO;
-import com.a404.duckonback.dto.RandomMemeResponseDTO;
 import com.a404.duckonback.entity.Meme;
 import com.a404.duckonback.entity.MemeTag;
 import com.a404.duckonback.entity.Tag;
@@ -14,6 +11,9 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,25 +35,8 @@ public class MemeServiceImpl implements MemeService {
     private final MemeTagRepository memeTagRepository;
     private final UserRepository userRepository;
     private final MemeFavoriteRepository memeFavoriteRepository;
+    private final MemeHourlyTop10Repository memeHourlyTop10Repository;
 
-    @Override
-    public MemeCreateResponseDTO createMeme(Long userId, MemeCreateRequestDTO req) {
-        User creator = userRepository.getReferenceById(userId);
-
-        List<MemeInfoDTO> resultList = new ArrayList<>();
-
-        handleOne(creator, req.getImage1(), req.getTags1()).ifPresent(resultList::add);
-        handleOne(creator, req.getImage2(), req.getTags2()).ifPresent(resultList::add);
-        handleOne(creator, req.getImage3(), req.getTags3()).ifPresent(resultList::add);
-
-        if (resultList.isEmpty()) {
-            throw new IllegalArgumentException("업로드할 밈 이미지가 최소 1개 이상 필요합니다.");
-        }
-
-        return MemeCreateResponseDTO.builder()
-                .memes(resultList)
-                .build();
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -115,17 +98,38 @@ public class MemeServiceImpl implements MemeService {
                 .build();
     }
 
-    private Optional<MemeInfoDTO> handleOne(User creator,
-                                            MultipartFile file,
-                                            Set<String> rawTags) {
+    @Override
+    public MemeCreateResponseDTO createMemes(Long userId, MemeCreateRequestDTO req) {
+        User creator = userRepository.getReferenceById(userId);
+
+        List<MemeCreateResponseDTO.MemeInfoDTO> resultList = new ArrayList<>();
+
+        handleOne(creator, req.getImage1(), req.getTags1()).ifPresent(resultList::add);
+        handleOne(creator, req.getImage2(), req.getTags2()).ifPresent(resultList::add);
+        handleOne(creator, req.getImage3(), req.getTags3()).ifPresent(resultList::add);
+
+        if (resultList.isEmpty()) {
+            throw new IllegalArgumentException("업로드할 밈 이미지가 최소 1개 이상 필요합니다.");
+        }
+
+        return MemeCreateResponseDTO.builder()
+                .memes(resultList)
+                .build();
+    }
+
+    private Optional<MemeCreateResponseDTO.MemeInfoDTO> handleOne(
+            User creator,
+            MultipartFile file,
+            Set<String> rawTags
+    ) {
         if (file == null || file.isEmpty()) {
             return Optional.empty();
         }
 
-        // 1) S3 업로드 → CDN URL
+        // 1) S3 업로드
         var upload = memeS3Service.uploadMeme(file);
 
-        // 2) Meme 엔티티 저장
+        // 2) Meme 저장
         Meme meme = Meme.builder()
                 .creator(creator)
                 .imageUrl(upload.getCdnUrl())
@@ -136,19 +140,19 @@ public class MemeServiceImpl implements MemeService {
 
         meme = memeRepository.save(meme);
 
-        // 3) 태그 처리 (null-safe + trim + 중복 제거)
-        Set<String> normalizedTags = Optional.ofNullable(rawTags)
+        // 3) 태그 정리
+        LinkedHashSet<String> normalizedTags = Optional.ofNullable(rawTags)
                 .orElse(Collections.emptySet())
                 .stream()
                 .map(t -> t == null ? "" : t.trim())
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toCollection(LinkedHashSet::new)); // 순서 유지
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         for (String tagName : normalizedTags) {
             Tag tag = tagRepository.findByTagName(tagName)
-                    .orElseGet(() -> tagRepository.save(
-                            Tag.builder().tagName(tagName).build()
-                    ));
+                    .orElseGet(() -> tagRepository.save(Tag.builder()
+                            .tagName(tagName)
+                            .build()));
 
             MemeTag mt = MemeTag.of(meme, tag);
             memeTagRepository.save(mt);
@@ -156,14 +160,16 @@ public class MemeServiceImpl implements MemeService {
 
         log.info("✅ Meme created: id={}, url={}", meme.getId(), meme.getImageUrl());
 
-        MemeInfoDTO dto = MemeInfoDTO.builder()
+        // 4) 응답용 DTO 생성 (프론트와 1:1 매칭)
+        MemeCreateResponseDTO.MemeInfoDTO dto = MemeCreateResponseDTO.MemeInfoDTO.builder()
                 .memeId(meme.getId())
                 .imageUrl(meme.getImageUrl())
-                .tags(normalizedTags)
+                .tags(new ArrayList<>(normalizedTags))
                 .build();
 
         return Optional.of(dto);
     }
+
 
     public void createFavorite(Long userId, Long memeId){
         if (memeFavoriteRepository.existsByUser_IdAndMeme_Id(userId, memeId)) {
@@ -193,5 +199,165 @@ public class MemeServiceImpl implements MemeService {
             throw new CustomException("존재하지 않는 즐겨찾기입니다.",HttpStatus.NOT_FOUND);
         }
         memeFavoriteRepository.deleteByUser_IdAndMeme_Id(userId, memeId);
+    }
+
+    @Override
+    public List<FavoriteMemeDTO> getMyFavoriteMemes(Long userId, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(size, 1);
+
+        // 페이지 요청
+        PageRequest pageable = PageRequest.of(safePage - 1, safeSize);
+        Page<MemeFavorite> favPage = memeFavoriteRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
+
+
+        return favPage.getContent().stream()
+                .map(mf -> {
+                    var meme = mf.getMeme();
+                    var tags = java.util.Optional.ofNullable(meme.getMemeTags())
+                            .orElse(java.util.Collections.emptySet())
+                            .stream()
+                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
+                            .filter(java.util.Objects::nonNull)
+                            .distinct()
+                            .toList();
+
+                    return FavoriteMemeDTO.builder()
+                            .memeId(meme.getId())
+                            .memeUrl(meme.getImageUrl())
+                            .tags(tags)
+                            .favoritedAt(mf.getCreatedAt())
+                            .build();
+                })
+                .toList();
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public RandomMemeResponseDTO getHourlyTop10Memes() {
+        List<MemeHourlyTop10> topList = memeHourlyTop10Repository.findLatestTop10();
+
+        if (topList.isEmpty()) {
+            // 아직 집계 전이거나 로그 없음
+            return RandomMemeResponseDTO.builder()
+                    .page(1)
+                    .size(0)
+                    .total(0)
+                    .items(List.of())
+                    .build();
+        }
+
+        List<RandomMemeItemDTO> items = topList.stream()
+                .map(row -> {
+                    Meme meme = row.getMeme();
+
+                    List<String> tags = Optional.ofNullable(meme.getMemeTags())
+                            .orElseGet(Set::of)
+                            .stream()
+                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .toList();
+
+                    return RandomMemeItemDTO.builder()
+                            .memeId(meme.getId())
+                            .memeUrl(meme.getImageUrl())
+                            .tags(tags)
+                            .build();
+                })
+                .toList();
+
+        int size = items.size();
+
+        return RandomMemeResponseDTO.builder()
+                .page(1)
+                .size(size)
+                .total(size)
+                .items(items)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RandomMemeResponseDTO getTop10MemesByTotalUsage() {
+        // usageCnt + downloadCnt 기준 상위 10개
+        var memes = memeRepository.findTopByUsageAndDownload(PageRequest.of(0, 10));
+
+        if (memes.isEmpty()) {
+            return RandomMemeResponseDTO.builder()
+                    .page(1)
+                    .size(0)
+                    .total(0)
+                    .items(List.of())
+                    .build();
+        }
+
+        List<RandomMemeItemDTO> items = memes.stream()
+                .map(meme -> {
+                    List<String> tags = Optional.ofNullable(meme.getMemeTags())
+                            .orElseGet(Collections::emptySet)
+                            .stream()
+                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .toList();
+
+                    return RandomMemeItemDTO.builder()
+                            .memeId(meme.getId())
+                            .memeUrl(meme.getImageUrl())
+                            .tags(tags)
+                            .build();
+                })
+                .toList();
+
+        int size = items.size();
+
+        return RandomMemeResponseDTO.builder()
+                .page(1)
+                .size(size)
+                .total(size)
+                .items(items)
+                .build();
+    }
+
+    @Override
+    public MemeDetailDTO getMemeDetail(Long memeId) {
+        Meme meme = memeRepository.findByIdWithCreatorAndTags(memeId)
+                .orElseThrow(() -> new CustomException("해당 밈을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+
+        User creator = meme.getCreator();
+        MemeCreatorDTO creatorDTO = MemeCreatorDTO.builder()
+                .id(creator.getId())
+                .userId(creator.getUserId())
+                .nickname(creator.getNickname())
+                .imgUrl(creator.getImgUrl())
+                .build();
+
+        List<String> tags = meme.getMemeTags().stream()
+                .map(mt -> mt.getTag().getTagName())
+                .distinct()
+                .toList();
+
+        int favoriteCnt = (int) memeFavoriteRepository.countByMemeId(memeId);
+
+        return MemeDetailDTO.builder()
+                .memeId(meme.getId())
+                .imageUrl(meme.getImageUrl())
+                .createdAt(meme.getCreatedAt())
+                .usageCnt(meme.getUsageCnt())
+                .favoriteCnt(favoriteCnt)
+                .downloadCnt(meme.getDownloadCnt())
+                .creator(creatorDTO)
+                .tags(tags)
+                .build();
+    }
+
+    @Override
+    public List<MyMemeDTO> getMyMemes(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size);
+        return memeRepository
+                .findMyMemesByCreatorIdOrderByCreatedAtDesc(userId, pageable)
+                .getContent();
     }
 }
