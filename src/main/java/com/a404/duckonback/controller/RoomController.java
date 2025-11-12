@@ -5,6 +5,7 @@ import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.RoomSyncEventType;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.response.ErrorCode;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
 @RestController
@@ -258,7 +260,7 @@ public class RoomController {
             String userId = principal.getUser().getUserId();
 
             if (redisService.isUserBanned(roomId.toString(), userId)) {
-                throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.", HttpStatus.FORBIDDEN);
+                throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.",ErrorCode.ROOM_BANNED_USER);
             }
 
             redisService.addUserToRoom(roomId.toString(), principal.getUser());

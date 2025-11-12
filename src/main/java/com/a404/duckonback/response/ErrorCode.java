@@ -13,6 +13,7 @@ public enum ErrorCode {
     BAD_REQUEST(400, HttpStatus.BAD_REQUEST, "잘못된 접근입니다."),
     UPLOAD_FILE_COUNT_EXCEEDED(400, HttpStatus.BAD_REQUEST, "업로드 가능한 파일 개수를 초과했습니다. 한 번에 최대 3개까지 업로드할 수 있어요."),
     UPLOAD_INVALID_MULTIPART(400, HttpStatus.BAD_REQUEST, "잘못된 파일 업로드 요청입니다."),
+    ROOM_BANNED_USER(400,HttpStatus.BAD_REQUEST,"강퇴된 사용자입니다. 입장할 수 없습니다."),
 
 
     // 401 UNAUTHORIZED
