@@ -105,7 +105,8 @@ public class SecurityConfig {
                                         "/api/memes/random",
                                         "/api/memes/top/**",
                                         "/api/tags/**",
-                                        "/api/memes/**"
+                                        "/api/memes/**",
+                                        "/api/tags/**"
                                 ).permitAll()
 
                                 // 1) 인증 필요 API (특정 /me, /follow, PUT /follow)
