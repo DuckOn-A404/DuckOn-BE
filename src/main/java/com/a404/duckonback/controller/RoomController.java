@@ -5,12 +5,14 @@ import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.RoomSyncEventType;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.response.ErrorCode;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.LiveRoomService;
 import com.a404.duckonback.service.RedisService;
 import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 @Tag(name = "방 관리", description = "방 생성, 조회, 삭제 등의 기능을 제공합니다.")
 @RestController
@@ -218,10 +221,12 @@ public class RoomController {
             description = "특정 방을 입장합니다. 로그인한 유저, 로그인하지 않은 유저 모두 입장 가능합니다.\n"
                             + "잠겨있는 경우 에러 반환(입장질문 포함)하며 정답을 포함하여 재요청을 수행하면 됩니다.")
     @PostMapping("/{roomId}/enter")
-    public ResponseEntity<LiveRoomDTO> enterRoom(
+    public ResponseEntity<Map<String,Object>> enterRoom(
+//    public ResponseEntity<LiveRoomDTO> enterRoom(
             @PathVariable Long roomId,
             @RequestBody(required = false) EntryAnswerRequestDTO request,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            HttpServletRequest http
     ) {
         LiveRoomDTO room = redisService.getRoomInfo(roomId.toString());
         String entryAnswer = (request != null) ? request.getEntryAnswer() : null;
@@ -248,10 +253,25 @@ public class RoomController {
             }
         }
 
+        Map<String, Object> result = new HashMap<>();
+
         // 로그인 사용자인 경우 참여자 목록에 추가
         if (principal != null) {
+            String userId = principal.getUser().getUserId();
+
+            if (redisService.isUserBanned(roomId.toString(), userId)) {
+                throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.",ErrorCode.ROOM_BANNED_USER);
+            }
+
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
+            result.put("userId", userId);
+            result.put("nickname", principal.getUser().getNickname());
         }else{// 로그인 하지 않더라도 참여자 수 증가
+            String sessionId = http.getSession(true).getId();
+            String guestId = "guest:" + sessionId;
+            String nickname = "익명의 오리#" + java.util.UUID.randomUUID().toString().substring(0, 6);;
+            result.put("userId", guestId);
+            result.put("nickname", nickname);
             redisService.addParticipantCountToRoom(roomId.toString());
         }
 
@@ -262,7 +282,9 @@ public class RoomController {
         );
         room.setParticipantCount(participantCount);
 
-        return ResponseEntity.ok(room);
+        result.put("room", room);
+
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "방 퇴장", description = "현재 로그인한 사용자가 방에서 퇴장합니다.")
