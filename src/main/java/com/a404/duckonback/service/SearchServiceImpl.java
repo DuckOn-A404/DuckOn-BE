@@ -1,6 +1,8 @@
 package com.a404.duckonback.service;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.IndexRequest;
+import org.opensearch.client.opensearch.core.SearchRequest;
+import org.opensearch.client.opensearch.core.SearchResponse;
+import org.opensearch.client.opensearch.core.search.Hit;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +40,7 @@ public class SearchServiceImpl implements SearchService {
             query = new Query.Builder()
                 .term(t -> t
                     .field("tags")
-                    .value(normalizedTerm)
+                    .value(v -> v.stringValue(normalizedTerm))
                 )
                     .build();
         }
@@ -45,7 +50,7 @@ public class SearchServiceImpl implements SearchService {
             .query(query)
             .build();
         
-        SearchResponse<ImageDocument> response = openSearchClient.search(searchRequest, , ImageDocument.class);
+        SearchResponse<ImageDocument> response = openSearchClient.search(searchRequest, ImageDocument.class);
 
         List<ImageDocument> results = response.hits().hits().stream()
             .map(Hit::source)
@@ -59,7 +64,6 @@ public class SearchServiceImpl implements SearchService {
             .build();
     }
 
-
     @Override
     public void indexImage(ImageDocument imageDocument) throws IOException {
         IndexRequest<ImageDocument> indexeRequest = new IndexRequest.Builder<ImageDocument>()
@@ -70,7 +74,4 @@ public class SearchServiceImpl implements SearchService {
 
         openSearchClient.index(indexeRequest);
     }
-
-    
-
 }
