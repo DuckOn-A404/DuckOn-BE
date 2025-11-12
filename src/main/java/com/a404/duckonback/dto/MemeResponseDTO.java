@@ -9,8 +9,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RandomMemeItemDTO {
-    Long memeId;
-    String memeUrl;
-    List<String> tags;
+public class MemeResponseDTO {
+    int page;
+    int size;
+    int total;
+    List<MemeItemDTO> items;
 }

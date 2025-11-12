@@ -46,4 +46,15 @@ public interface MemeRepository extends JpaRepository<Meme, Long> {
             @Param("creatorId") Long creatorId,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT DISTINCT m
+    FROM Meme m
+    JOIN m.memeTags mt
+    JOIN mt.tag t
+    WHERE LOWER(t.tagName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    ORDER BY m.usageCnt DESC
+    """)
+    Page<Meme> findByTagNameContainingOrderbyUsageCnt(@Param("keyword") String keyword, Pageable pageable);
+
 }

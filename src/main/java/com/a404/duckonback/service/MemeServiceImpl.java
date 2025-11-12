@@ -40,7 +40,7 @@ public class MemeServiceImpl implements MemeService {
 
     @Override
     @Transactional(readOnly = true)
-    public RandomMemeResponseDTO getRandomMemes(int page, int size) {
+    public MemeResponseDTO getRandomMemes(int page, int size) {
         int safePage = Math.max(page, 1);
         int safeSize = Math.max(size, 1);
 
@@ -48,7 +48,7 @@ public class MemeServiceImpl implements MemeService {
 
         // 아무 밈도 없을 때
         if (totalCount == 0) {
-            return RandomMemeResponseDTO.builder()
+            return MemeResponseDTO.builder()
                     .page(safePage)
                     .size(safeSize)
                     .total(0)
@@ -71,7 +71,7 @@ public class MemeServiceImpl implements MemeService {
         java.util.Collections.shuffle(memes);
 
         // 엔티티 -> DTO 변환
-        List<RandomMemeItemDTO> items = memes.stream()
+        List<MemeItemDTO> items = memes.stream()
                 .map(meme -> {
                     // 태그 목록
                     List<String> tags = java.util.Optional.ofNullable(meme.getMemeTags())
@@ -82,7 +82,7 @@ public class MemeServiceImpl implements MemeService {
                             .distinct()
                             .toList();
 
-                    return RandomMemeItemDTO.builder()
+                    return MemeItemDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
                             .tags(tags)
@@ -90,7 +90,7 @@ public class MemeServiceImpl implements MemeService {
                 })
                 .toList();
 
-        return RandomMemeResponseDTO.builder()
+        return MemeResponseDTO.builder()
                 .page(safePage)
                 .size(safeSize)
                 .total((int) totalCount)
@@ -235,12 +235,12 @@ public class MemeServiceImpl implements MemeService {
 
     @Override
     @Transactional(readOnly = true)
-    public RandomMemeResponseDTO getHourlyTop10Memes() {
+    public MemeResponseDTO getHourlyTop10Memes() {
         List<MemeHourlyTop10> topList = memeHourlyTop10Repository.findLatestTop10();
 
         if (topList.isEmpty()) {
             // 아직 집계 전이거나 로그 없음
-            return RandomMemeResponseDTO.builder()
+            return MemeResponseDTO.builder()
                     .page(1)
                     .size(0)
                     .total(0)
@@ -248,7 +248,7 @@ public class MemeServiceImpl implements MemeService {
                     .build();
         }
 
-        List<RandomMemeItemDTO> items = topList.stream()
+        List<MemeItemDTO> items = topList.stream()
                 .map(row -> {
                     Meme meme = row.getMeme();
 
@@ -260,7 +260,7 @@ public class MemeServiceImpl implements MemeService {
                             .distinct()
                             .toList();
 
-                    return RandomMemeItemDTO.builder()
+                    return MemeItemDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
                             .tags(tags)
@@ -270,7 +270,7 @@ public class MemeServiceImpl implements MemeService {
 
         int size = items.size();
 
-        return RandomMemeResponseDTO.builder()
+        return MemeResponseDTO.builder()
                 .page(1)
                 .size(size)
                 .total(size)
@@ -280,12 +280,12 @@ public class MemeServiceImpl implements MemeService {
 
     @Override
     @Transactional(readOnly = true)
-    public RandomMemeResponseDTO getTop10MemesByTotalUsage() {
+    public MemeResponseDTO getTop10MemesByTotalUsage() {
         // usageCnt + downloadCnt 기준 상위 10개
         var memes = memeRepository.findTopByUsageAndDownload(PageRequest.of(0, 10));
 
         if (memes.isEmpty()) {
-            return RandomMemeResponseDTO.builder()
+            return MemeResponseDTO.builder()
                     .page(1)
                     .size(0)
                     .total(0)
@@ -293,7 +293,7 @@ public class MemeServiceImpl implements MemeService {
                     .build();
         }
 
-        List<RandomMemeItemDTO> items = memes.stream()
+        List<MemeItemDTO> items = memes.stream()
                 .map(meme -> {
                     List<String> tags = Optional.ofNullable(meme.getMemeTags())
                             .orElseGet(Collections::emptySet)
@@ -303,7 +303,7 @@ public class MemeServiceImpl implements MemeService {
                             .distinct()
                             .toList();
 
-                    return RandomMemeItemDTO.builder()
+                    return MemeItemDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
                             .tags(tags)
@@ -313,7 +313,7 @@ public class MemeServiceImpl implements MemeService {
 
         int size = items.size();
 
-        return RandomMemeResponseDTO.builder()
+        return MemeResponseDTO.builder()
                 .page(1)
                 .size(size)
                 .total(size)
@@ -359,5 +359,49 @@ public class MemeServiceImpl implements MemeService {
         return memeRepository
                 .findMyMemesByCreatorIdOrderByCreatedAtDesc(userId, pageable)
                 .getContent();
+    }
+
+    public MemeResponseDTO searchByTagBasic(String tag, int page, int size) {
+        if (tag == null || tag.isBlank()) {
+            return MemeResponseDTO.builder()
+                    .page(page)
+                    .size(size)
+                    .total(0)
+                    .items(Collections.emptyList())
+                    .build();
+        }
+
+        // JPQL에서 이미 ORDER BY m.usageCnt DESC 고정
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size);
+        Page<Meme> resultPage =
+                memeRepository.findByTagNameContainingOrderbyUsageCnt(tag.trim(), pageable);
+
+        List<Meme> memes = resultPage.getContent();
+        List<Long> memeIds = memes.stream().map(Meme::getId).toList();
+
+        // 밈별 태그 일괄 조회 (N+1 방지)
+        Map<Long, List<String>> tagsByMemeId = new HashMap<>();
+        if (!memeIds.isEmpty()) {
+            for (Object[] row : memeTagRepository.findTagPairsByMemeIds(memeIds)) {
+                Long memeId = (Long) row[0];
+                String tagName = (String) row[1];
+                tagsByMemeId.computeIfAbsent(memeId, k -> new ArrayList<>()).add(tagName);
+            }
+        }
+
+        List<MemeItemDTO> items = memes.stream()
+                .map(m -> MemeItemDTO.builder()
+                        .memeId(m.getId())
+                        .memeUrl(m.getImageUrl())
+                        .tags(tagsByMemeId.getOrDefault(m.getId(), List.of()))
+                        .build())
+                .collect(Collectors.toList());
+
+        return MemeResponseDTO.builder()
+                .page(page)
+                .size(size)
+                .total((int) resultPage.getTotalElements())
+                .items(items)
+                .build();
     }
 }

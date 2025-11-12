@@ -82,11 +82,11 @@ public class MemeController {
             description = "랜덤으로 밈을 조회합니다. 페이지네이션을 지원합니다."
     )
     @GetMapping("/random")
-    public ResponseEntity<ApiResponseDTO<RandomMemeResponseDTO>> getRandomMeme(
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> getRandomMeme(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        RandomMemeResponseDTO randomMemes = memeService.getRandomMemes(page, size);
+        MemeResponseDTO randomMemes = memeService.getRandomMemes(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, randomMemes));
     }
 
@@ -148,8 +148,8 @@ public class MemeController {
             description = "가장 최근 집계된 1시간 구간 기준 TOP10 밈을 반환합니다."
     )
     @GetMapping("/top/hourly")
-    public ResponseEntity<ApiResponseDTO<RandomMemeResponseDTO>> getHourlyTop10Memes() {
-        RandomMemeResponseDTO res = memeService.getHourlyTop10Memes();
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> getHourlyTop10Memes() {
+        MemeResponseDTO res = memeService.getHourlyTop10Memes();
         return ResponseEntity.ok(
                 ApiResponseDTO.success(SuccessCode.MEME_TOP10_RETRIEVE_SUCCESS, res)
         );
@@ -160,8 +160,8 @@ public class MemeController {
             description = "meme 테이블의 usageCnt + downloadCnt 누적 합 기준으로 상위 10개의 밈을 반환합니다."
     )
     @GetMapping("/top/total")
-    public ResponseEntity<ApiResponseDTO<RandomMemeResponseDTO>> getTop10MemesByTotalUsage() {
-        RandomMemeResponseDTO res = memeService.getTop10MemesByTotalUsage();
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> getTop10MemesByTotalUsage() {
+        MemeResponseDTO res = memeService.getTop10MemesByTotalUsage();
         return ResponseEntity.ok(
                 ApiResponseDTO.success(SuccessCode.MEME_TOP10_RETRIEVE_SUCCESS, res)
         );
@@ -192,6 +192,20 @@ public class MemeController {
         if (principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
         List<MyMemeDTO> myMemes = memeService.getMyMemes(principal.getId(), page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, myMemes));
+    }
+
+    @Operation(
+            summary = "태그 기반 밈 검색",
+            description = "입력한 키워드를 포함(부분 일치)하는 태그명을 가진 밈들을 조회합니다. 결과는 usageCnt 내림차순으로 정렬됩니다."
+    )
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> searchMemesByTag(
+            @RequestParam String tag,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        MemeResponseDTO searchedMemes = memeService.searchByTagBasic(tag, page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, searchedMemes));
     }
 
 
