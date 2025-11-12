@@ -65,6 +65,8 @@ dependencies {
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    implementation 'org.opensearch.client:opensearch-java:2.11.0'
 }
 
 tasks.named('test') {
