@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,8 @@ public class RoomController {
     private final ArtistService artistService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
+    private final StringRedisTemplate stringRedisTemplate;
+
 
     @Operation(summary = "방 생성",
             description = "새로운 라이브 방송 방을 생성합니다. 프로필 사진과 배경 이미지를 포함할 수 있습니다.")
@@ -346,6 +350,10 @@ public class RoomController {
                 roomId.toString(),
                 target
         );
+
+        String bannedKey = "room:" + roomId + ":banned";
+        stringRedisTemplate.opsForSet().add(bannedKey, target.getUserId());
+        stringRedisTemplate.expire(bannedKey, Duration.ofHours(6));
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());
         messagingTemplate.convertAndSend(
