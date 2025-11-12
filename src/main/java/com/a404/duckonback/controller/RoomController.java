@@ -260,7 +260,7 @@ public class RoomController {
             String userId = principal.getUser().getUserId();
 
             if (redisService.isUserBanned(roomId.toString(), userId)) {
-                throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.",ErrorCode.ROOM_BANNED_USER);
+                throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.",HttpStatus.BAD_REQUEST);
             }
 
             redisService.addUserToRoom(roomId.toString(), principal.getUser());
