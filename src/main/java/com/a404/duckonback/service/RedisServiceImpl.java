@@ -595,7 +595,6 @@ public class RedisServiceImpl implements RedisService {
         String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
         String cKey = roomCountKey(roomId);
 
-        String bannedKey = "room:" + roomId + ":banned";
 
         // 롤백 대비 백업
         Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
@@ -611,8 +610,6 @@ public class RedisServiceImpl implements RedisService {
                 stringRedisTemplate.opsForValue().set(cKey, "0");
             }
 
-            stringRedisTemplate.opsForSet().add(bannedKey, user.getUserId());
-            stringRedisTemplate.expire(bannedKey, ROOM_TTL);
         }
 
         Long size = stringRedisTemplate.opsForSet().size(uKey);
