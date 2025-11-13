@@ -56,14 +56,8 @@ public final class SecurityEndpoints {
             "/api/memes/usage"
     };
 
-    /**
-     * 메서드 상관 없이 인증이 필요한 endpoint
-     * 전체가 허용된 controller 하위에 인증이 필요한 경우
-     * ex) /api/artists/* : 아티스트 상세 페이지, /api/artists/me : 내가 팔로우한 아티스트
-     * TODO: /api/artists/me 경로 변경 논의
-     */
     public static final String[] AUTH_REQUIRED = {
-            "/api/artists/me",
+            "/api/me/**",
             "/api/auth/logout"
     };
 

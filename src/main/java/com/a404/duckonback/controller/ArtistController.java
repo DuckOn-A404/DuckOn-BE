@@ -92,33 +92,6 @@ public class ArtistController {
         return ResponseEntity.ok(Map.of("artistList", list));
     }
 
-    // 내가 팔로우한 아티스트 조회
-    @Operation(summary = "내가 팔로우한 아티스트 조회 (JWT 필요O)",
-            description = "로그인한 사용자가 팔로우한 아티스트 목록을 페이지 단위로 조회합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyFollowedArtists(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal CustomUserPrincipal principal) {
-
-        if (page < 1 || size < 1) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("message", "잘못된 페이지 번호 또는 크기입니다."));
-        }
-
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<FollowedArtistDTO> dtoPage = artistFollowService.getFollowedArtists(
-                principal.getUser().getId(), pageable);
-
-        return ResponseEntity.ok(Map.of(
-                "artistList", dtoPage.getContent(),
-                "page", page,
-                "size", size,
-                "totalPages", dtoPage.getTotalPages(),
-                "totalElements", dtoPage.getTotalElements()
-        ));
-    }
 
     // 아티스트 팔로우 추가
     @Operation(summary = "아티스트 팔로우 (JWT 필요O)",
