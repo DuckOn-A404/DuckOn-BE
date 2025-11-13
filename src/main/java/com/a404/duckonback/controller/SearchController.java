@@ -25,7 +25,7 @@ public class SearchController {
 
     private final SearchService searchService;
 
-    @Operation(summary = "밈 검색", description = "밈을 검색합니다.")
+    @Operation(summary = "밈 검색 (JWT 필요X)", description = "밈을 검색합니다.")
     @GetMapping
     public ResponseEntity<SearchResponseDto> searchMemes(
         @RequestParam("q") String queryTerm,

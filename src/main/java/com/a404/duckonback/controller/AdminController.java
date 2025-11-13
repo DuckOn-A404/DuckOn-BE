@@ -36,7 +36,7 @@ public class AdminController {
     private final EngagementBatchService engagementBatchService;
     private final MemeRankingBatchService memeRankingBatchService;
 
-    @Operation(summary = "아티스트 등록", description = "새로운 아티스트를 등록합니다.")
+    @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
     public ResponseEntity<Map<String,String>> createArtist(
             @ModelAttribute @Valid AdminArtistRequestDTO dto
@@ -47,7 +47,7 @@ public class AdminController {
                 .body(Map.of("message", "아티스트가 성공적으로 등록되었습니다."));
     }
 
-    @Operation(summary = "아티스트 정보 수정", description = "기존 아티스트의 정보를 수정합니다.")
+    @Operation(summary = "아티스트 정보 수정 (JWT 필요O)", description = "기존 아티스트의 정보를 수정합니다.")
     @PatchMapping("/artists/{artistId}")
     public ResponseEntity<Map<String,String>> patchArtist(
             @PathVariable Long artistId,
@@ -57,7 +57,7 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "아티스트 정보가 성공적으로 수정되었습니다."));
     }
 
-    @Operation(summary = "유저 참여도 지표 재생성", description = "유저 참여도 지표 스냅샷을 재생성합니다.")
+    @Operation(summary = "유저 참여도 지표 재생성 (JWT 필요O)", description = "유저 참여도 지표 스냅샷을 재생성합니다.")
     @PostMapping("/batch/engagement/rebuild")
     public ResponseEntity<ApiResponseDTO> rebuildEngagement() {
         engagementBatchService.rebuildEngagementSnapshot();
@@ -65,7 +65,7 @@ public class AdminController {
     }
 
     @Operation(
-            summary = "시간별 밈 TOP10 집계(직전 1시간) 수동 실행",
+            summary = "시간별 밈 TOP10 집계(직전 1시간) 수동 실행 (JWT 필요O)",
             description = "meme_usage_log 기반으로 직전 1시간 구간의 밈 사용/다운로드 로그를 집계하여 meme_hourly_top10에 저장합니다."
     )
     @PostMapping("/batch/meme/hourly-top10")

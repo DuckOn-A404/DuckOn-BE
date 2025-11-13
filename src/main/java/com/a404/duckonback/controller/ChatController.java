@@ -9,6 +9,7 @@ import com.a404.duckonback.service.ChatService;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.service.UserRankService;
 import com.a404.duckonback.util.ChatRateLimiter;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,7 @@ public class ChatController {
      * 클라이언트가 메시지를 보낼 때 호출하는 엔드포인트
      * POST /api/chat/artist/{artistId}/message
      */
+    @Operation(summary = "채팅 메시지 전송 (JWT 필요O)", description = "아티스트 창에서 채팅 메시지를 전송합니다.")
     @PostMapping("/artist/{artistId}/message")
     public ResponseEntity<ChatMessageResponseDTO> sendMessage(
             @PathVariable String artistId,
@@ -74,6 +76,10 @@ public class ChatController {
      * 클라이언트가 주기적으로 채팅 내역을 조회할 때 호출
      * GET /api/chat/artist/{artistId}/message
      */
+    @Operation(
+            summary = "아티스트 채팅 메시지 조회 (JWT 필요X)",
+            description = "아티스트 창에서 채팅 메시지 내역을 조회합니다. 선택적으로 특정 시점 이후의 메시지만 조회할 수 있습니다."
+    )
     @GetMapping("/artist/{artistId}/message")
     public ResponseEntity<List<ChatMessageResponseDTO>> getMessage(
             @PathVariable String artistId,

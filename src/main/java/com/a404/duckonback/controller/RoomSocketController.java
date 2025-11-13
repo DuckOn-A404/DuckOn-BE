@@ -10,6 +10,7 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.service.RedisService;
 import com.a404.duckonback.service.UserRankService;
 import com.a404.duckonback.util.ChatRateLimiter;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,7 @@ public class RoomSocketController {
     private final UserRankService userRankService;
 
     // 영상 동기화 메시지
+    @Operation(summary = "방 내 영상 동기화 메시지 (JWT 필요X)")
     @MessageMapping("/room/update")
     public void updateRoom(@Payload LiveRoomSyncDTO dto,
                            StompHeaderAccessor accessor) {
@@ -53,6 +55,7 @@ public class RoomSocketController {
     }
 
     // 채팅 메시지 수신
+    @Operation(summary = "방 내 채팅 (JWT 필요X)")
     @MessageMapping("/room/chat")
     public void chat(@Payload ChatMessageDTO message,
                      StompHeaderAccessor accessor) {
