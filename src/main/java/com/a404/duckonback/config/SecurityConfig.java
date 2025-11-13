@@ -38,6 +38,23 @@ public class SecurityConfig {
     private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
 
+    // CORS 허용 Origin 상수
+    private static final List<String> CORS_ALLOWED_ORIGINS = List.of(
+            "https://memeduck.site",
+            "https://www.memeduck.site",
+            "https://duckon.site",
+            "https://www.duckon.site",
+            "https://d3jianh0vyc8he.cloudfront.net",
+            "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
+            "http://127.0.0.1:3000",
+            "http://localhost:3000",
+            "http://localhost:5173"
+    );
+
+    private static final List<String> CORS_ALLOWED_METHODS= List.of(
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+    );
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -51,33 +68,24 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "https://memeduck.site",
-                "https://www.memeduck.site",
-                "https://duckon.site",
-                "https://www.duckon.site",
-                "https://d3jianh0vyc8he.cloudfront.net",
-                "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
-                "http://localhost:5173/"
-        ));
-        configuration.setAllowedMethods(List.of("*"));        // 모든 Method 허용
-        configuration.setAllowedHeaders(List.of("*"));        // 모든 Header 허용
-        configuration.setAllowCredentials(true);              // 쿠키/인증정보 허용
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(CORS_ALLOWED_ORIGINS);
+        config.setAllowedMethods(CORS_ALLOWED_METHODS);
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
 
         return source;
     }
 
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            CustomOAuth2UserService oauth2UserService,
-                                           AuthenticationManager authManager, TokenBlacklistService tokenBlacklistService) throws Exception {
+                                           AuthenticationManager authManager) throws Exception {
         // JSON 로그인 필터
         CustomJsonUsernamePasswordAuthenticationFilter jsonFilter =
                 new CustomJsonUsernamePasswordAuthenticationFilter(authManager);
@@ -85,7 +93,6 @@ public class SecurityConfig {
         jsonFilter.setFilterProcessesUrl("/api/auth/login");
         jsonFilter.setAuthenticationSuccessHandler(jsonSuccessHandler);
         jsonFilter.setAuthenticationFailureHandler(jsonFailureHandler);
-
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 적용
