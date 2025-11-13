@@ -375,7 +375,7 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "홈 화면 아티스트별 라이브룸 조회", 
+    @Operation(summary = "홈 화면 아티스트별 라이브룸 조회 (JWT 필요X)",
            description = "홈 화면에 표시할 랜덤 아티스트와 각 아티스트의 인기 라이브룸을 조회합니다. (참여자 수 내림차순)")
     @GetMapping("/home")
     public ResponseEntity<Map<String, Object>> getHomeRooms(

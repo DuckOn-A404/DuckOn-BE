@@ -67,7 +67,7 @@ public class MemeController {
 
 
     @Operation(
-            summary = "밈 S3에 업로드(테스트용) (JWT 필요X)",
+            summary = "밈 S3에 업로드(테스트용) (JWT 필요O)",
             description = "파일을 S3에 업로드합니다."
     )
     @PostMapping(
@@ -133,10 +133,10 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "내 즐겨찾기 밈 목록 조회",
+            summary = "내 즐겨찾기 밈 목록 조회 (JWT 필요O)",
             description = "내가 즐겨찾기한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
     )
-    @GetMapping("/favorites (JWT 필요O)")
+    @GetMapping("/favorites")
     public ResponseEntity<ApiResponseDTO<List<FavoriteMemeDTO>>> getMyFavoriteMemes(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestParam(defaultValue = "1") int page,
@@ -148,10 +148,10 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "시간별 TOP10 밈 조회",
+            summary = "시간별 TOP10 밈 조회 (JWT 필요X)",
             description = "가장 최근 집계된 1시간 구간 기준 TOP10 밈을 반환합니다."
     )
-    @GetMapping("/top/hourly (JWT 필요X)")
+    @GetMapping("/top/hourly")
     public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> getHourlyTop10Memes() {
         MemeResponseDTO res = memeService.getHourlyTop10Memes();
         return ResponseEntity.ok(
