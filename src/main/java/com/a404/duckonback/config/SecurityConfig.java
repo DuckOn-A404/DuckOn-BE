@@ -103,8 +103,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 0. 예외적으로 인증이 필요한 endpoint
                         .requestMatchers(SecurityEndpoints.AUTH_REQUIRED).authenticated()
-                        // 같은 경로의 get은 허용, post만 비허용
-                        .requestMatchers(HttpMethod.POST, "/api/chat/artist/**").authenticated()
 
                         // 1. Swagger, 문서
                         .requestMatchers(SecurityEndpoints.SWAGGER).permitAll()
