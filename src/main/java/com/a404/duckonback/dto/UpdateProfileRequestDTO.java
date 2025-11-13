@@ -11,6 +11,5 @@ import org.springframework.web.multipart.MultipartFile;
 public class UpdateProfileRequestDTO {
     private String nickname;
     private String language;
-    private String newPassword;
     private MultipartFile profileImg;
 }

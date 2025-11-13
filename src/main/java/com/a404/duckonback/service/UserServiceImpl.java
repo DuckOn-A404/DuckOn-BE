@@ -908,10 +908,6 @@ public class UserServiceImpl implements UserService {
             throw new CustomException("새로운 사용자 정보가 제공되지 않았습니다.", HttpStatus.BAD_REQUEST);
         }
 
-        if(newUserInfo.getNewPassword() != null && !newUserInfo.getNewPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(newUserInfo.getNewPassword()));
-        }
-
         if(newUserInfo.getNickname() != null && !newUserInfo.getNickname().isBlank()) {
             user.setNickname(newUserInfo.getNickname());
         }
