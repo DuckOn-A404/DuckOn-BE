@@ -52,6 +52,7 @@ dependencies {
 
     implementation 'software.amazon.awssdk:s3:2.32.10' // AWS SDK for S3
     implementation 'software.amazon.awssdk:auth:2.32.10' // AWS SDK for authentication
+    implementation 'software.amazon.awssdk:apache-client:2.32.10' // AWS SDK Apache HTTP client
 
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
@@ -65,6 +66,10 @@ dependencies {
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    implementation 'org.opensearch.client:opensearch-java:2.11.0'
+    implementation 'software.amazon.awssdk:apache-client:2.32.10'
+
 }
 
 tasks.named('test') {

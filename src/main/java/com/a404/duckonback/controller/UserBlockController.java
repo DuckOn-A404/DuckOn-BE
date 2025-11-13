@@ -23,7 +23,7 @@ public class UserBlockController {
 
     /** 타 이용자 차단 */
     @Operation(
-            summary = "사용자 차단",
+            summary = "사용자 차단 (JWT 필요O)",
             description = "특정 사용자를 차단합니다. 로그인한 사용자의 ID와 차단 대상자의 userId를 사용합니다."
     )
     @PostMapping("/block/{userId}")
@@ -38,7 +38,7 @@ public class UserBlockController {
 
     /** 차단 해제 */
     @Operation(
-            summary = "차단 해제",
+            summary = "차단 해제 (JWT 필요O)",
             description = "특정 사용자의 차단을 해제합니다. 로그인한 사용자의 ID와 차단 대상자의 userId를 사용합니다."
     )
     @DeleteMapping("/block/{userId}")
@@ -53,7 +53,7 @@ public class UserBlockController {
 
     /** 차단 여부 확인 */
     @Operation(
-            summary = "차단 여부 확인",
+            summary = "차단 여부 확인 (JWT 필요O)",
             description = "특정 사용자가 차단되었는지 확인합니다. 로그인한 사용자의 ID와 차단 대상자의 userId를 사용합니다."
     )
     @GetMapping("/block/{userId}")
@@ -68,7 +68,7 @@ public class UserBlockController {
 
     /** 차단 목록 조회 */
     @Operation(
-            summary = "차단 목록 조회",
+            summary = "차단 목록 조회 (JWT 필요O)",
             description = "로그인한 사용자가 차단한 사용자 목록을 조회합니다."
     )
     @GetMapping("/block")

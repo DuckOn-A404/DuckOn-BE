@@ -32,7 +32,7 @@ public class ArtistController {
     private final ArtistFollowService artistFollowService;
 
     // 단일 아티스트 상세 조회
-    @Operation(summary = "아티스트 상세 조회",
+    @Operation(summary = "아티스트 상세 조회 (JWT 필요X)",
             description = "특정 아티스트의 상세 정보를 조회합니다. 로그인한 사용자의 팔로우 상태도 함께 반환됩니다.")
     @GetMapping("/{artistId}")
     public ResponseEntity<?> getArtist(
@@ -47,7 +47,7 @@ public class ArtistController {
     }
 
     // 전체 아티스트 목록/검색/정렬 통합
-    @Operation(summary = "아티스트 목록/검색/정렬 조회",
+    @Operation(summary = "아티스트 목록/검색/정렬 조회 (JWT 필요X)",
             description = "페이지네이션 + 정렬(followers/name/debut) + 검색(keyword)을 지원합니다.")
     @GetMapping
     public ResponseEntity<?> getArtistList(
@@ -74,7 +74,7 @@ public class ArtistController {
     }
 
     // 키워드 검색
-    @Operation(summary = "아티스트 검색",
+    @Operation(summary = "아티스트 검색 (JWT 필요X)",
             description = "아티스트 이름이나 설명을 키워드로 검색합니다. 검색 결과는 페이지 단위로 반환됩니다.")
     @GetMapping(params = {"keyword", "!page", "!size", "!sort", "!order"})
     public ResponseEntity<?> searchArtists(@RequestParam String keyword) {
@@ -83,7 +83,7 @@ public class ArtistController {
     }
 
     // 랜덤 아티스트 조회
-    @Operation(summary = "랜덤 아티스트 조회",
+    @Operation(summary = "랜덤 아티스트 조회 (JWT 필요X)",
             description = "지정된 크기만큼 랜덤으로 아티스트를 조회합니다. 기본 크기는 16입니다.")
     @GetMapping("/random")
     public ResponseEntity<?> getRandomArtists(
@@ -93,7 +93,7 @@ public class ArtistController {
     }
 
     // 내가 팔로우한 아티스트 조회
-    @Operation(summary = "내가 팔로우한 아티스트 조회",
+    @Operation(summary = "내가 팔로우한 아티스트 조회 (JWT 필요O)",
             description = "로그인한 사용자가 팔로우한 아티스트 목록을 페이지 단위로 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<?> getMyFollowedArtists(
@@ -121,7 +121,7 @@ public class ArtistController {
     }
 
     // 아티스트 팔로우 추가
-    @Operation(summary = "아티스트 팔로우",
+    @Operation(summary = "아티스트 팔로우 (JWT 필요O)",
             description = "로그인한 사용자가 특정 아티스트를 팔로우합니다. 성공 시 201 상태 코드를 반환합니다.")
     @PostMapping("/{artistId}/follow")
     public ResponseEntity<?> followArtist(
@@ -136,7 +136,7 @@ public class ArtistController {
     }
 
     // 아티스트 팔로우 취소
-    @Operation(summary = "아티스트 팔로우 취소",
+    @Operation(summary = "아티스트 팔로우 취소 (JWT 필요O)",
             description = "로그인한 사용자가 특정 아티스트의 팔로우를 취소합니다. 성공 시 200 상태 코드를 반환합니다.")
     @DeleteMapping("/{artistId}/follow")
     public ResponseEntity<?> unfollowArtist(
@@ -150,7 +150,7 @@ public class ArtistController {
     }
 
     // 아티스트 팔로우 수정
-    @Operation(summary = "아티스트 팔로우 목록 수정",
+    @Operation(summary = "아티스트 팔로우 목록 수정 (JWT 필요O)",
             description = "로그인한 사용자가 팔로우할 아티스트 목록을 수정합니다. 기존 팔로우는 모두 취소되고, 요청된 아티스트만 팔로우됩니다.")
     @PutMapping("/follow")
     public ResponseEntity<?> updateFollows(

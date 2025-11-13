@@ -29,7 +29,7 @@ public class TagSearchController {
     }
 
     // 실시간 인기 태그 조회
-    @Operation(summary = "실시간 인기 태그 조회", description = "지정된 기간 동안 가장 많이 검색된 인기 태그를 조회합니다. 기간은 10분, 1시간, 1일 중 선택할 수 있습니다.")
+    @Operation(summary = "실시간 인기 태그 조회 (JWT 필요X)", description = "지정된 기간 동안 가장 많이 검색된 인기 태그를 조회합니다. 기간은 10분, 1시간, 1일 중 선택할 수 있습니다.")
     @GetMapping("/trending")
     public ResponseEntity<ApiResponseDTO<List<TrendingTagDTO>>> getTrendingTags(
             @RequestParam(defaultValue = "HOUR") String range,

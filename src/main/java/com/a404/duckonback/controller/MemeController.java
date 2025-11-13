@@ -33,6 +33,10 @@ public class MemeController {
     private final MemeS3Service memeS3Service;
     private final MemeUsageLogService memeUsageLogService;
 
+    @Operation(
+            summary = "밈 생성 (JWT 필요O)",
+            description = "최대 3개의 이미지를 업로드하여 밈을 생성합니다. 각 이미지에 태그를 지정할 수 있습니다."
+    )
     @PostMapping("/create")
     public ResponseEntity<ApiResponseDTO<MemeCreateResponseDTO>> createMemes(
             @AuthenticationPrincipal CustomUserPrincipal principal,
@@ -63,7 +67,7 @@ public class MemeController {
 
 
     @Operation(
-            summary = "밈 S3에 업로드(테스트용)",
+            summary = "밈 S3에 업로드(테스트용) (JWT 필요O)",
             description = "파일을 S3에 업로드합니다."
     )
     @PostMapping(
@@ -78,7 +82,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "랜덤 밈 조회",
+            summary = "랜덤 밈 조회 (JWT 필요X)",
             description = "랜덤으로 밈을 조회합니다. 페이지네이션을 지원합니다."
     )
     @GetMapping("/random")
@@ -91,7 +95,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "밈 사용/다운로드 로그 기록",
+            summary = "밈 사용/다운로드 로그 기록 (JWT 필요X)",
             description = "밈 사용(채팅에서 사용) 또는 다운로드 시 호출하여 로그와 집계 카운트를 기록합니다."
     )
     @PostMapping("/usage")
@@ -104,7 +108,7 @@ public class MemeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_USAGE_LOG_SUCCESS, null));
     }
 
-    @Operation(summary = "밈 즐겨찾기 추가", description = "특정 밈을 즐겨찾기에 추가합니다. 이미 추가되어 있어도 에러 없이 성공 처리합니다(idempotent).")
+    @Operation(summary = "밈 즐겨찾기 추가 (JWT 필요O)", description = "특정 밈을 즐겨찾기에 추가합니다. 이미 추가되어 있어도 에러 없이 성공 처리합니다(idempotent).")
     @PostMapping("/{memeId}/favorite")
     public ResponseEntity<ApiResponseDTO<Void>> createFavorite(
             @AuthenticationPrincipal CustomUserPrincipal principal,
@@ -116,7 +120,7 @@ public class MemeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_CREATED, null));
     }
 
-    @Operation(summary = "밈 즐겨찾기 취소", description = "특정 밈의 즐겨찾기를 취소합니다. 존재하지 않아도 에러 없이 성공 처리합니다(idempotent).")
+    @Operation(summary = "밈 즐겨찾기 취소 (JWT 필요O)", description = "특정 밈의 즐겨찾기를 취소합니다. 존재하지 않아도 에러 없이 성공 처리합니다(idempotent).")
     @DeleteMapping("/{memeId}/favorite")
     public ResponseEntity<ApiResponseDTO<Void>> deleteFavorite(
             @AuthenticationPrincipal CustomUserPrincipal principal,
@@ -129,7 +133,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "내 즐겨찾기 밈 목록 조회",
+            summary = "내 즐겨찾기 밈 목록 조회 (JWT 필요O)",
             description = "내가 즐겨찾기한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
     )
     @GetMapping("/favorites")
@@ -144,7 +148,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "시간별 TOP10 밈 조회",
+            summary = "시간별 TOP10 밈 조회 (JWT 필요X)",
             description = "가장 최근 집계된 1시간 구간 기준 TOP10 밈을 반환합니다."
     )
     @GetMapping("/top/hourly")
@@ -156,7 +160,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "누적 TOP10 밈 조회",
+            summary = "누적 TOP10 밈 조회 (JWT 필요X)",
             description = "meme 테이블의 usageCnt + downloadCnt 누적 합 기준으로 상위 10개의 밈을 반환합니다."
     )
     @GetMapping("/top/total")
@@ -168,7 +172,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "밈 상세 조회",
+            summary = "밈 상세 조회 (JWT 필요X)",
             description = "밈 기본정보, 태그 이름 리스트, 생성자 정보를 반환합니다."
     )
     @GetMapping("/{memeId}/detail")
@@ -180,7 +184,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "내가 만든 밈 목록 조회",
+            summary = "내가 만든 밈 목록 조회 (JWT 필요O)",
             description = "내가 생성한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
     )
     @GetMapping("/mine")
@@ -195,7 +199,7 @@ public class MemeController {
     }
 
     @Operation(
-            summary = "태그 기반 밈 검색",
+            summary = "태그 기반 밈 검색 (JWT 필요X)",
             description = "입력한 키워드를 포함(부분 일치)하는 태그명을 가진 밈들을 조회합니다. 결과는 usageCnt 내림차순으로 정렬됩니다."
     )
     @GetMapping("/search-basic")
