@@ -16,7 +16,6 @@ public final class SecurityEndpoints {
     };
 
     public static final String[] PUBLIC_ANY = {
-            "/api/memes/random",
             "/api/memes/top/**",
             "/api/tags/**",
     };
@@ -63,7 +62,6 @@ public final class SecurityEndpoints {
      * ex) /api/artists/* : 아티스트 상세 페이지, /api/artists/me : 내가 팔로우한 아티스트
      * TODO: /api/artists/me 경로 변경 논의
      */
-
     public static final String[] AUTH_REQUIRED = {
             "/api/artists/me",
             "/api/auth/logout"
