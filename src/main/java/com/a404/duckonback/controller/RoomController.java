@@ -303,7 +303,7 @@ public class RoomController {
             redisService.removeUserFromRoom(
                     artistId.toString(),
                     roomId.toString(),
-                    principal.getUser()
+                    principal.getUser().getUserId()
             );
         }else{
             redisService.decreaseParticipantCountFromRoom(roomId.toString());
@@ -319,10 +319,10 @@ public class RoomController {
     }
 
     @Operation(summary = "방 강퇴 (JWT 필요O)", description = "방장이 현재 접속한 사용자를 방에서 강제 퇴장합니다.")
-    @PostMapping("/{roomId}/eject/{nickname}")
+    @PostMapping("/{roomId}/eject/{targetId}")
     public ResponseEntity<?> ejectUserFromRoom(
             @PathVariable Long roomId,
-            @PathVariable String nickname,
+            @PathVariable String targetId,
             @RequestParam Long artistId,
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
@@ -339,20 +339,20 @@ public class RoomController {
             throw new CustomException("호스트만 강제퇴장 시킬 수 있습니다.", HttpStatus.FORBIDDEN);
         }
 
-        User target = userService.findByNickname(nickname);
+//        User target = userService.findByNickname(nickname);
         
         
         //강퇴 대상 user에게 강퇴 메세지 전송
-        messagingTemplate.convertAndSendToUser(target.getUserId(),"/queue/kick",roomId);
+        messagingTemplate.convertAndSendToUser(targetId,"/queue/kick",roomId);
 
         redisService.removeUserFromRoom(
                 artistId.toString(),
                 roomId.toString(),
-                target
+                targetId
         );
 
         String bannedKey = "room:" + roomId + ":banned";
-        stringRedisTemplate.opsForSet().add(bannedKey, target.getUserId());
+        stringRedisTemplate.opsForSet().add(bannedKey, targetId);
         stringRedisTemplate.expire(bannedKey, Duration.ofHours(6));
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());

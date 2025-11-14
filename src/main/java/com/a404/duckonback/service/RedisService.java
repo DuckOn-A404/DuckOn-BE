@@ -17,7 +17,7 @@ public interface RedisService {
     LiveRoomDTO getRoomInfo(String roomId);
     void deleteRoomInfo(Long artistId, Long roomId);
     void addUserToRoom(String roomId, User user);
-    void removeUserFromRoom(String artistId, String roomId,User user);
+    void removeUserFromRoom(String artistId, String roomId,String userId);
     List<LiveRoomSummaryDTO> getAllRoomSummaries(Long artistId);
     List<HomeArtistRoomDTO> getHomeArtistRooms(List<Long> artistIds, int roomLimitPerArtist);
     List<RoomListInfoDTO> getTrendingRooms(int size);        // 기존

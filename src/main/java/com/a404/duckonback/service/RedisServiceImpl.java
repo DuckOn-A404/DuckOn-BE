@@ -589,7 +589,7 @@ public class RedisServiceImpl implements RedisService {
 //        // 남아있는 경우의 host 변경은 프론트에서 재전송하는 정책(주석 그대로 유지)
 //    }
     @Override
-    public void removeUserFromRoom(String artistId, String roomId, User user) {
+    public void removeUserFromRoom(String artistId, String roomId, String userId) {
         String uKey = roomUsersKey(roomId);
         String rKey = roomKey(roomId);
         String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
@@ -602,7 +602,7 @@ public class RedisServiceImpl implements RedisService {
         LiveRoomDTO backup = roomTemplate.opsForValue().get(rKey);
 
         // 제거 시도
-        Long removedUser = stringRedisTemplate.opsForSet().remove(uKey, user.getUserId());
+        Long removedUser = stringRedisTemplate.opsForSet().remove(uKey, userId);
         if (removedUser != null && removedUser > 0) {
             // 실제로 빠졌으면 카운터 -1 (음수 방지)
             Long after = stringRedisTemplate.opsForValue().decrement(cKey);
