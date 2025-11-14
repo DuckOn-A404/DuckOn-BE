@@ -48,7 +48,13 @@ public class SecurityConfig {
             "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
             "http://127.0.0.1:3000",
             "http://localhost:3000",
-            "http://localhost:5173"
+            "http://localhost:5173",
+            "http://localhost",
+
+            // 모바일 앱용
+            "capacitor://localhost",
+            "ionic://localhost"   
+        
     );
 
     private static final List<String> CORS_ALLOWED_METHODS= List.of(
