@@ -124,7 +124,7 @@ public class MemeServiceImpl implements MemeService {
     private Optional<MemeCreateResponseDTO.MemeInfoDTO> handleOne(
             User creator,
             MultipartFile file,
-            Set<String> rawTags
+            Set<String> rawTags,
             OpenSearchDebugInfo debugInfo    // 테스트 후 삭제
     ) {
         if (file == null || file.isEmpty()) {
@@ -180,7 +180,7 @@ public class MemeServiceImpl implements MemeService {
                         indexed = true;
                 } catch (Exception e) {
                         indexingError = e.getMessage();
-                } else{
+                } catch (Exception e) {
                         indexingError = "OpenSearch 연결 실패";
                 }
 
