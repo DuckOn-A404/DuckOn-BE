@@ -26,8 +26,8 @@ public class MemeCreateResponseDTO {
         private List<String> tags;
 
         // 테스트 후 삭제할 것
-        private Boolean OpenSearchIndexed;
-        private String OpenSearchError;
+        private Boolean openSearchIndexed;
+        private String openSearchError;
     }
 
     // 테스트 후 삭제

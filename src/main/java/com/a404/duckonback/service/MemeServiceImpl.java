@@ -12,6 +12,7 @@ import com.a404.duckonback.repository.*;
 import com.a404.duckonback.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.client.opensearch.OpenSearchClient; // 추가
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ public class MemeServiceImpl implements MemeService {
     private final MemeFavoriteRepository memeFavoriteRepository;
     private final MemeHourlyTop10Repository memeHourlyTop10Repository;
     private final SearchService searchService;
+    private final OpenSearchClient openSearchClient; // 추가
 
 
     @Override
@@ -180,9 +182,10 @@ public class MemeServiceImpl implements MemeService {
                         indexed = true;
                 } catch (Exception e) {
                         indexingError = e.getMessage();
-                } catch (Exception e) {
-                        indexingError = "OpenSearch 연결 실패";
                 }
+        } else {
+                indexingError = "OpenSearch 연결 실패";
+        }
 
         // 4) 응답용 DTO 생성 (프론트와 1:1 매칭)
         MemeCreateResponseDTO.MemeInfoDTO dto = MemeCreateResponseDTO.MemeInfoDTO.builder()
