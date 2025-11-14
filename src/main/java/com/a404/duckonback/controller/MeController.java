@@ -1,9 +1,11 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.FollowedArtistDTO;
+import com.a404.duckonback.dto.PasswordChangeRequestDTO;
 import com.a404.duckonback.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
+import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.ArtistFollowService;
 import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +55,16 @@ public class MeController {
 
         userService.deleteUser(principal.getUser(), refreshTokenHeader);
         return ResponseEntity.ok(Map.of("message", "회원탈퇴가 완료되었습니다."));
+    }
+
+    @Operation(summary = "비밀번호 변경 (JWT 필요O)", description = "현재 비밀번호를 검증한 뒤 새 비밀번호로 변경합니다.")
+    @PatchMapping("/password")
+    public ResponseEntity<ApiResponseDTO<Void>> changePassword(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody PasswordChangeRequestDTO requestDTO
+    ){
+        userService.changePassword(principal.getId(), requestDTO);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.PASSWORD_CHANGE_SUCCESS));
     }
 
     @Operation(summary = "내 팔로워 조회 (JWT 필요O)", description = "로그인한 사용자의 팔로워 목록을 조회합니다.")

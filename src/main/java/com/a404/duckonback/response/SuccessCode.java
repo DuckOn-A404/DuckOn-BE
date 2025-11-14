@@ -10,7 +10,7 @@ public enum SuccessCode {
 
     // 유저 관련
     GET_USER_LEADERBOARD_SUCCESS(200, HttpStatus.OK, "유저 리더보드 조회에 성공했습니다."),
-
+    PASSWORD_CHANGE_SUCCESS(200, HttpStatus.OK, "비밀번호를 성공적으로 변경했습니다"),
 
     // 회원가입 관련
     USER_SIGNUP_SUCCESS(201, HttpStatus.CREATED, "회원가입이 완료되었습니다."),

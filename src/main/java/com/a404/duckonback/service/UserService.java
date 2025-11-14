@@ -37,4 +37,6 @@ public interface UserService {
     RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
 
     User findByNickname(String nickname);
+
+    void changePassword(Long userId, PasswordChangeRequestDTO requestDTO);
 }

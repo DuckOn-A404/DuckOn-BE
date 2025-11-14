@@ -567,6 +567,7 @@ import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.RoomRepository;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
+import com.a404.duckonback.response.ErrorCode;
 import com.a404.duckonback.util.Anonymizer;
 import com.a404.duckonback.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1220,5 +1221,41 @@ public class UserServiceImpl implements UserService {
     public User findByNickname(String nickname) {
         return userRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("해당 닉네임의 사용자가 존재하지 않습니다: " + nickname));
+    }
+
+    @Override
+    public void changePassword(Long userId, PasswordChangeRequestDTO requestDTO) {
+        // 1. 입력값 기본 검증
+        if(requestDTO.getCurrentPassword() == null || requestDTO.getCurrentPassword().isBlank()){
+           throw new CustomException(ErrorCode.CURRENT_PASSWORD_EMPTY);
+        }
+        if(requestDTO.getNewPassword() == null || requestDTO.getNewPassword().isBlank()){
+            throw new CustomException(ErrorCode.NEW_PASSWORD_EMPTY);
+        }
+
+        // 2. 새 비밀번호 기본 정책 (백에선 8자리 이상만 체크)
+        if(requestDTO.getNewPassword().length() < 8){
+            throw new CustomException(ErrorCode.PASSWORD_POLICY_VIOLATION);
+        }
+
+        // 3. 사용자 검증
+        User user = userRepository.findByIdAndDeletedFalse(userId);
+        if(user == null){
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 4. 현재 비밀번호 검증
+        if(!passwordEncoder.matches(requestDTO.getCurrentPassword(), user.getPassword())){
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // 5. 기존과 같은 비밀번호 확인
+        if (passwordEncoder.matches(requestDTO.getNewPassword(), user.getPassword())) {
+            throw new CustomException(ErrorCode.SAME_PASSWORD_NOT_ALLOWED);
+        }
+
+        // 6. 비밀번호 변경
+        user.setPassword(passwordEncoder.encode(requestDTO.getNewPassword()));
+        userRepository.save(user);
     }
 }
