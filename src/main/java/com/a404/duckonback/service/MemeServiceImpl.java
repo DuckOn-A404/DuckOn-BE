@@ -13,6 +13,7 @@ import com.a404.duckonback.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient; // 추가
+import com.a404.duckonback.dto.MemeCreateResponseDTO.OpenSearchDebugInfo; // 추가
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
