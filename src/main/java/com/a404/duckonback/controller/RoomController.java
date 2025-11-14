@@ -62,13 +62,6 @@ public class RoomController {
         return ResponseEntity.ok(room);
     }
 
-//    @Operation(summary = "방 조회",
-//            description = "특정 방의 정보를 조회합니다. 방 ID를 통해 방 정보를 가져옵니다.")
-//    @GetMapping("/{roomId}")
-//    public ResponseEntity<LiveRoomDTO> getRoom(@PathVariable Long roomId) {
-//        LiveRoomDTO room = liveRoomService.getRoom(roomId);
-//        return ResponseEntity.ok(room);
-//    }
 
     @Operation(summary = "방 삭제 (JWT 필요O)",
             description = "특정 방을 삭제합니다. 방 ID와 아티스트 ID를 통해 방 정보를 삭제합니다.")

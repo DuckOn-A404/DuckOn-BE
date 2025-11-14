@@ -32,4 +32,6 @@ public interface RedisService {
     void addParticipantCountToRoom(String roomId);
     void decreaseParticipantCountFromRoom(String roomId);
     boolean isUserBanned(String roomId, String userId);
+    boolean acquireCreateRoomLock(String hostUserId);
+    void releaseCreateRoomLock(String hostUserId);
 }

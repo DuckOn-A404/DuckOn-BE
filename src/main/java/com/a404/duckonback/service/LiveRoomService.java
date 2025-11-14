@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface LiveRoomService {
     LiveRoomDTO createRoom(CreateRoomRequestDTO req);
-//    LiveRoomDTO getRoom(Long roomId);
+    boolean hasActiveRoomByHost(String hostUserId);
 
 }

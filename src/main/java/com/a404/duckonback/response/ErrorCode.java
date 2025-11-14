@@ -19,6 +19,7 @@ public enum ErrorCode {
     CURRENT_PASSWORD_EMPTY(400, HttpStatus.BAD_REQUEST, "기존 비밀번호가 입력되지 않았습니다"),
     NEW_PASSWORD_EMPTY(400, HttpStatus.BAD_REQUEST, "새로운 비밀번호가 입력되지 않았습니다"),
 
+
     // 401 UNAUTHORIZED
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
     INVALID_PASSWORD(401, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 올바르지 않습니다."),
@@ -38,12 +39,16 @@ public enum ErrorCode {
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
     MEME_NOT_FOUND(404, HttpStatus.NOT_FOUND, "밈을 찾을 수 없습니다."),
 
+    //409 CONFLICT
+    ROOM_CREATION_CONFLICT(409, HttpStatus.CONFLICT, "이미 방 생성 요청이 처리 중입니다."),
+
     //413 PAYLOAD TOO LARGE
     UPLOAD_SIZE_EXCEEDED(413, HttpStatus.PAYLOAD_TOO_LARGE, "업로드 가능한 파일 용량을 초과했습니다."),
 
 
     //429 TOO MANY REQUESTS
     TOO_MANY_REQUESTS(429, HttpStatus.TOO_MANY_REQUESTS, "요청 횟수를 초과하였습니다."),
+    TOO_MANY_ROOMS(429,HttpStatus.TOO_MANY_REQUESTS,"방은 하나만 만들 수 있습니다."),
 
     //500 INTERNAL SERVER ERROR
     INTERNAL_SERVER_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),

@@ -447,6 +447,8 @@ public class RedisServiceImpl implements RedisService {
     private static final Duration ROOM_TTL = Duration.ofHours(6);
     private static final String ROOM_COUNT_SUFFIX = ":count";
 
+    private static final String HOST_ROOM_LOCK_PREFIX = "lock:room:create:";
+
     private String roomCountKey(String roomId) { return ROOM_KEY_PREFIX + roomId + ROOM_COUNT_SUFFIX; }
     private String roomCountKey(Long roomId)   { return ROOM_KEY_PREFIX + roomId + ROOM_COUNT_SUFFIX; }
     private String roomKey(String roomId) { return ROOM_KEY_PREFIX + roomId; }
@@ -942,6 +944,21 @@ public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
         return Boolean.TRUE.equals(
                 stringRedisTemplate.opsForSet().isMember(bKey, userId)
         );
+    }
+
+    @Override
+    public boolean acquireCreateRoomLock(String hostUserId) {
+        String key = HOST_ROOM_LOCK_PREFIX + hostUserId;
+        // 이미 키가 있으면 false, 없으면 생성하고 true
+        Boolean ok = stringRedisTemplate.opsForValue()
+                .setIfAbsent(key, "1", Duration.ofSeconds(5)); // 5초 정도 TTL (취향 따라 조절)
+        return Boolean.TRUE.equals(ok);
+    }
+
+    @Override
+    public void releaseCreateRoomLock(String hostUserId) {
+        String key = HOST_ROOM_LOCK_PREFIX + hostUserId;
+        stringRedisTemplate.delete(key);
     }
 
 }
