@@ -1,9 +1,6 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.RecommendUsersResponseDTO;
-import com.a404.duckonback.dto.UpdateProfileRequestDTO;
-import com.a404.duckonback.dto.UserInfoResponseDTO;
-import com.a404.duckonback.dto.UserRankLeaderboardDTO;
+import com.a404.duckonback.dto.*;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
@@ -13,13 +10,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "사용자 관리", description = "다른 사용자 정보 조회, 추천, 유저보드 등")
 @RestController
@@ -30,19 +25,30 @@ public class UserController {
     private final UserService userService;
     private final UserRankService userRankService;
 
-    @Operation(summary = "사용자 정보 조회 (JWT 필요O)", description = "특정 사용자의 정보를 조회합니다.")
-    @GetMapping("/{userId}")
+    @Operation(summary = "사용자 정보 조회 (JWT 필요X)", description = "특정 사용자의 정보를 조회합니다.")
+    @GetMapping("/{otherUserId}")
     public ResponseEntity<?> getUserInfo(
             @Parameter(
                     description = "조회할 사용자의 ID",
                     required = true,
                     example = "user5@example.com"
             )
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable String userId
+            @RequestParam String myUserIdOrNull,
+            @PathVariable String otherUserId
     ) {
-        UserInfoResponseDTO userInfo = userService.getUserInfo(principal.getUser().getUserId(), userId);
+        UserInfoResponseDTO userInfo = userService.getUserInfo(myUserIdOrNull, otherUserId);
         return ResponseEntity.ok(userInfo);
+    }
+
+    @Operation(summary = "방 생성 히스토리 조회 (JWT 필요X)", description = "특정 사용자의 방 생성 기록을 페이징 처리로 조회합니다.")
+    @GetMapping("/{userId}/rooms")
+    public ResponseEntity<ApiResponseDTO<RoomSummaryPageDTO>> getUserRoomCreateHistory(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        RoomSummaryPageDTO response = userService.getUserRoomCreateHistory(userId, page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_USER_ROOM_CREATE_HISTORY_SUCCESS, response));
     }
 
     @Operation(summary = "사용자 추천 (JWT 필요X)", description = "로그인/비로그인 모두 사용 가능. 현재 사용자에게 어울리는 다른 사용자를 추천합니다.")
