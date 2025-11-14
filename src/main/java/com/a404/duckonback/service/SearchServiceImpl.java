@@ -24,7 +24,7 @@ import org.opensearch.client.opensearch.core.search.Hit;
 public class SearchServiceImpl implements SearchService {
 
     private final OpenSearchClient openSearchClient;
-    private final String INDEX_NAME = "images-index";
+    private final String INDEX_NAME = "memes-index";
     
     @Override
     public SearchResponseDto searchByTag(String queryTerm, String mode) throws IOException {
