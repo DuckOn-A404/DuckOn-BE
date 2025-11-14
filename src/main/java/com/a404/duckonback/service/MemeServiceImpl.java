@@ -9,7 +9,6 @@ import com.a404.duckonback.entity.User;
 import com.a404.duckonback.dto.MemeCreateResponseDTO.MemeInfoDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.*;
-import com.a404.duckonback.service.S3ValidationService;
 import com.a404.duckonback.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +38,6 @@ public class MemeServiceImpl implements MemeService {
     private final MemeFavoriteRepository memeFavoriteRepository;
     private final MemeHourlyTop10Repository memeHourlyTop10Repository;
     private final SearchService searchService;
-    private final S3ValidationService s3ValidationService;
 
 
     @Override
@@ -105,8 +103,9 @@ public class MemeServiceImpl implements MemeService {
     @Override
     public MemeCreateResponseDTO createMemes(Long userId, MemeCreateRequestDTO req) {
         User creator = userRepository.getReferenceById(userId);
-
         List<MemeCreateResponseDTO.MemeInfoDTO> resultList = new ArrayList<>();
+
+        OpenSearchDebugInfo debugInfo = checkOpenSearchConnection();    // 테스트 후 삭제
 
         handleOne(creator, req.getImage1(), req.getTags1()).ifPresent(resultList::add);
         handleOne(creator, req.getImage2(), req.getTags2()).ifPresent(resultList::add);
@@ -118,6 +117,7 @@ public class MemeServiceImpl implements MemeService {
 
         return MemeCreateResponseDTO.builder()
                 .memes(resultList)
+                .debugInfo(debugInfo)    // 테스트 후 삭제
                 .build();
     }
 
@@ -125,6 +125,7 @@ public class MemeServiceImpl implements MemeService {
             User creator,
             MultipartFile file,
             Set<String> rawTags
+            OpenSearchDebugInfo debugInfo    // 테스트 후 삭제
     ) {
         if (file == null || file.isEmpty()) {
             return Optional.empty();
@@ -164,52 +165,56 @@ public class MemeServiceImpl implements MemeService {
 
         log.info("✅ Meme created: id={}, url={}", meme.getId(), meme.getImageUrl());
 
+        Boolean indexed = false;
+        String indexingError = null;
+        
+        if (debugInfo.getOpensearchConnected()) {
+                try{
+                        ImageDocument imageDocument = ImageDocument.builder()
+                                .s3_url(upload.getCdnUrl())
+                                .object_key(upload.getKey())
+                                .tags(new ArrayList<>(normalizedTags))
+                                .created_at(LocalDateTime.now())
+                                .build();
+                        searchService.indexImage(imageDocument);
+                        indexed = true;
+                } catch (Exception e) {
+                        indexingError = e.getMessage();
+                } else{
+                        indexingError = "OpenSearch 연결 실패";
+                }
+
         // 4) 응답용 DTO 생성 (프론트와 1:1 매칭)
         MemeCreateResponseDTO.MemeInfoDTO dto = MemeCreateResponseDTO.MemeInfoDTO.builder()
-        .memeId(meme.getId())
-        .imageUrl(meme.getImageUrl())
-        .tags(new ArrayList<>(normalizedTags))
-        .build();
-
-        try {
-        // 1) S3에 실제로 존재하는지 확인
-        log.info("🔍 S3 존재 여부 확인 시작: key={}", upload.getKey());
-        boolean existsInS3 = s3ValidationService.existsInS3(upload.getKey());
-        log.info("🔍 S3 존재 여부 확인 결과: key={}, exists={}", upload.getKey(), existsInS3);
-
-        if (existsInS3) {
-                // 2) ImageDocument 생성
-                ImageDocument imageDocument = ImageDocument.builder()
-                        .s3_url(upload.getCdnUrl())
-                        .object_key(upload.getKey())
-                        .tags(new ArrayList<>(normalizedTags))
-                        .created_at(LocalDateTime.now())
-                        .build();
-
-                log.info("📦 ImageDocument 생성 완료: s3_url={}, object_key={}, tags={}",
-                        imageDocument.getS3_url(),
-                        imageDocument.getObject_key(),
-                        imageDocument.getTags());
-
-                // 3) OpenSearch에 저장
-                searchService.indexImage(imageDocument);
-
-                log.info("✅ Indexed to OpenSearch: objectKey={}, tags={}", upload.getKey(), normalizedTags);
-
-        } else {
-                log.warn("⚠️ S3 object not found, skipping OpenSearch indexing: {}", upload.getKey());
-        }
-
-        } catch (Exception e) {
-        // OpenSearch 저장 실패 시 로그만 남기고 계속 진행
-        log.error("❌ OpenSearch indexing failed: objectKey={}, tags={}, error={}",
-                upload.getKey(), normalizedTags, e.getMessage(), e);
-        // TODO: 나중에 재시도 큐 구현 시 여기에 추가
-        }
-
-        return Optional.of(dto);
+                .memeId(meme.getId())
+                .imageUrl(meme.getImageUrl())
+                .tags(new ArrayList<>(normalizedTags))
+                .OpenSearchIndexed(indexed)
+                .OpenSearchError(indexingError)
+                .build();
+        
+        return Optional.of(dto);        
     }
 
+    private OpenSearchDebugInfo checkOpenSearchConnection() {
+        try {
+                var infoResponse = openSearchClient.info();
+                var countResponse = openSearchClient.count(c -> c.index("memes-index"));
+                return OpenSearchDebugInfo.builder()
+                        .opensearchConnected(true)
+                        .indexName("memes-index")
+                        .totalDocuments(countResponse.count())
+                        .connectionError(null)
+                        .build();
+        } catch (Exception e) {
+                return OpenSearchDebugInfo.builder()
+                        .opensearchConnected(false)
+                        .indexName("memes-index")
+                        .totalDocuments(0L)
+                        .connectionError(e.getMessage())
+                        .build();
+        }
+    }
 
     public void createFavorite(Long userId, Long memeId){
         if (memeFavoriteRepository.existsByUser_IdAndMeme_Id(userId, memeId)) {

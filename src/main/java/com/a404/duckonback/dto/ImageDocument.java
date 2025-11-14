@@ -3,6 +3,7 @@ package com.a404.duckonback.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,5 +20,7 @@ public class ImageDocument {
     private String s3_url;
     private String object_key;
     private List<String> tags;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime created_at;
 }
