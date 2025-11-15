@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface MemeFavoriteRepository  extends JpaRepository<MemeFavorite, Long> {
     boolean existsByUser_IdAndMeme_Id(Long userId, Long memeId);
     void deleteByUser_IdAndMeme_Id(Long userId, Long memeId);
+    void deleteByMeme_Id(Long memeId);
 
     @EntityGraph(attributePaths = {
             "meme",

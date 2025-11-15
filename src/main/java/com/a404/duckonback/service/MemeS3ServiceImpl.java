@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
@@ -86,6 +87,28 @@ public class MemeS3ServiceImpl implements MemeS3Service{
         int dot = originalFilename.lastIndexOf('.');
         if (dot == -1 || dot == originalFilename.length() - 1) return "bin";
         return originalFilename.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    @Override
+    public void deleteMeme(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            throw new IllegalArgumentException("삭제할 S3 key가 없습니다.");
+        }
+
+        try {
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+
+            s3Client.deleteObject(deleteRequest);
+            log.info("✅ S3 파일 삭제 완료: bucket={}, key={}", bucketName, s3Key);
+
+        } catch (S3Exception e) {
+            log.error("❌ S3 파일 삭제 실패: bucket={}, key={}, error={}",
+                    bucketName, s3Key, e.awsErrorDetails().errorMessage());
+            throw new RuntimeException("S3 파일 삭제 실패", e);
+        }
     }
 
 }

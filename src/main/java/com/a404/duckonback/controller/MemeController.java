@@ -65,6 +65,22 @@ public class MemeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_UPLOAD_SUCCESS, res));
     }
 
+    @Operation(
+        summary = "내가 생성한 밈 삭제 (JWT 필요O)",
+        description = "본인이 생성한 밈만 삭제할 수 있습니다."
+    )
+    @DeleteMapping("/{memeId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteMeme(
+        @AuthenticationPrincipal CustomUserPrincipal principal,
+        @PathVariable Long memeId
+    ) {
+        if(principal == null) {
+                throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+        }
+        memeService.deleteMeme(principal.getId(), memeId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_DELETE_SUCCESS, null));
+    }
+
 
     @Operation(
             summary = "밈 S3에 업로드(테스트용) (JWT 필요O)",

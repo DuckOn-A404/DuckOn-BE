@@ -21,6 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -443,5 +446,56 @@ public class MemeServiceImpl implements MemeService {
                 .total((int) resultPage.getTotalElements())
                 .items(items)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteMeme(Long userId, Long memeId) {
+        // 1) 밈 존재 여부 확인
+        Meme meme = memeRepository.findById(memeId)
+                .orElseThrow(() -> new CustomException("존재하지 않는 밈입니다.", HttpStatus.NOT_FOUND));
+
+        // 2) 권한 확인 (본인이 생성한 밈인지)
+        if (!meme.getCreator().getId().equals(userId)) {
+            throw new CustomException("본인이 생성한 밈만 삭제할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        // 3) S3 key 추출 (imageUrl은 CDN URL이므로 파싱 필요)
+        String imageUrl = meme.getImageUrl();
+        String s3Key = extractS3KeyFromCdnUrl(imageUrl);
+
+        // 4) 연관 데이터 삭제
+        // MemeTag는 cascade = ALL, orphanRemoval = true 이므로 자동 삭제됨
+        // MemeFavorite는 수동 삭제 필요
+        memeFavoriteRepository.deleteByMeme_Id(memeId);
+
+        // 5) DB에서 밈 삭제 (MemeTag는 자동 삭제)
+        memeRepository.delete(meme);
+
+        // 6) S3에서 파일 삭제
+        try {
+            memeS3Service.deleteMeme(s3Key);
+            log.info("✅ S3 파일 삭제 완료: key={}", s3Key);
+        } catch (Exception e) {
+            log.error("❌ S3 파일 삭제 실패: key={}, error={}", s3Key, e.getMessage());
+            // S3 삭제 실패 시에도 DB는 이미 삭제되었으므로 로그만 남김
+        }
+
+        log.info("✅ 밈 삭제 완료: memeId={}, userId={}", memeId, userId);
+    }
+
+    // CDN URL에서 S3 key 추출하는 헬퍼 메서드
+    private String extractS3KeyFromCdnUrl(String cdnUrl) {
+        // CDN URL 예시: https://cdn.example.com/memes%2F2025%2F11%2Fuuid.gif
+        // S3 key: memes/2025/11/uuid.gif
+        try {
+            URI uri = new URI(cdnUrl);
+            String path = uri.getPath();
+            String decoded = URLDecoder.decode(path, StandardCharsets.UTF_8);
+            return decoded.startsWith("/") ? decoded.substring(1) : decoded;
+        } catch (Exception e) {
+            log.error("CDN URL 파싱 실패: {}", cdnUrl, e);
+            throw new RuntimeException("잘못된 이미지 URL입니다.", e);
+        }
     }
 }
