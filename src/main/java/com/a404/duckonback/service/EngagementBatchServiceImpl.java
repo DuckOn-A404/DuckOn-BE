@@ -209,7 +209,7 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
               END
         """);
 
-        log.info("[Batch] User engagement stats snapshot rebuilt successfully.");
+        log.info("[Batch] User engagement stats snapshot rebuilt successfully");
     }
 }
 
