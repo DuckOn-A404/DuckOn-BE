@@ -2,8 +2,6 @@ package com.a404.duckonback.dto;
 
 import lombok.*;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,5 +10,4 @@ import java.util.List;
 public class MemeItemDTO {
     Long memeId;
     String memeUrl;
-    List<String> tags;
 }

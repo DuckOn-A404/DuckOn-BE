@@ -51,6 +51,17 @@ public class UserController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_USER_ROOM_CREATE_HISTORY_SUCCESS, response));
     }
 
+    @Operation(summary = "밈 생성 히스토리 조회 (JWT 필요X)", description = "특정 사용자의 밈 생성 기록을 페이징 처리로 조회합니다.")
+    @GetMapping("/{userId}/memes")
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> getUserMemeCreateHistory(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        MemeResponseDTO response = userService.getUserMemeCreateHistory(userId, page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_USER_MEME_CREATE_HISTORY_SUCCESS, response));
+    }
+
     @Operation(summary = "사용자 추천 (JWT 필요X)", description = "로그인/비로그인 모두 사용 가능. 현재 사용자에게 어울리는 다른 사용자를 추천합니다.")
     @GetMapping("/recommendations")
     public ResponseEntity<?> recommendUsers(
