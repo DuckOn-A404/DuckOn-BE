@@ -125,6 +125,9 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
               PERCENT_RANK() OVER (ORDER BY s.artist_chat_count DESC) AS pc,
               PERCENT_RANK() OVER (ORDER BY s.meme_create_count  DESC) AS pm
             FROM user_engagement_stats s
+            JOIN `user` u ON u.id = s.user_id
+            WHERE u.deleted = FALSE
+              AND u.role NOT IN ('ADMIN', 'ROLE_ADMIN')
         """);
 
         // 6-1) min/max 임시 테이블
@@ -138,7 +141,10 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
               MIN(artist_chat_count)  AS min_chat,
               MAX(meme_create_count)  AS max_meme,
               MIN(meme_create_count)  AS min_meme
-            FROM user_engagement_stats
+            FROM user_engagement_stats s
+            JOIN `user` u ON u.id = s.user_id
+            WHERE u.deleted = FALSE
+              AND u.role NOT IN ('ADMIN', 'ROLE_ADMIN')
         """);
 
         // 7) 최종 p/grade 갱신
@@ -197,18 +203,34 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
                 WHEN (CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END) >= 70 THEN 'PURPLE'
                 WHEN (CASE WHEN t.max_meme = t.min_meme THEN 0 ELSE (1 - p.pm) * 100 END) >= 60 THEN 'YELLOW'
                 ELSE 'GREEN'
-              END,
-
-              -- 통합 등급 (p_composite 기준)
-              s.grade_composite = CASE
-                WHEN s.p_composite >= 95 THEN 'VIP'
-                WHEN s.p_composite >= 75 THEN 'GOLD'
-                WHEN s.p_composite >= 55 THEN 'PURPLE'
-                WHEN s.p_composite >= 35 THEN 'YELLOW'
-                ELSE 'GREEN'
               END
+
         """);
 
+        // 8) p_composite 기반 퍼센타일 등급 산정 (ADMIN 제외)
+        jdbcTemplate.update("DROP TEMPORARY TABLE IF EXISTS tmp_composite_pct");
+        jdbcTemplate.update("""
+            CREATE TEMPORARY TABLE tmp_composite_pct AS
+            SELECT
+              s.user_id,
+              PERCENT_RANK() OVER (ORDER BY s.p_composite DESC) AS pr_comp
+            FROM user_engagement_stats s
+            JOIN `user` u ON u.id = s.user_id
+            WHERE u.deleted = FALSE
+              AND u.role NOT IN ('ADMIN', 'ROLE_ADMIN')
+        """);
+
+        jdbcTemplate.update("""
+            UPDATE user_engagement_stats s
+            JOIN tmp_composite_pct c ON c.user_id = s.user_id
+            SET s.grade_composite = CASE
+              WHEN c.pr_comp <= 0.10 THEN 'VIP'    -- 상위 10%
+              WHEN c.pr_comp <= 0.30 THEN 'GOLD'   -- 10% ~ 30%
+              WHEN c.pr_comp <= 0.55 THEN 'PURPLE' -- 30% ~ 55%
+              WHEN c.pr_comp <= 0.80 THEN 'YELLOW' -- 55% ~ 80%
+              ELSE 'GREEN'                         -- 나머지
+            END
+        """);
         log.info("[Batch] User engagement stats snapshot rebuilt successfully");
     }
 }
