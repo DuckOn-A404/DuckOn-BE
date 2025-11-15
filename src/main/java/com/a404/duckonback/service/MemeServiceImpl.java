@@ -6,7 +6,6 @@ import com.a404.duckonback.entity.Meme;
 import com.a404.duckonback.entity.MemeTag;
 import com.a404.duckonback.entity.Tag;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.dto.MemeCreateResponseDTO.MemeInfoDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.*;
 import com.a404.duckonback.service.S3ValidationService;
@@ -80,19 +79,9 @@ public class MemeServiceImpl implements MemeService {
         // 엔티티 -> DTO 변환
         List<MemeItemDTO> items = memes.stream()
                 .map(meme -> {
-                    // 태그 목록
-                    List<String> tags = java.util.Optional.ofNullable(meme.getMemeTags())
-                            .orElse(java.util.Collections.emptySet())
-                            .stream()
-                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
-                            .filter(java.util.Objects::nonNull)
-                            .distinct()
-                            .toList();
-
                     return MemeItemDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
-                            .tags(tags)
                             .build();
                 })
                 .toList();
@@ -257,18 +246,9 @@ public class MemeServiceImpl implements MemeService {
         return favPage.getContent().stream()
                 .map(mf -> {
                     var meme = mf.getMeme();
-                    var tags = java.util.Optional.ofNullable(meme.getMemeTags())
-                            .orElse(java.util.Collections.emptySet())
-                            .stream()
-                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
-                            .filter(java.util.Objects::nonNull)
-                            .distinct()
-                            .toList();
-
                     return FavoriteMemeDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
-                            .tags(tags)
                             .favoritedAt(mf.getCreatedAt())
                             .build();
                 })
@@ -294,19 +274,9 @@ public class MemeServiceImpl implements MemeService {
         List<MemeItemDTO> items = topList.stream()
                 .map(row -> {
                     Meme meme = row.getMeme();
-
-                    List<String> tags = Optional.ofNullable(meme.getMemeTags())
-                            .orElseGet(Set::of)
-                            .stream()
-                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .toList();
-
                     return MemeItemDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
-                            .tags(tags)
                             .build();
                 })
                 .toList();
@@ -338,18 +308,9 @@ public class MemeServiceImpl implements MemeService {
 
         List<MemeItemDTO> items = memes.stream()
                 .map(meme -> {
-                    List<String> tags = Optional.ofNullable(meme.getMemeTags())
-                            .orElseGet(Collections::emptySet)
-                            .stream()
-                            .map(mt -> mt.getTag() != null ? mt.getTag().getTagName() : null)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .toList();
-
                     return MemeItemDTO.builder()
                             .memeId(meme.getId())
                             .memeUrl(meme.getImageUrl())
-                            .tags(tags)
                             .build();
                 })
                 .toList();
@@ -396,14 +357,6 @@ public class MemeServiceImpl implements MemeService {
                 .build();
     }
 
-    @Override
-    public List<MyMemeDTO> getMyMemes(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size);
-        return memeRepository
-                .findMyMemesByCreatorIdOrderByCreatedAtDesc(userId, pageable)
-                .getContent();
-    }
-
     public MemeResponseDTO searchByTagBasic(String tag, int page, int size) {
         if (tag == null || tag.isBlank()) {
             return MemeResponseDTO.builder()
@@ -422,21 +375,10 @@ public class MemeServiceImpl implements MemeService {
         List<Meme> memes = resultPage.getContent();
         List<Long> memeIds = memes.stream().map(Meme::getId).toList();
 
-        // 밈별 태그 일괄 조회 (N+1 방지)
-        Map<Long, List<String>> tagsByMemeId = new HashMap<>();
-        if (!memeIds.isEmpty()) {
-            for (Object[] row : memeTagRepository.findTagPairsByMemeIds(memeIds)) {
-                Long memeId = (Long) row[0];
-                String tagName = (String) row[1];
-                tagsByMemeId.computeIfAbsent(memeId, k -> new ArrayList<>()).add(tagName);
-            }
-        }
-
         List<MemeItemDTO> items = memes.stream()
                 .map(m -> MemeItemDTO.builder()
                         .memeId(m.getId())
                         .memeUrl(m.getImageUrl())
-                        .tags(tagsByMemeId.getOrDefault(m.getId(), List.of()))
                         .build())
                 .collect(Collectors.toList());
 
