@@ -35,6 +35,7 @@ public class UserEngagementStatsJdbcRepository {
               s.grade_composite   AS grade_composite
             FROM user_engagement_stats s
             JOIN `user` u ON u.id = s.user_id AND u.deleted = FALSE
+            WHERE u.role != 'ADMIN'       
             ORDER BY s.p_composite DESC, s.user_id ASC
             LIMIT ? OFFSET ?
         """, (rs, i) -> mapLeaderboard(rs), limit, offset);

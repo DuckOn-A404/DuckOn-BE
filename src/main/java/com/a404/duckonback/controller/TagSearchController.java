@@ -12,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Tag(name = "태그 검색 로그 및 인기 태그", description = "태그 검색 로그 기록 및 실시간 인기 태그 조회 기능을 제공합니다.")
@@ -44,5 +47,20 @@ public class TagSearchController {
 
         List<TrendingTagDTO> trending = tagSearchService.getTrendingTags(duration, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.TAG_TRENDING_RETRIEVE_SUCCESS, trending));
+    }
+
+    // 실시간 인기 태그 조회
+    @Operation(summary = "기본 인기 태그 조회(10개) (JWT 필요X)", description = "지정된 기간 동안 가장 많이 검색된 인기 태그를 조회합니다. 기간은 10분, 1시간, 1일 중 선택할 수 있습니다.")
+    @GetMapping("/basic")
+    public ResponseEntity<ApiResponseDTO<List<String>>> getTagsBasic(
+    ) {
+        String[] tags = new String[] {"Aespa", "blackping", "jennie", "karina", "kiss of life", "winter", "블랙핑크", "장원영","안유진","카리나", "rose","아이즈원"};
+        List<String> list = new ArrayList<>(Arrays.asList(tags));
+        Collections.shuffle(list);              // 리스트 전체 섞기
+
+        List<String> result = list.subList(0, 10);
+
+
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.TAG_TRENDING_RETRIEVE_SUCCESS, result));
     }
 }
