@@ -12,7 +12,6 @@ public interface MemeService {
     List<FavoriteMemeDTO> getMyFavoriteMemes(Long userId, int page, int size);
     MemeResponseDTO getHourlyTop10Memes();
     MemeResponseDTO getTop10MemesByTotalUsage();
-    List<MyMemeDTO> getMyMemes(Long userId, int page, int size);
 
     MemeDetailDTO getMemeDetail(Long memeId);
     MemeResponseDTO searchByTagBasic(String tag, int page, int size);
