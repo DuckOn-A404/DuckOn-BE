@@ -202,9 +202,9 @@ public class EngagementBatchServiceImpl implements EngagementBatchService {
               -- 통합 등급 (p_composite 기준)
               s.grade_composite = CASE
                 WHEN s.p_composite >= 95 THEN 'VIP'
-                WHEN s.p_composite >= 80 THEN 'GOLD'
-                WHEN s.p_composite >= 70 THEN 'PURPLE'
-                WHEN s.p_composite >= 60 THEN 'YELLOW'
+                WHEN s.p_composite >= 75 THEN 'GOLD'
+                WHEN s.p_composite >= 55 THEN 'PURPLE'
+                WHEN s.p_composite >= 35 THEN 'YELLOW'
                 ELSE 'GREEN'
               END
         """);
