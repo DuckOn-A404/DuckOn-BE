@@ -101,7 +101,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public UserDetailInfoResponseDTO getUserDetailInfo(String userId) {
         User user = userRepository.findUserDetailWithArtistFollows(userId)
                 .orElseThrow(() -> new CustomException("사용자 없음", HttpStatus.NOT_FOUND));
