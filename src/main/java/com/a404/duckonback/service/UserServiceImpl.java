@@ -2,10 +2,12 @@ package com.a404.duckonback.service;
 
 import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.Follow;
+import com.a404.duckonback.entity.Meme;
 import com.a404.duckonback.entity.Penalty;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.SocialProvider;
 import com.a404.duckonback.exception.CustomException;
+import com.a404.duckonback.repository.MemeRepository;
 import com.a404.duckonback.repository.RoomRepository;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.repository.projection.UserBrief;
@@ -49,6 +51,7 @@ public class UserServiceImpl implements UserService {
     private final JWTUtil jWTUtil;
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserRankService userRankService;
+    private final MemeRepository memoRepository;
 
     // --- 가벼운 규칙 상수 ---
     private static final int SIZE_DEFAULT = 10;
@@ -65,6 +68,7 @@ public class UserServiceImpl implements UserService {
     // >>> CHANGED: room 키 프리픽스(현재 Redis 스키마에 맞춤)
     private static final String ROOM_KEY_PREFIX = "room:";
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final MemeRepository memeRepository;
 
     @Override
     public User findByEmail(String email) {
@@ -616,6 +620,49 @@ public class UserServiceImpl implements UserService {
         }
 
         return RecommendUsersResponseDTO.builder().users(list).build();
+    }
+
+    @Override
+    public MemeResponseDTO getUserMemeCreateHistory(String userId, int size, int page) {
+        // 1. 유저
+        User user = userRepository.findByUserIdAndDeletedFalse(userId);
+        if(user == null){
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 2. 페이징
+        int safePage = Math.max(1, page);
+        int safeSize = Math.max(1, size);
+        Pageable pageable = PageRequest.of(safePage - 1, safeSize);
+
+        // 3. 총 개수
+        long total = memeRepository.countByCreatorId(user.getId());
+        if(total == 0){
+            return MemeResponseDTO.builder()
+                    .page(safePage)
+                    .size(safeSize)
+                    .total(0)
+                    .items(List.of())
+                    .build();
+        }
+
+        // 4. 페이지 조회
+        Page<Meme> pageResult = memeRepository.findMemesByCreatorIdOrderByCreatedAtDesc(user.getId(), pageable);
+
+        // 5. DTO 매핑
+        List<MemeItemDTO> items = pageResult.getContent().stream()
+                .map(m -> MemeItemDTO.builder()
+                        .memeId(m.getId())
+                        .memeUrl(m.getImageUrl())
+                        .build())
+                .toList();
+
+        return MemeResponseDTO.builder()
+                .page(safePage)
+                .size(safeSize)
+                .total(Math.toIntExact(total))
+                .items(items)
+                .build();
     }
 
     // >>> CHANGED: 점수 누적 유틸(동일)

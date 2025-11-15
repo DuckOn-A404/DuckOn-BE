@@ -37,5 +37,7 @@ public interface UserService {
 
     RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
 
+    MemeResponseDTO getUserMemeCreateHistory(String userId, int size, int page);
+
 
 }
