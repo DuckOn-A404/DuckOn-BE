@@ -36,8 +36,7 @@ public final class SecurityEndpoints {
             "/api/rooms/home",
 
             // users
-            "/api/users/recommendations",
-            "/api/users/leaderboard",
+            "/api/users/**",
 
             // youtube
             "/api/public/youtube/meta/*",
