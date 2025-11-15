@@ -67,23 +67,6 @@ public class MemeController {
     }
 
     @Operation(
-        summary = "내가 생성한 밈 삭제 (JWT 필요O)",
-        description = "본인이 생성한 밈만 삭제할 수 있습니다."
-    )
-    @DeleteMapping("/{memeId}")
-    public ResponseEntity<ApiResponseDTO<Void>> deleteMeme(
-        @AuthenticationPrincipal CustomUserPrincipal principal,
-        @PathVariable Long memeId
-    ) {
-        if(principal == null) {
-                throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
-        }
-        memeService.deleteMeme(principal.getId(), memeId);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_DELETE_SUCCESS, null));
-    }
-
-
-    @Operation(
             summary = "밈 S3에 업로드(테스트용) (JWT 필요O)",
             description = "파일을 S3에 업로드합니다."
     )
@@ -228,30 +211,5 @@ public class MemeController {
         MemeResponseDTO searchedMemes = memeService.searchByTagBasic(tag, page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, searchedMemes));
     }
-
-    @Operation(
-            summary = "내가 생성한 밈 수정 (JWT 필요O)",
-            description = "본인이 생성한 밈만 수정할 수 있습니다. 현재는 태그 수정만 지원하며, 태그는 최소 1개, 최대 25개까지 가능합니다."
-    )
-    @PatchMapping("/{memeId}")
-    public ResponseEntity<ApiResponseDTO<MemeDetailDTO>> updateMeme(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long memeId,
-            @Valid @RequestBody MemeUpdateRequestDTO request
-    ) {
-        if (principal == null) {
-            throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
-        }
-
-        MemeDetailDTO result = memeService.updateMeme(
-                principal.getId(),
-                memeId,
-                request
-        );
-
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_UPDATE_SUCCESS, result));
-    }
-
-
 
 }
