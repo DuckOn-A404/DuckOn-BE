@@ -1,15 +1,17 @@
 package com.a404.duckonback.controller;
 
-import com.a404.duckonback.dto.FollowedArtistDTO;
-import com.a404.duckonback.dto.PasswordChangeRequestDTO;
-import com.a404.duckonback.dto.UpdateProfileRequestDTO;
+import com.a404.duckonback.dto.*;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
+import com.a404.duckonback.response.ErrorCode;
 import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.ArtistFollowService;
+import com.a404.duckonback.service.MemeService;
 import com.a404.duckonback.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +31,7 @@ public class MeController {
 
     private final UserService userService;
     private final ArtistFollowService artistFollowService;
+    private final MemeService memeService;
 
     @Operation(summary = "내 정보 조회 (JWT 필요O)", description = "로그인한 사용자의 상세 정보를 조회합니다.")
     @GetMapping
@@ -133,4 +136,44 @@ public class MeController {
                 "totalElements", dtoPage.getTotalElements()
         ));
     }
+
+    @Operation(
+            summary = "내가 생성한 밈 수정 (JWT 필요O)",
+            description = "본인이 생성한 밈만 수정할 수 있습니다. 현재는 태그 수정만 지원하며, 태그는 최소 1개, 최대 25개까지 가능합니다."
+    )
+    @PatchMapping("/{memeId}")
+    public ResponseEntity<ApiResponseDTO<MemeDetailDTO>> updateMeme(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long memeId,
+            @Valid @RequestBody MemeUpdateRequestDTO request
+    ) {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+        }
+
+        MemeDetailDTO result = memeService.updateMeme(
+                principal.getId(),
+                memeId,
+                request
+        );
+
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_UPDATE_SUCCESS, result));
+    }
+
+    @Operation(
+            summary = "내가 생성한 밈 삭제 (JWT 필요O)",
+            description = "본인이 생성한 밈만 삭제할 수 있습니다."
+    )
+    @DeleteMapping("/{memeId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteMeme(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long memeId
+    ) {
+        if(principal == null) {
+            throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+        }
+        memeService.deleteMeme(principal.getId(), memeId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_DELETE_SUCCESS, null));
+    }
+
 }
