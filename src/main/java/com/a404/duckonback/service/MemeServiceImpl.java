@@ -484,6 +484,113 @@ public class MemeServiceImpl implements MemeService {
         log.info("✅ 밈 삭제 완료: memeId={}, userId={}", memeId, userId);
     }
 
+    @Override
+    @Transactional
+    public MemeDetailDTO updateMeme(Long userId, Long memeId, MemeUpdateRequestDTO request) {
+        // 1) 밈 존재 여부 확인 및 태그와 함께 조회
+        Meme meme = memeRepository.findByIdWithCreatorAndTags(memeId)
+                .orElseThrow(() -> new CustomException("존재하지 않는 밈입니다.", HttpStatus.NOT_FOUND));
+
+        // 2) 권한 확인 (본인이 생성한 밈인지)
+        if (!meme.getCreator().getId().equals(userId)) {
+            throw new CustomException("본인이 생성한 밈만 수정할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        // 3) 태그 업데이트 처리 (현재 지원하는 기능)
+        if (request.getTags() != null) {
+            updateMemeTags(meme, request.getTags());
+        }
+
+        // TODO: 향후 다른 속성 업데이트 추가
+
+        // 4) 응답 DTO 생성 (기존 getMemeDetail 로직 재사용)
+        return getMemeDetail(memeId);
+    }
+
+    /**
+     * 밈의 태그를 업데이트하는 내부 메서드
+     * @param meme 업데이트할 밈 엔티티
+     * @param tags 새로운 태그 리스트
+     */
+    private void updateMemeTags(Meme meme, List<String> tags) {
+        // 1) 태그 정규화 (기존 로직 재사용)
+        LinkedHashSet<String> normalizedTags = tags.stream()
+                .map(t -> t == null ? "" : t.trim())
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        // 2) 최소 1개 검증
+        if (normalizedTags.isEmpty()) {
+            throw new CustomException("태그는 최소 1개 이상 필요합니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 3) 최대 25개 검증
+        if (normalizedTags.size() > 25) {
+            throw new CustomException("태그는 최대 25개까지 가능합니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        // 4) 기존 태그명 조회
+        Set<String> oldTagNames = meme.getMemeTags().stream()
+                .map(mt -> mt.getTag().getTagName())
+                .collect(Collectors.toSet());
+
+        // 5) 추가할 태그 계산 (newTags - oldTags)
+        Set<String> tagsToAdd = normalizedTags.stream()
+                .filter(t -> !oldTagNames.contains(t))
+                .collect(Collectors.toSet());
+
+        // 6) 삭제할 태그 계산 (oldTags - newTags)
+        Set<String> tagsToRemove = oldTagNames.stream()
+                .filter(t -> !normalizedTags.contains(t))
+                .collect(Collectors.toSet());
+
+        // 7) 태그 삭제 처리
+        if (!tagsToRemove.isEmpty()) {
+            meme.getMemeTags().removeIf(mt ->
+                    tagsToRemove.contains(mt.getTag().getTagName()));
+            // 참고: Tag 테이블에서는 삭제하지 않음 (요구사항 6)
+            log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
+        }
+
+        // 8) 태그 추가 처리 (기존 로직 재사용)
+        for (String tagName : tagsToAdd) {
+            // 기존 태그 조회 또는 새로 생성 (요구사항 5)
+            Tag tag = tagRepository.findByTagName(tagName)
+                    .orElseGet(() -> {
+                        Tag newTag = Tag.builder()
+                                .tagName(tagName)
+                                .build();
+                        return tagRepository.save(newTag);
+                    });
+
+            MemeTag mt = MemeTag.of(meme, tag);
+            meme.getMemeTags().add(mt);
+            memeTagRepository.save(mt);
+
+            log.info("➕ 밈에 태그 추가: memeId={}, tagName={}", meme.getId(), tagName);
+        }
+
+        // TODO: OpenSearch 업데이트 추가 예정
+        // try {
+        //     String s3Key = extractS3KeyFromCdnUrl(meme.getImageUrl());
+        //     ImageDocument imageDocument = ImageDocument.builder()
+        //             .s3_url(meme.getImageUrl())
+        //             .object_key(s3Key)
+        //             .tags(new ArrayList<>(normalizedTags))
+        //             .created_at(meme.getCreatedAt())
+        //             .build();
+        //     searchService.indexImage(imageDocument); // 기존 문서 업데이트
+        //     log.info("✅ OpenSearch 업데이트 완료: memeId={}", meme.getId());
+        // } catch (Exception e) {
+        //     log.error("❌ OpenSearch 업데이트 실패: memeId={}, error={}", meme.getId(), e.getMessage());
+        // }
+
+        log.info("✅ 밈 태그 수정 완료: memeId={}, oldTags={}, newTags={}",
+                meme.getId(), oldTagNames, normalizedTags);
+    }
+
+
+
     // CDN URL에서 S3 key 추출하는 헬퍼 메서드
     private String extractS3KeyFromCdnUrl(String cdnUrl) {
         // CDN URL 예시: https://cdn.example.com/memes%2F2025%2F11%2Fuuid.gif

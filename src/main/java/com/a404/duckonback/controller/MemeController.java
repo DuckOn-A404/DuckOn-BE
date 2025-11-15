@@ -12,6 +12,7 @@ import com.a404.duckonback.service.MemeService;
 import com.a404.duckonback.service.MemeUsageLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -227,6 +228,30 @@ public class MemeController {
         MemeResponseDTO searchedMemes = memeService.searchByTagBasic(tag, page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, searchedMemes));
     }
+
+    @Operation(
+            summary = "내가 생성한 밈 수정 (JWT 필요O)",
+            description = "본인이 생성한 밈만 수정할 수 있습니다. 현재는 태그 수정만 지원하며, 태그는 최소 1개, 최대 25개까지 가능합니다."
+    )
+    @PatchMapping("/{memeId}")
+    public ResponseEntity<ApiResponseDTO<MemeDetailDTO>> updateMeme(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long memeId,
+            @Valid @RequestBody MemeUpdateRequestDTO request
+    ) {
+        if (principal == null) {
+            throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
+        }
+
+        MemeDetailDTO result = memeService.updateMeme(
+                principal.getId(),
+                memeId,
+                request
+        );
+
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_UPDATE_SUCCESS, result));
+    }
+
 
 
 }
