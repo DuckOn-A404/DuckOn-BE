@@ -545,12 +545,25 @@ public class MemeServiceImpl implements MemeService {
                 .collect(Collectors.toSet());
 
         // 7) 태그 삭제 처리
+        // if (!tagsToRemove.isEmpty()) {
+        //     meme.getMemeTags().removeIf(mt ->
+        //             tagsToRemove.contains(mt.getTag().getTagName()));
+        //     // 참고: Tag 테이블에서는 삭제하지 않음 (요구사항 6)
+        //     log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
+        // }
         if (!tagsToRemove.isEmpty()) {
-            meme.getMemeTags().removeIf(mt ->
-                    tagsToRemove.contains(mt.getTag().getTagName()));
-            // 참고: Tag 테이블에서는 삭제하지 않음 (요구사항 6)
-            log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
-        }
+                List<MemeTag> toDelete = meme.getMemeTags().stream()
+                        .filter(mt -> tagsToRemove.contains(mt.getTag().getTagName()))
+                        .toList();
+                
+                if (!toDelete.isEmpty()) {
+                    memeTagRepository.deleteAll(toDelete);
+                    memeTagRepository.flush();  // 즉시 DB 반영
+                    meme.getMemeTags().removeAll(toDelete);  // 컬렉션에서도 제거
+                }
+                
+                // log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
+            }
 
         // 8) 태그 추가 처리 (기존 로직 재사용)
         for (String tagName : tagsToAdd) {
