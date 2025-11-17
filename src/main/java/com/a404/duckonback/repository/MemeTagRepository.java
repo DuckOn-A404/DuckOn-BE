@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface MemeTagRepository extends JpaRepository<MemeTag, MemeTagId> {
+
+    List<MemeTag> findByMeme_Id(Long memeId);
+
     @Query("""
         SELECT mt.meme.id, t.tagName
         FROM MemeTag mt

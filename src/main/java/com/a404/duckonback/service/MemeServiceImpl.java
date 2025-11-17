@@ -455,115 +455,98 @@ public class MemeServiceImpl implements MemeService {
      * @param tags 새로운 태그 리스트
      */
     private void updateMemeTags(Meme meme, List<String> tags) {
-        // 1) 태그 정규화 (기존 로직 재사용)
+        log.info("🔄 태그 업데이트 시작: memeId={}, newTags={}", meme.getId(), tags);
+        
+        // 1) 태그 정규화
         LinkedHashSet<String> normalizedTags = tags.stream()
                 .map(t -> t == null ? "" : t.trim())
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        // 2) 최소 1개 검증
+    
+        // 2) 검증
         if (normalizedTags.isEmpty()) {
             throw new CustomException("태그는 최소 1개 이상 필요합니다.", HttpStatus.BAD_REQUEST);
         }
-
-        // 3) 최대 25개 검증
         if (normalizedTags.size() > 25) {
             throw new CustomException("태그는 최대 25개까지 가능합니다.", HttpStatus.BAD_REQUEST);
         }
-
-        // 4) 기존 태그명 조회
-        Set<String> oldTagNames = meme.getMemeTags().stream()
+    
+        // 3) DB에서 직접 현재 MemeTag들 조회 (캐시 문제 방지)
+        List<MemeTag> currentMemeTags = memeTagRepository.findByMeme_Id(meme.getId());
+        Set<String> oldTagNames = currentMemeTags.stream()
                 .map(mt -> mt.getTag().getTagName())
                 .collect(Collectors.toSet());
-
-        // 5) 추가할 태그 계산 (newTags - oldTags)
+    
+        log.info("📊 현재 DB의 태그들: {}", oldTagNames);
+    
+        // 4) 차이 계산
         Set<String> tagsToAdd = normalizedTags.stream()
                 .filter(t -> !oldTagNames.contains(t))
                 .collect(Collectors.toSet());
-
-        // 6) 삭제할 태그 계산 (oldTags - newTags)
+    
         Set<String> tagsToRemove = oldTagNames.stream()
                 .filter(t -> !normalizedTags.contains(t))
                 .collect(Collectors.toSet());
-
-        // 7) 태그 삭제 처리
+        
+        // 5) 삭제 처리 - ID 기반으로 안전하게
         if (!tagsToRemove.isEmpty()) {
-            List<MemeTag> toDelete = meme.getMemeTags().stream()
+            List<MemeTag> memeTagIdsToDelete = currentMemeTags.stream()
                     .filter(mt -> tagsToRemove.contains(mt.getTag().getTagName()))
                     .toList();
             
-            if (!toDelete.isEmpty()) {
-                // DB에서 먼저 삭제
-                memeTagRepository.deleteAll(toDelete);
-                memeTagRepository.flush();
-                
-                // 컬렉션에서 제거 (equals/hashCode 기반)
-                meme.getMemeTags().removeAll(toDelete);
-                
-                log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
+            if (!memeTagIdsToDelete.isEmpty()) {
+                memeTagRepository.deleteAll(memeTagIdsToDelete);
             }
         }
-
-        // 8) 태그 추가 처리
+    
+        // 6) 추가 처리F
         for (String tagName : tagsToAdd) {
-            // 기존 태그 조회 또는 새로 생성
-        //     Tag tag = tagRepository.findByTagName(tagName)
-        //             .orElseGet(() -> {
-        //                 Tag newTag = Tag.builder()
-        //                         .tagName(tagName)
-        //                         .build();
-        //                 return tagRepository.save(newTag);
-        //             });
-
-        //     MemeTag mt = MemeTag.of(meme, tag);
-        // 수정된 코드
-        Tag tag = tagRepository.findByTagName(tagName)
-                .orElseGet(() -> {
-                    Tag newTag = Tag.builder().tagName(tagName).build();
-                    Tag savedTag = tagRepository.save(newTag);
-                    tagRepository.flush(); // 강제로 DB에 반영하여 ID 확보
-                    return savedTag;
-                });
-
-        MemeTag mt = MemeTag.of(meme, tag);
-        memeTagRepository.save(mt);
-        meme.getMemeTags().add(mt);
-        log.info("➕ 밈에 태그 추가: memeId={}, tagName={}", meme.getId(), tagName);
+            try {
+                log.info("🏷️ 태그 추가 시작: tagName={}", tagName);
+                
+                // Tag 조회 또는 생성
+                Tag tag = tagRepository.findByTagName(tagName)
+                        .orElseGet(() -> {
+                            log.info("🆕 새 태그 생성: {}", tagName);
+                            Tag newTag = Tag.builder().tagName(tagName).build();
+                            Tag saved = tagRepository.save(newTag);
+                            tagRepository.flush(); // ID 확보
+                            log.info("✅ 새 태그 저장: id={}, name={}", saved.getId(), tagName);
+                            return saved;
+                        });
+    
+                // MemeTag 생성
+                MemeTagId memeTagId = new MemeTagId(meme.getId(), tag.getId());
+                MemeTag memeTag = new MemeTag();
+                memeTag.setId(memeTagId);
+                memeTag.setMeme(meme);
+                memeTag.setTag(tag);
+                
+                memeTagRepository.save(memeTag);
+                log.info("✅ MemeTag 생성 완료: memeId={}, tagId={}, tagName={}", 
+                         meme.getId(), tag.getId(), tagName);
+                         
+            } catch (Exception e) {
+                log.error("❌ 태그 추가 실패: tagName={}, error={}", tagName, e.getMessage(), e);
+                throw new CustomException("태그 추가 중 오류가 발생했습니다: " + tagName, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
-
-        // TODO: OpenSearch 업데이트 추가 예정
-        // try {
-        //     String s3Key = extractS3KeyFromCdnUrl(meme.getImageUrl());
-        //     ImageDocument imageDocument = ImageDocument.builder()
-        //             .s3_url(meme.getImageUrl())
-        //             .object_key(s3Key)
-        //             .tags(new ArrayList<>(normalizedTags))
-        //             .created_at(meme.getCreatedAt())
-        //             .build();
-        //     searchService.indexImage(imageDocument); // 기존 문서 업데이트
-        //     log.info("✅ OpenSearch 업데이트 완료: memeId={}", meme.getId());
-        // } catch (Exception e) {
-        //     log.error("❌ OpenSearch 업데이트 실패: memeId={}, error={}", meme.getId(), e.getMessage());
-        // }
-
-        log.info("✅ 밈 태그 수정 완료: memeId={}, oldTags={}, newTags={}",
-                meme.getId(), oldTagNames, normalizedTags);
+    
+        log.info("✅ 태그 업데이트 완료: memeId={}, finalTags={}", meme.getId(), normalizedTags);
     }
 
-
-
-    // CDN URL에서 S3 key 추출하는 헬퍼 메서드
-    private String extractS3KeyFromCdnUrl(String cdnUrl) {
-        // CDN URL 예시: https://cdn.example.com/memes%2F2025%2F11%2Fuuid.gif
-        // S3 key: memes/2025/11/uuid.gif
-        try {
-            URI uri = new URI(cdnUrl);
-            String path = uri.getPath();
-            String decoded = URLDecoder.decode(path, StandardCharsets.UTF_8);
-            return decoded.startsWith("/") ? decoded.substring(1) : decoded;
-        } catch (Exception e) {
-            log.error("CDN URL 파싱 실패: {}", cdnUrl, e);
-            throw new RuntimeException("잘못된 이미지 URL입니다.", e);
+        /**
+         * CDN URL에서 S3 key 추출하는 헬퍼 메서드
+         */
+        private String extractS3KeyFromCdnUrl(String cdnUrl) {
+                try {
+                URI uri = new URI(cdnUrl);
+                String path = uri.getPath();
+                String decoded = URLDecoder.decode(path, StandardCharsets.UTF_8);
+                return decoded.startsWith("/") ? decoded.substring(1) : decoded;
+                } catch (Exception e) {
+                log.error("CDN URL 파싱 실패: {}", cdnUrl, e);
+                throw new CustomException("잘못된 이미지 URL입니다.", HttpStatus.BAD_REQUEST);
         }
     }
 }
