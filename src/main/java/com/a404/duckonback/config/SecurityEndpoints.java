@@ -46,7 +46,10 @@ public final class SecurityEndpoints {
             "/api/memes/top/**",
             "/api/memes/search-basic",
             "/api/memes/random",
-            "/api/memes/search"
+            "/api/memes/search",
+
+            //youtube
+            "/api/public/youtube/search"
     };
 
     public static final String[] PUBLIC_POST = {
