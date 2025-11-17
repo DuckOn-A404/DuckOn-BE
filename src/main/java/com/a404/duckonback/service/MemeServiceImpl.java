@@ -565,23 +565,28 @@ public class MemeServiceImpl implements MemeService {
         // 8) 태그 추가 처리
         for (String tagName : tagsToAdd) {
             // 기존 태그 조회 또는 새로 생성
-            Tag tag = tagRepository.findByTagName(tagName)
-                    .orElseGet(() -> {
-                        Tag newTag = Tag.builder()
-                                .tagName(tagName)
-                                .build();
-                        return tagRepository.save(newTag);
-                    });
+        //     Tag tag = tagRepository.findByTagName(tagName)
+        //             .orElseGet(() -> {
+        //                 Tag newTag = Tag.builder()
+        //                         .tagName(tagName)
+        //                         .build();
+        //                 return tagRepository.save(newTag);
+        //             });
 
-            MemeTag mt = MemeTag.of(meme, tag);
-            
-            // 먼저 DB에 저장 (ID 생성)
-            memeTagRepository.save(mt);
-            
-            // 그 다음 컬렉션에 추가
-            meme.getMemeTags().add(mt);
+        //     MemeTag mt = MemeTag.of(meme, tag);
+        // 수정된 코드
+        Tag tag = tagRepository.findByTagName(tagName)
+                .orElseGet(() -> {
+                    Tag newTag = Tag.builder().tagName(tagName).build();
+                    Tag savedTag = tagRepository.save(newTag);
+                    tagRepository.flush(); // 강제로 DB에 반영하여 ID 확보
+                    return savedTag;
+                });
 
-            log.info("➕ 밈에 태그 추가: memeId={}, tagName={}", meme.getId(), tagName);
+        MemeTag mt = MemeTag.of(meme, tag);
+        memeTagRepository.save(mt);
+        meme.getMemeTags().add(mt);
+        log.info("➕ 밈에 태그 추가: memeId={}, tagName={}", meme.getId(), tagName);
         }
 
         // TODO: OpenSearch 업데이트 추가 예정
