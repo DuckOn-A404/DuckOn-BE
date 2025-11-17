@@ -43,4 +43,17 @@ public class MemeTag {
         mt.setId(new MemeTagId(meme.getId(), tag.getId()));
         return mt;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof MemeTag)) return false;
+        MemeTag memeTag = (MemeTag) o;
+        return id != null && id.equals(memeTag.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 }
