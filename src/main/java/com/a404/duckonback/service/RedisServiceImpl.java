@@ -416,7 +416,9 @@ import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.*;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -424,6 +426,13 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.Cursor;
+
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -780,7 +789,8 @@ public class RedisServiceImpl implements RedisService {
 @Override
 public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
     // 1) room:* 스캔
-    Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//    Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+    Set<String> keys = scanKeys(ROOM_KEY_PREFIX + "*");
     if (keys == null || keys.isEmpty()) {
         return Page.empty(pageable);
     }
@@ -853,49 +863,12 @@ public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
         return count != null && count <= 10;
     }
 
-    // ===================== 호스트 활성 방 조회 =====================
 
-//    @Override
-//    public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
-//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
-//        if (keys == null || keys.isEmpty()) return null;
-//
-//        for (String key : keys) {
-//            LiveRoomDTO dto = roomTemplate.opsForValue().get(key);
-//            if (dto == null) continue;
-//            if (!Objects.equals(hostUserId, dto.getHostId())) continue;
-//
-//            String roomIdStr = key.substring(ROOM_KEY_PREFIX.length());
-//            Long cnt = stringRedisTemplate.opsForSet().size(roomUsersKey(roomIdStr));
-//            int participantCount = cnt != null ? cnt.intValue() : 0;
-//
-//            User hostUser = userRepository.findByUserIdAndDeletedFalse(hostUserId);
-//            String hostNickname   = hostUser != null ? hostUser.getNickname() : null;
-//            String hostProfileImg = hostUser != null ? hostUser.getImgUrl()    : null;
-//
-//            Artist artist = (dto.getArtistId() != null) ? artistRepository.findById(dto.getArtistId()).orElse(null) : null;
-//            String artistNameEn = artist != null ? artist.getNameEn() : null;
-//            String artistNameKr = artist != null ? artist.getNameKr() : null;
-//
-//            return RoomListInfoDTO.builder()
-//                    .roomId(dto.getRoomId())
-//                    .artistId(dto.getArtistId())
-//                    .artistNameEn(artistNameEn)
-//                    .artistNameKr(artistNameKr)
-//                    .title(dto.getTitle())
-//                    .hostId(hostUserId)
-//                    .hostNickname(hostNickname)
-//                    .hostProfileImgUrl(hostProfileImg)
-//                    .imgUrl(dto.getImgUrl())
-//                    .participantCount(participantCount)
-//                    .build();
-//        }
-//        return null;
-//    }
 @Override
 public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
     // KEYS 대신 SCAN 권장 (간단히 KEYS를 쓰되 "room:{id}"만 통과시키려면 아래 필터는 꼭!)
-    Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//    Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+    Set<String> keys = scanKeys(ROOM_KEY_PREFIX + "*");
     if (keys == null || keys.isEmpty()) return null;
 
     for (String key : keys) {
@@ -942,6 +915,29 @@ public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
         return Boolean.TRUE.equals(
                 stringRedisTemplate.opsForSet().isMember(bKey, userId)
         );
+    }
+
+    private Set<String> scanKeys(String pattern) {
+        Set<String> keys = new HashSet<>();
+
+        ScanOptions options = ScanOptions.scanOptions()
+                .match(pattern)
+                .count(1_000)
+                .build();
+
+        stringRedisTemplate.execute((RedisConnection connection) -> {
+            try (Cursor<byte[]> cursor = connection.scan(options)) {
+                while (cursor.hasNext()) {
+                    byte[] rawKey = cursor.next();
+                    keys.add(new String(rawKey, StandardCharsets.UTF_8));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to scan keys with pattern: " + pattern, e);
+            }
+            return null;
+        });
+
+        return keys;
     }
 
 }
