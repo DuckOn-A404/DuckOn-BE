@@ -622,7 +622,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public MemeResponseDTO getUserMemeCreateHistory(String userId, int size, int page) {
+    public MemeResponseDTO getUserMemeCreateHistory(String userId, int page, int size) {
         // 1. 유저
         User user = userRepository.findByUserIdAndDeletedFalse(userId);
         if(user == null){
@@ -634,19 +634,9 @@ public class UserServiceImpl implements UserService {
         int safeSize = Math.max(1, size);
         Pageable pageable = PageRequest.of(safePage - 1, safeSize);
 
-        // 3. 총 개수
-        long total = memeRepository.countByCreatorId(user.getId());
-        if(total == 0){
-            return MemeResponseDTO.builder()
-                    .page(safePage)
-                    .size(safeSize)
-                    .total(0)
-                    .items(List.of())
-                    .build();
-        }
-
         // 4. 페이지 조회
         Page<Meme> pageResult = memeRepository.findMemesByCreatorIdOrderByCreatedAtDesc(user.getId(), pageable);
+        long total = pageResult.getTotalElements();
 
         // 5. DTO 매핑
         List<MemeItemDTO> items = pageResult.getContent().stream()
