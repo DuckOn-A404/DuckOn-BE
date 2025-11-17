@@ -33,6 +33,10 @@ public class MeController {
     private final ArtistFollowService artistFollowService;
     private final MemeService memeService;
 
+    /**
+     * 기본 정보
+     */
+
     @Operation(summary = "내 정보 조회 (JWT 필요O)", description = "로그인한 사용자의 상세 정보를 조회합니다.")
     @GetMapping
     public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserPrincipal principal) {
@@ -70,6 +74,21 @@ public class MeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.PASSWORD_CHANGE_SUCCESS));
     }
 
+    @Operation(summary = "비밀번호 확인 (JWT 필요O)", description = "입력한 비밀번호가 현재 사용자의 비밀번호와 일치하는지 확인합니다.")
+    @PostMapping("/verify-password")
+    public ResponseEntity<?> verifyPassword(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody Map<String, String> request
+    ) {
+        String inputPassword = request.get("password");
+        boolean isValid = userService.verifyPassword(principal.getUser().getUserId(), inputPassword);
+        return ResponseEntity.ok(Map.of("valid", isValid));
+    }
+
+    /**
+     * 유저 팔로우
+     */
+
     @Operation(summary = "내 팔로워 조회 (JWT 필요O)", description = "로그인한 사용자의 팔로워 목록을 조회합니다.")
     @GetMapping("/followers")
     public ResponseEntity<?> getFollowers(@AuthenticationPrincipal CustomUserPrincipal principal) {
@@ -99,16 +118,9 @@ public class MeController {
         return ResponseEntity.ok(Map.of("message", "사용자 팔로우를 취소했습니다."));
     }
 
-    @Operation(summary = "비밀번호 확인 (JWT 필요O)", description = "입력한 비밀번호가 현재 사용자의 비밀번호와 일치하는지 확인합니다.")
-    @PostMapping("/verify-password")
-    public ResponseEntity<?> verifyPassword(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestBody Map<String, String> request
-    ) {
-        String inputPassword = request.get("password");
-        boolean isValid = userService.verifyPassword(principal.getUser().getUserId(), inputPassword);
-        return ResponseEntity.ok(Map.of("valid", isValid));
-    }
+    /**
+     * 아티스트
+     */
 
     @Operation(summary = "내가 팔로우한 아티스트 조회 (JWT 필요O)",
             description = "로그인한 사용자가 팔로우한 아티스트 목록을 페이지 단위로 조회합니다.")
@@ -137,6 +149,10 @@ public class MeController {
         ));
     }
 
+    /**
+     * 밈
+     */
+
     @Operation(
             summary = "내가 생성한 밈 수정 (JWT 필요O)",
             description = "본인이 생성한 밈만 수정할 수 있습니다. 현재는 태그 수정만 지원하며, 태그는 최소 1개, 최대 25개까지 가능합니다."
@@ -147,16 +163,7 @@ public class MeController {
             @PathVariable Long memeId,
             @Valid @RequestBody MemeUpdateRequestDTO request
     ) {
-        if (principal == null) {
-            throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
-        }
-
-        MemeDetailDTO result = memeService.updateMeme(
-                principal.getId(),
-                memeId,
-                request
-        );
-
+        MemeDetailDTO result = memeService.updateMeme( principal.getId(), memeId, request);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_UPDATE_SUCCESS, result));
     }
 
