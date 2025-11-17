@@ -6,11 +6,8 @@ import com.a404.duckonback.entity.Meme;
 import com.a404.duckonback.entity.MemeTag;
 import com.a404.duckonback.entity.Tag;
 import com.a404.duckonback.entity.User;
-import com.a404.duckonback.dto.MemeCreateResponseDTO.MemeInfoDTO;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.repository.*;
-import com.a404.duckonback.service.S3ValidationService;
-import com.a404.duckonback.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -545,25 +542,19 @@ public class MemeServiceImpl implements MemeService {
         Set<String> tagsToRemove = oldTagNames.stream()
                 .filter(t -> !normalizedTags.contains(t))
                 .collect(Collectors.toSet());
-    
-        log.info("➕ 추가할 태그: {}", tagsToAdd);
-        log.info("🗑️ 삭제할 태그: {}", tagsToRemove);
-    
+        
         // 5) 삭제 처리 - ID 기반으로 안전하게
         if (!tagsToRemove.isEmpty()) {
-            List<Long> memeTagIdsToDelete = currentMemeTags.stream()
+            List<MemeTag> memeTagIdsToDelete = currentMemeTags.stream()
                     .filter(mt -> tagsToRemove.contains(mt.getTag().getTagName()))
-                    .map(mt -> mt.getId())
                     .toList();
             
             if (!memeTagIdsToDelete.isEmpty()) {
-                // ID 기반 삭제 (더 안전함)
-                memeTagRepository.deleteAllById(memeTagIdsToDelete);
-                log.info("🗑️ MemeTag 삭제 완료: ids={}", memeTagIdsToDelete);
+                memeTagRepository.deleteAll(memeTagIdsToDelete);
             }
         }
     
-        // 6) 추가 처리
+        // 6) 추가 처리F
         for (String tagName : tagsToAdd) {
             try {
                 log.info("🏷️ 태그 추가 시작: tagName={}", tagName);
@@ -597,5 +588,20 @@ public class MemeServiceImpl implements MemeService {
         }
     
         log.info("✅ 태그 업데이트 완료: memeId={}, finalTags={}", meme.getId(), normalizedTags);
+    }
+
+        /**
+         * CDN URL에서 S3 key 추출하는 헬퍼 메서드
+         */
+        private String extractS3KeyFromCdnUrl(String cdnUrl) {
+                try {
+                URI uri = new URI(cdnUrl);
+                String path = uri.getPath();
+                String decoded = URLDecoder.decode(path, StandardCharsets.UTF_8);
+                return decoded.startsWith("/") ? decoded.substring(1) : decoded;
+                } catch (Exception e) {
+                log.error("CDN URL 파싱 실패: {}", cdnUrl, e);
+                throw new CustomException("잘못된 이미지 URL입니다.", HttpStatus.BAD_REQUEST);
+        }
     }
 }
