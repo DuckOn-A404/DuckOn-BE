@@ -545,29 +545,26 @@ public class MemeServiceImpl implements MemeService {
                 .collect(Collectors.toSet());
 
         // 7) 태그 삭제 처리
-        // if (!tagsToRemove.isEmpty()) {
-        //     meme.getMemeTags().removeIf(mt ->
-        //             tagsToRemove.contains(mt.getTag().getTagName()));
-        //     // 참고: Tag 테이블에서는 삭제하지 않음 (요구사항 6)
-        //     log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
-        // }
         if (!tagsToRemove.isEmpty()) {
-                List<MemeTag> toDelete = meme.getMemeTags().stream()
-                        .filter(mt -> tagsToRemove.contains(mt.getTag().getTagName()))
-                        .toList();
+            List<MemeTag> toDelete = meme.getMemeTags().stream()
+                    .filter(mt -> tagsToRemove.contains(mt.getTag().getTagName()))
+                    .toList();
+            
+            if (!toDelete.isEmpty()) {
+                // DB에서 먼저 삭제
+                memeTagRepository.deleteAll(toDelete);
+                memeTagRepository.flush();
                 
-                if (!toDelete.isEmpty()) {
-                    memeTagRepository.deleteAll(toDelete);
-                    memeTagRepository.flush();  // 즉시 DB 반영
-                    meme.getMemeTags().removeAll(toDelete);  // 컬렉션에서도 제거
-                }
+                // 컬렉션에서 제거 (equals/hashCode 기반)
+                meme.getMemeTags().removeAll(toDelete);
                 
-                // log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
+                log.info("🗑️ 밈에서 태그 제거: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
             }
+        }
 
-        // 8) 태그 추가 처리 (기존 로직 재사용)
+        // 8) 태그 추가 처리
         for (String tagName : tagsToAdd) {
-            // 기존 태그 조회 또는 새로 생성 (요구사항 5)
+            // 기존 태그 조회 또는 새로 생성
             Tag tag = tagRepository.findByTagName(tagName)
                     .orElseGet(() -> {
                         Tag newTag = Tag.builder()
@@ -577,8 +574,12 @@ public class MemeServiceImpl implements MemeService {
                     });
 
             MemeTag mt = MemeTag.of(meme, tag);
-            meme.getMemeTags().add(mt);
+            
+            // 먼저 DB에 저장 (ID 생성)
             memeTagRepository.save(mt);
+            
+            // 그 다음 컬렉션에 추가
+            meme.getMemeTags().add(mt);
 
             log.info("➕ 밈에 태그 추가: memeId={}, tagName={}", meme.getId(), tagName);
         }
