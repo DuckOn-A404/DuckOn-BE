@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface MemeTagRepository extends JpaRepository<MemeTag, MemeTagId> {
 
-    ist<MemeTag> findByMeme_Id(Long memeId);
+    List<MemeTag> findByMeme_Id(Long memeId);
 
     @Query("""
         SELECT mt.meme.id, t.tagName
