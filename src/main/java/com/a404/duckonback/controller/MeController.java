@@ -183,4 +183,19 @@ public class MeController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_DELETE_SUCCESS, null));
     }
 
+
+    @Operation(
+            summary = "내 즐겨찾기 밈 목록 조회 (JWT 필요O)",
+            description = "내가 즐겨찾기한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
+    )
+    @GetMapping("/favorite-memes")
+    public ResponseEntity<ApiResponseDTO<MemeResponseDTO>> getMyFavoriteMemes(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        MemeResponseDTO favorites = memeService.getMyFavoriteMemes(principal.getId(), page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, favorites));
+    }
+
 }

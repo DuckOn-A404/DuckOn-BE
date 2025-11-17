@@ -11,7 +11,6 @@ import com.a404.duckonback.service.MemeService;
 import com.a404.duckonback.service.MemeUsageLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -128,21 +127,6 @@ public class MemeController {
 
         memeService.deleteFavorite(principal.getId(), memeId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_FAVORITE_DELETED, null));
-    }
-
-    @Operation(
-            summary = "내 즐겨찾기 밈 목록 조회 (JWT 필요O)",
-            description = "내가 즐겨찾기한 밈을 최신순으로 조회합니다. 페이지네이션을 지원합니다."
-    )
-    @GetMapping("/favorites")
-    public ResponseEntity<ApiResponseDTO<List<FavoriteMemeDTO>>> getMyFavoriteMemes(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        if(principal == null) throw new CustomException("로그인이 필요합니다.", ErrorCode.USER_NOT_AUTHENTICATED);
-        List<FavoriteMemeDTO> favorites = memeService.getMyFavoriteMemes(principal.getId(), page, size);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MEME_RETRIEVE_SUCCESS, favorites));
     }
 
     @Operation(
