@@ -18,7 +18,8 @@ public enum ErrorCode {
     SAME_PASSWORD_NOT_ALLOWED(400, HttpStatus.BAD_REQUEST, "이전과 동일한 비밀번호로는 변경할 수 없습니다."),
     CURRENT_PASSWORD_EMPTY(400, HttpStatus.BAD_REQUEST, "기존 비밀번호가 입력되지 않았습니다"),
     NEW_PASSWORD_EMPTY(400, HttpStatus.BAD_REQUEST, "새로운 비밀번호가 입력되지 않았습니다"),
-
+    TRANSLATION_TEXT_EMPTY(400, HttpStatus.BAD_REQUEST, "번역할 텍스트가 없습니다."),
+    TRANSLATION_UNSUPPORTED_LANG(400, HttpStatus.BAD_REQUEST, "지원하지 않는 언어 코드입니다."),
 
     // 401 UNAUTHORIZED
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
@@ -52,6 +53,7 @@ public enum ErrorCode {
 
     //500 INTERNAL SERVER ERROR
     INTERNAL_SERVER_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
+    TRANSLATION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "번역 중 오류가 발생했습니다."),
     ;
 
 

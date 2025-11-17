@@ -23,4 +23,6 @@ public class ChatMessageDTO {
 
     @Builder.Default
     private Instant sentAt = Instant.now();
+
+    private String senderLang;
 }

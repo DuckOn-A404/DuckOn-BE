@@ -55,7 +55,8 @@ public final class SecurityEndpoints {
     public static final String[] PUBLIC_POST = {
             "/api/rooms/*/enter",
             "/api/rooms/*/exit",
-            "/api/memes/usage"
+            "/api/memes/usage",
+            "/api/translation/chat"
     };
 
     public static final String[] AUTH_REQUIRED = {

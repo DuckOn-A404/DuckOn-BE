@@ -59,4 +59,11 @@ public class ServiceProperties {
     @Value("${service.email.code.consume-on-success:true}")
     private boolean consumeOnSuccess;
 
+    // --- OpenAI ---
+    @Value("${openai.api-key}")
+    private String openAiApiKey;
+
+    @Value("${openai.model:gpt-4.1-mini}")
+    private String openAiModel;
+
 }

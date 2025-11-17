@@ -63,13 +63,6 @@ public class RoomSocketController {
         User user = (User) accessor.getSessionAttributes().get("user");
         Boolean isGuest = (Boolean) accessor.getSessionAttributes().getOrDefault("guest", Boolean.FALSE);
 
-//        if (user != null) {
-//            message.setSenderNickName(user.getNickname()); // 또는 userId
-//            message.setSenderId(user.getUserId());
-//        } else {
-//            throw new CustomException("로그인이 필요합니다.", HttpStatus.NOT_FOUND);
-//        }
-
         if(!message.isImage() &&message.getContent().length() > 100){
             throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
@@ -78,6 +71,7 @@ public class RoomSocketController {
         if (user != null && !isGuest) {
             message.setSenderId(user.getUserId());
             message.setSenderNickName(user.getNickname());
+            message.setSenderLang(user.getLanguage()); // 로그인 유저 언어 세팅
             UserRankDTO userRankDTO = userRankService.getUserRank(user.getId());
             message.setUserRank(userRankDTO);
             rateKey = chatRateLimiter.userKey(user.getUserId());
@@ -85,11 +79,16 @@ public class RoomSocketController {
             // 게스트
             String guestId = (String) accessor.getSessionAttributes().get("guestId");
             String guestNickname = (String) accessor.getSessionAttributes().get("guestNickname");
+            String guestLang = (String) accessor.getSessionAttributes().get("guestLang");
+
             if (guestId == null) guestId = "guest:" + java.util.UUID.randomUUID();
             if (guestNickname == null) guestNickname = "게스트";
+            if (guestLang == null) guestLang = "en"; // 기본 언어는 영어로
 
             message.setSenderId(guestId);            // 문자열 ID 허용(프론트 필터링에도 사용됨)
             message.setSenderNickName(guestNickname);
+            message.setSenderLang(guestLang);
+
             rateKey = chatRateLimiter.userKey(guestId); // 같은 레이트리밋 로직 재사용
         }
 
@@ -101,18 +100,6 @@ public class RoomSocketController {
                     Map.of("type","CHAT_RATE_LIMITED")
             );
         }
-
-//        String key = chatRateLimiter.userKey(user.getUserId());
-//        boolean allowed = chatRateLimiter.allow(key, 5, Duration.ofSeconds(5));
-//        if (!allowed) {
-//            throw new CustomException(
-//                    "채팅은 5초에 5번까지만 가능합니다.",
-//                    HttpStatus.TOO_MANY_REQUESTS,
-//                    Map.of(
-//                    "type", "CHAT_RATE_LIMITED"
-//            ));
-//        }
-
 
         messagingTemplate.convertAndSend("/topic/chat/" + message.getRoomId(), message);
     }

@@ -34,6 +34,9 @@ public enum SuccessCode {
     MEME_TOP10_RETRIEVE_SUCCESS(200, HttpStatus.OK, "밈 TOP10 조회에 성공했습니다."),
     TAG_TRENDING_RETRIEVE_SUCCESS(200, HttpStatus.OK, "실시간 인기 태그 조회에 성공했습니다."),
     TAG_SEARCH_LOG_SUCCESS(200, HttpStatus.OK, "태그 검색 로그 기록에 성공했습니다."),
+
+    // 번역 api 관련
+    CHAT_TRANSLATION_SUCCESS(200, HttpStatus.OK, "채팅 번역을 성공적으로 수행했습니다."),
     ;
 
 
