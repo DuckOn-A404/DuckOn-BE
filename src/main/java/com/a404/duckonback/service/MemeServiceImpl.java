@@ -551,35 +551,30 @@ public class MemeServiceImpl implements MemeService {
             log.info("✅ 태그 삭제 완료: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
         }
     
-        // 6) 추가 처리
+        // 6) 추가 처리 - cascade를 활용하여 Meme 엔티티의 컬렉션에 추가
         for (String tagName : tagsToAdd) {
-            try {
-                // Tag 조회 또는 생성
-                Tag tag = tagRepository.findByTagName(tagName)
-                        .orElseGet(() -> {
-                            Tag newTag = Tag.builder().tagName(tagName).build();
-                            Tag saved = tagRepository.save(newTag);
-                            tagRepository.flush(); // ID 확보
-                            return saved;
-                        });
+            // Tag 조회 또는 생성
+            Tag tag = tagRepository.findByTagName(tagName)
+                    .orElseGet(() -> {
+                        Tag newTag = Tag.builder().tagName(tagName).build();
+                        Tag saved = tagRepository.save(newTag);
+                        tagRepository.flush(); // ID 확보
+                        return saved;
+                    });
 
-                // MemeTag 생성
-                MemeTagId memeTagId = new MemeTagId(meme.getId(), tag.getId());
-                MemeTag memeTag = new MemeTag();
-                memeTag.setId(memeTagId);
-                memeTag.setMeme(meme);
-                memeTag.setTag(tag);
+            // MemeTag 생성
+            MemeTagId memeTagId = new MemeTagId(meme.getId(), tag.getId());
+            MemeTag memeTag = new MemeTag();
+            memeTag.setId(memeTagId);
+            memeTag.setMeme(meme);
+            memeTag.setTag(tag);
 
-                // Meme 엔티티의 컬렉션에 추가 (양방향 관계 동기화)
-                meme.getMemeTags().add(memeTag);
-                memeTagRepository.save(memeTag);
+            // Meme 엔티티의 컬렉션에 추가
+            // cascade = CascadeType.ALL이므로 컬렉션에 추가하면 자동으로 persist됨
+            meme.getMemeTags().add(memeTag);
 
-                log.info("✅ MemeTag 생성 완료: memeId={}, tagId={}, tagName={}",
-                         meme.getId(), tag.getId(), tagName);
-
-            } catch (Exception e) {
-                throw new CustomException("태그 추가 중 오류가 발생했습니다: " + tagName, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            log.info("✅ 태그 추가 완료: memeId={}, tagId={}, tagName={}",
+                     meme.getId(), tag.getId(), tagName);
         }    
     }
 
