@@ -476,9 +476,7 @@ public class MemeServiceImpl implements MemeService {
         Set<String> oldTagNames = currentMemeTags.stream()
                 .map(mt -> mt.getTag().getTagName())
                 .collect(Collectors.toSet());
-    
-        log.info("📊 현재 DB의 태그들: {}", oldTagNames);
-    
+        
         // 4) 차이 계산
         Set<String> tagsToAdd = normalizedTags.stream()
                 .filter(t -> !oldTagNames.contains(t))
@@ -496,22 +494,20 @@ public class MemeServiceImpl implements MemeService {
             
             if (!memeTagIdsToDelete.isEmpty()) {
                 memeTagRepository.deleteAll(memeTagIdsToDelete);
+                memeTagRepository.flush();
+                
             }
         }
     
-        // 6) 추가 처리F
+        // 6) 추가 처리
         for (String tagName : tagsToAdd) {
-            try {
-                log.info("🏷️ 태그 추가 시작: tagName={}", tagName);
-                
+            try {                
                 // Tag 조회 또는 생성
                 Tag tag = tagRepository.findByTagName(tagName)
                         .orElseGet(() -> {
-                            log.info("🆕 새 태그 생성: {}", tagName);
                             Tag newTag = Tag.builder().tagName(tagName).build();
                             Tag saved = tagRepository.save(newTag);
                             tagRepository.flush(); // ID 확보
-                            log.info("✅ 새 태그 저장: id={}, name={}", saved.getId(), tagName);
                             return saved;
                         });
     
@@ -527,12 +523,9 @@ public class MemeServiceImpl implements MemeService {
                          meme.getId(), tag.getId(), tagName);
                          
             } catch (Exception e) {
-                log.error("❌ 태그 추가 실패: tagName={}, error={}", tagName, e.getMessage(), e);
                 throw new CustomException("태그 추가 중 오류가 발생했습니다: " + tagName, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        }
-    
-        log.info("✅ 태그 업데이트 완료: memeId={}, finalTags={}", meme.getId(), normalizedTags);
+        }    
     }
 
         /**
