@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @Tag(name = "인증 관리", description = "로그인, 회원가입, 이메일 중복 확인 등의 인증 관련 기능을 제공합니다.")
 @RestController
 @RequestMapping("/api/auth")
@@ -39,7 +41,7 @@ public class AuthController {
         try {
             return authService.signup(request);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 내부 오류가 발생했습니다.");
         }
     }
@@ -82,7 +84,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
     }
 
-    @Operation(summary = "이메일 인증번호 발송 (JWT 필요X)")
+    @Operation(summary = "이메일 인증번호 발송 (JWT 필요X)", description = "싸피 와이파이로 작동하지 않습니다. 꼭 핫스팟으로 실행해주세요!")
     @PostMapping("/code")
     public ResponseEntity<SendEmailCodeResponse> sendCode(@Valid @RequestBody SendEmailCodeRequest req) {
         emailVerificationService.sendCode(req.getEmail(), req.getEmailPurpose());
