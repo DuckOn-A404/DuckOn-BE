@@ -13,11 +13,15 @@ import com.a404.duckonback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.*;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -286,7 +290,9 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public Page<RoomListInfoDTO> getTrendingRooms(Pageable pageable) {
         // 1) room:* 스캔
-        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+        Set<String> keys = scanKeys(ROOM_KEY_PREFIX + "*");
+
         if (keys == null || keys.isEmpty()) {
             return Page.empty(pageable);
         }
@@ -363,7 +369,9 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public RoomListInfoDTO getActiveRoomByHost(String hostUserId) {
         // KEYS 대신 SCAN 권장 (간단히 KEYS를 쓰되 "room:{id}"만 통과시키려면 아래 필터는 꼭!)
-        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+        Set<String> keys = scanKeys(ROOM_KEY_PREFIX + "*");
+
         if (keys == null || keys.isEmpty()) return null;
 
         for (String key : keys) {
@@ -427,4 +435,27 @@ public class RedisServiceImpl implements RedisService {
         stringRedisTemplate.delete(key);
     }
 
+    @Override
+    public Set<String> scanKeys(String pattern) {
+        Set<String> keys = new HashSet<>();
+
+        ScanOptions options = ScanOptions.scanOptions()
+                .match(pattern)
+                .count(1000)  // 한 번에 스캔할 양 힌트
+                .build();
+
+        stringRedisTemplate.execute((RedisConnection connection) -> {
+            try (Cursor<byte[]> cursor = connection.scan(options)) {
+                while (cursor.hasNext()) {
+                    byte[] rawKey = cursor.next();
+                    keys.add(new String(rawKey, StandardCharsets.UTF_8));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to scan keys", e);
+            }
+            return null;
+        });
+
+        return keys;
+    }
 }

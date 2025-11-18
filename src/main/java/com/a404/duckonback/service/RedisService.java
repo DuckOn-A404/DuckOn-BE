@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Set;
 
 public interface RedisService {
     void saveRoomInfo(String roomId, LiveRoomDTO room);
@@ -34,4 +35,5 @@ public interface RedisService {
     boolean isUserBanned(String roomId, String userId);
     boolean acquireCreateRoomLock(String hostUserId);
     void releaseCreateRoomLock(String hostUserId);
+    Set<String> scanKeys(String pattern);
 }

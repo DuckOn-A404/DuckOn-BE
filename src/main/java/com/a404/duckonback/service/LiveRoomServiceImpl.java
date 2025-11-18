@@ -111,7 +111,8 @@ public class LiveRoomServiceImpl implements LiveRoomService {
     @Override
     public boolean hasActiveRoomByHost(String hostUserId) {
         // KEYS 사용 (서비스 규모 커지면 SCAN으로 교체 가능)
-        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
+        Set<String> keys = redisService.scanKeys(ROOM_KEY_PREFIX + "*");
+//        Set<String> keys = stringRedisTemplate.keys(ROOM_KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) return false;
 
         for (String key : keys) {
