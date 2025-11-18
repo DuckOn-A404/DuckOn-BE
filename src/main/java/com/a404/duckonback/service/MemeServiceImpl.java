@@ -541,22 +541,19 @@ public class MemeServiceImpl implements MemeService {
                 .filter(t -> !normalizedTags.contains(t))
                 .collect(Collectors.toSet());
         
-        // 5) 삭제 처리 - ID 기반으로 안전하게
+        // 5) 삭제 처리 - orphanRemoval을 활용하여 Meme 엔티티의 컬렉션에서 제거
         if (!tagsToRemove.isEmpty()) {
-            List<MemeTag> memeTagIdsToDelete = currentMemeTags.stream()
-                    .filter(mt -> tagsToRemove.contains(mt.getTag().getTagName()))
-                    .toList();
-            
-            if (!memeTagIdsToDelete.isEmpty()) {
-                memeTagRepository.deleteAll(memeTagIdsToDelete);
-                memeTagRepository.flush();
-                
-            }
+            // Meme 엔티티의 memeTags 컬렉션에서 직접 제거
+            // orphanRemoval = true이므로 컬렉션에서 제거하면 자동으로 DB에서도 삭제됨
+            meme.getMemeTags().removeIf(mt ->
+                tagsToRemove.contains(mt.getTag().getTagName())
+            );
+            log.info("✅ 태그 삭제 완료: memeId={}, removedTags={}", meme.getId(), tagsToRemove);
         }
     
         // 6) 추가 처리
         for (String tagName : tagsToAdd) {
-            try {                
+            try {
                 // Tag 조회 또는 생성
                 Tag tag = tagRepository.findByTagName(tagName)
                         .orElseGet(() -> {
@@ -565,18 +562,21 @@ public class MemeServiceImpl implements MemeService {
                             tagRepository.flush(); // ID 확보
                             return saved;
                         });
-    
+
                 // MemeTag 생성
                 MemeTagId memeTagId = new MemeTagId(meme.getId(), tag.getId());
                 MemeTag memeTag = new MemeTag();
                 memeTag.setId(memeTagId);
                 memeTag.setMeme(meme);
                 memeTag.setTag(tag);
-                
+
+                // Meme 엔티티의 컬렉션에 추가 (양방향 관계 동기화)
+                meme.getMemeTags().add(memeTag);
                 memeTagRepository.save(memeTag);
-                log.info("✅ MemeTag 생성 완료: memeId={}, tagId={}, tagName={}", 
+
+                log.info("✅ MemeTag 생성 완료: memeId={}, tagId={}, tagName={}",
                          meme.getId(), tag.getId(), tagName);
-                         
+
             } catch (Exception e) {
                 throw new CustomException("태그 추가 중 오류가 발생했습니다: " + tagName, HttpStatus.INTERNAL_SERVER_ERROR);
             }
