@@ -15,7 +15,7 @@ public class EmailTemplateRenderer {
                   <meta charset="UTF-8"/>
                   <meta name="viewport" content="width=device-width,initial-scale=1"/>
                   <meta http-equiv="x-ua-compatible" content="ie=edge"/>
-                  <title>[DuckOn] 이메일 인증번호</title>
+                  <title>[TeamDuck] 이메일 인증번호</title>
                   <style>
                     /* 기본 리셋 */
                     body,table,td,a{ -webkit-text-size-adjust:100%; -ms-text-size-adjust:100% }
@@ -71,7 +71,6 @@ public class EmailTemplateRenderer {
                                        </table>
                                      </td>
                                    </tr>
-                
                             <!-- 카드 -->
                             <tr>
                               <td class="px" style="padding:0 32px;">
@@ -81,7 +80,7 @@ public class EmailTemplateRenderer {
                                   <tr>
                                     <td style="padding:28px 28px 8px 28px;">
                                       <div style="font-size:12px; letter-spacing:.08em; color:#6b7280; text-transform:uppercase; font-weight:700;">
-                                        DuckOn 이메일 인증
+                                        TeamDuck 이메일 인증
                                       </div>
                                       <h1 style="margin:6px 0 10px; font-size:22px; line-height:1.4; color:#0f172a;">
                                         요청하신 인증번호입니다
@@ -91,7 +90,6 @@ public class EmailTemplateRenderer {
                                       </p>
                                     </td>
                                   </tr>
-                
                                   <!-- 인증 코드 박스 -->
                                   <tr>
                                     <td style="padding:12px 28px 20px 28px;">
@@ -110,28 +108,25 @@ public class EmailTemplateRenderer {
                                       </table>
                                     </td>
                                   </tr>
-                
                                   <!-- 보안 안내 -->
                                   <tr>
                                     <td style="padding:0 28px 24px 28px;">
                                       <p class="muted" style="margin:0; font-size:12px; color:#6b7280; line-height:1.7;">
-                                        본 메일을 요청하지 않으셨다면, 안전을 위해 무시하셔도 됩니다.
+                                        본 메일을 요청하지 않으셨다면, 관리자에게 문의해주세요.
                                       </p>
                                     </td>
                                   </tr>
                                 </table>
                               </td>
                             </tr>
-                
                             <!-- 푸터 -->
                             <tr>
                               <td class="px" align="center" style="padding:16px 32px 32px 32px;">
                                 <p class="muted" style="margin:8px 0 0; font-size:12px; color:#9aa1a9; line-height:1.6;">
-                                  © DuckOn · 이 메일은 발신 전용입니다.
+                                  © TeamDuck
                                 </p>
                               </td>
                             </tr>
-                
                           </table>
                         </td>
                       </tr>
