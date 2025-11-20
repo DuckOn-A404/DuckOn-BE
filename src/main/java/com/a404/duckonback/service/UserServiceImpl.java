@@ -780,7 +780,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    void setPassword(Long userId,String newPassword){
+    public void setPassword(Long userId,String newPassword){
         // 1. 입력값 기본 검증
         if(newPassword == null || newPassword.isBlank()){
             throw new CustomException(ErrorCode.NEW_PASSWORD_EMPTY);
