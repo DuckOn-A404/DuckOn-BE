@@ -31,7 +31,7 @@ public interface UserService {
 
     boolean verifyPassword(String userId, String inputPassword);
     void changePassword(Long userId, PasswordChangeRequestDTO requestDTO);
-
+    void setPassword(Long userId,String newPassword);
     User findActiveByEmail(String email);
     User findActiveByUserId(String userId);
 

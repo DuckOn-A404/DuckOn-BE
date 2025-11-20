@@ -1,6 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.*;
+import com.a404.duckonback.entity.User;
 import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.response.ApiResponseDTO;
@@ -71,6 +72,16 @@ public class MeController {
             @RequestBody PasswordChangeRequestDTO requestDTO
     ){
         userService.changePassword(principal.getId(), requestDTO);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.PASSWORD_CHANGE_SUCCESS));
+    }
+
+    @Operation(summary = "새로운 비밀번호 설정 (JWT 필요O)", description = "새 비밀번호로 변경합니다.")
+    @PatchMapping("/new-password")
+    public ResponseEntity<ApiResponseDTO<Void>> newPassword(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody String newPassword
+    ){
+        userService.setPassword(principal.getId(),newPassword);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.PASSWORD_CHANGE_SUCCESS));
     }
 

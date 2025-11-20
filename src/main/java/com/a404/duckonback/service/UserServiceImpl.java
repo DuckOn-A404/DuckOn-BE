@@ -778,4 +778,32 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(requestDTO.getNewPassword()));
         userRepository.save(user);
     }
+
+    @Override
+    void setPassword(Long userId,String newPassword){
+        // 1. 입력값 기본 검증
+        if(newPassword == null || newPassword.isBlank()){
+            throw new CustomException(ErrorCode.NEW_PASSWORD_EMPTY);
+        }
+
+        // 2. 새 비밀번호 기본 정책 (백에선 8자리 이상만 체크)
+        if(newPassword.length() < 8){
+            throw new CustomException(ErrorCode.PASSWORD_POLICY_VIOLATION);
+        }
+
+        // 3. 사용자 검증
+        User user = userRepository.findByIdAndDeletedFalse(userId);
+        if(user == null){
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 4. 기존과 같은 비밀번호 확인
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new CustomException(ErrorCode.SAME_PASSWORD_NOT_ALLOWED);
+        }
+
+        // 5. 비밀번호 변경
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
