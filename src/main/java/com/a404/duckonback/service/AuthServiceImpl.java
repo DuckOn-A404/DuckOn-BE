@@ -1,9 +1,6 @@
 package com.a404.duckonback.service;
 
-import com.a404.duckonback.dto.LoginRequestDTO;
-import com.a404.duckonback.dto.LoginResponseDTO;
-import com.a404.duckonback.dto.SignupRequestDTO;
-import com.a404.duckonback.dto.UserDTO;
+import com.a404.duckonback.dto.*;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.PenaltyStatus;
 import com.a404.duckonback.enums.PenaltyType;
@@ -38,6 +35,20 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jWTUtil;
     private final TokenBlacklistService tokenBlacklistService;
+
+    @Override
+    public JWTDTO getJWT(String email){
+        User user = userService.findByEmail(email);
+
+        String accessToken  = jWTUtil.generateAccessToken(user);
+        String refreshToken = jWTUtil.generateRefreshToken(user);
+
+        return JWTDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {

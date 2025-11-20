@@ -13,6 +13,7 @@ public enum SuccessCode {
     PASSWORD_CHANGE_SUCCESS(200, HttpStatus.OK, "비밀번호를 성공적으로 변경했습니다."),
     GET_USER_ROOM_CREATE_HISTORY_SUCCESS(200, HttpStatus.OK, "유저의 방 생성 기록을 성공적으로 불러왔습니다."),
     GET_USER_MEME_CREATE_HISTORY_SUCCESS(200, HttpStatus.OK, "유저의 밈 생성 기록을 성공적으로 불러왔습니다."),
+    EMAIL_VERIFIED(200,HttpStatus.OK,"이메일 인증이 완료되었습니다."),
 
     // 회원가입 관련
     USER_SIGNUP_SUCCESS(201, HttpStatus.CREATED, "회원가입이 완료되었습니다."),

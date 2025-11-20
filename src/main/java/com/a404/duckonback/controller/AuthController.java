@@ -1,7 +1,11 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.*;
+import com.a404.duckonback.exception.CustomException;
 import com.a404.duckonback.filter.CustomUserPrincipal;
+import com.a404.duckonback.response.ApiResponseDTO;
+import com.a404.duckonback.response.ErrorCode;
+import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.AuthService;
 import com.a404.duckonback.service.EmailVerificationService;
 import com.a404.duckonback.service.UserService;
@@ -96,6 +100,19 @@ public class AuthController {
     public ResponseEntity<VerifyEmailCodeResponse> verify(@Valid @RequestBody VerifyEmailCodeRequest req) {
         boolean ok = emailVerificationService.verifyCode(req.getEmail(), req.getEmailPurpose(), req.getCode());
         return ResponseEntity.ok(new VerifyEmailCodeResponse(ok, ok ? "인증 성공" : "인증 실패"));
+    }
+
+
+    @Operation(summary = "이메일 인증번호 검증 for 비밀번호 찾기 : JWT 발급 (JWT 필요X)")
+    @PostMapping("/verify-with-token")
+    public ResponseEntity<ApiResponseDTO<JWTDTO>> verifyForPassword(@Valid @RequestBody VerifyEmailCodeRequest req) {
+        boolean ok = emailVerificationService.verifyCode(req.getEmail(), req.getEmailPurpose(), req.getCode());
+        if(ok){
+            JWTDTO response = authService.getJWT(req.getEmail());
+            return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.EMAIL_VERIFIED, response));
+
+        }
+        throw new CustomException(ErrorCode.EMAIL_VERIFY_FAILED);
     }
 
 }

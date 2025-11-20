@@ -29,6 +29,7 @@ public enum ErrorCode {
     INVALID_JWT_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     EXPIRED_JWT_TOKEN(401, HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
     INVALID_CREDENTIALS(401, HttpStatus.UNAUTHORIZED, "잘못된 인증 정보입니다."),
+    EMAIL_VERIFY_FAILED(401,HttpStatus.UNAUTHORIZED,"이메일 인증에 실패했습니다."),
 
 
     // 403
