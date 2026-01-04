@@ -4,13 +4,20 @@ on:
   pull_request:
     branches: [ develop, main ]   # PR: 빌드만
   push:
-    branches: [ develop, main ]   # push/merge: 빌드+배포
+    branches: [ develop, main ]   # push/merge: 빌드 + (dev/prod) 배포
   workflow_dispatch:
+
+concurrency:
+  group: be-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: duckonback
-  JAVA_VERSION: '21'
+  JAVA_VERSION: "21"
+  DEV_NET: duckon-dev                  # ✅ GitLab 때 dev 네트워크명
+  PROD_APP: duckon-app-prod
+  DEV_APP: duckon-app-dev
 
 jobs:
   pr-build:
@@ -23,18 +30,19 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
 
-      - name: Compute lowercase owner
-        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+      - name: Gradle build
+        run: |
+          set -eux
+          chmod +x ./gradlew || true
+          ./gradlew --build-cache --configuration-cache assemble -x test
 
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
           FOUND=$(git ls-files | grep -E '(^|/)(Dockerfile)$' | head -n1 || true)
-          if [ -z "$FOUND" ]; then
-            echo "No Dockerfile found. Failing."
-            exit 1
-          fi
+          [ -n "$FOUND" ] || { echo "No Dockerfile found"; exit 1; }
           DIR=$(dirname "$FOUND")
           if [ "$DIR" = "." ]; then
             echo "BUILD_CONTEXT=." >> $GITHUB_ENV
@@ -43,28 +51,20 @@ jobs:
             echo "BUILD_CONTEXT=$DIR" >> $GITHUB_ENV
             echo "DOCKERFILE_PATH=$FOUND" >> $GITHUB_ENV
           fi
-          echo "Detected build context=$DIR, dockerfile=$FOUND"
+          echo "Detected context=$DIR, dockerfile=$FOUND"
 
       - name: Set up Docker Buildx
-        id: buildx
         uses: docker/setup-buildx-action@v3
         with:
           install: true
 
-      - name: Gradle build (root)
-        run: |
-          chmod +x ./gradlew || true
-          ./gradlew --version
-          ./gradlew clean build
-
-      - name: Docker build (no push)
+      - name: Docker build (dry-run, no push)
         uses: docker/build-push-action@v5
         with:
-          builder: ${{ steps.buildx.outputs.name }}
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
           push: false
-          tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
 
   push-deploy:
     if: github.event_name == 'push'
@@ -72,26 +72,52 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      env_name: ${{ steps.vars.outputs.env_name }}
+      tag_sha: ${{ steps.vars.outputs.tag_sha }}
+      tag_latest: ${{ steps.vars.outputs.tag_latest }}
+      image_repo: ${{ steps.vars.outputs.image_repo }}
+      owner_lc: ${{ steps.vars.outputs.owner_lc }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          install: true
+      - name: Compute lowercase owner & env/tags
+        id: vars
+        run: |
+          set -eux
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
 
-      - name: Compute lowercase owner
-        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+          BR="${GITHUB_REF##*/}"
+          if [ "$BR" = "main" ]; then
+            echo "env_name=prod" >> $GITHUB_OUTPUT
+            echo "tag_latest=prod-latest" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=dev" >> $GITHUB_OUTPUT
+            echo "tag_latest=dev-latest" >> $GITHUB_OUTPUT
+          fi
+
+          echo "tag_sha=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+          echo "image_repo=${{ env.REGISTRY }}/${OWNER_LC}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      # ✅ GitLab 원칙: push는 test 포함 build
+      - name: Gradle build
+        run: |
+          set -eux
+          chmod +x ./gradlew || true
+          ./gradlew --build-cache --configuration-cache clean build
 
       - name: Detect Dockerfile & build context
         run: |
           set -euo pipefail
           FOUND=$(git ls-files | grep -E '(^|/)(Dockerfile)$' | head -n1 || true)
-          if [ -z "$FOUND" ]; then
-            echo "No Dockerfile found. Failing."
-            exit 1
-          fi
+          [ -n "$FOUND" ] || { echo "No Dockerfile found"; exit 1; }
           DIR=$(dirname "$FOUND")
           if [ "$DIR" = "." ]; then
             echo "BUILD_CONTEXT=." >> $GITHUB_ENV
@@ -100,41 +126,37 @@ jobs:
             echo "BUILD_CONTEXT=$DIR" >> $GITHUB_ENV
             echo "DOCKERFILE_PATH=$FOUND" >> $GITHUB_ENV
           fi
-          echo "Detected build context=$DIR, dockerfile=$FOUND"
+          echo "Detected context=$DIR, dockerfile=$FOUND"
 
-      - name: Figure env & tags
-        id: vars
-        run: |
-          BR="${GITHUB_REF##*/}"
-          if [ "$BR" = "main" ]; then
-            echo "env=prod" >> $GITHUB_OUTPUT
-            echo "latest=prod-latest" >> $GITHUB_OUTPUT
-          else
-            echo "env=dev" >> $GITHUB_OUTPUT
-            echo "latest=dev-latest" >> $GITHUB_OUTPUT
-          fi
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
 
-      - name: Login to GHCR (for push)
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push image
+      - name: Build & push image to GHCR
         uses: docker/build-push-action@v5
         with:
-          builder: ${{ steps.buildx.outputs.name }}
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.latest }}
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ steps.vars.outputs.image_repo }}:${{ steps.vars.outputs.tag_latest }}
+            ${{ steps.vars.outputs.image_repo }}:${{ steps.vars.outputs.tag_sha }}
 
-      # -------- dev = SSH 배포 --------
-      - name: Deploy to DEV via SSH
-        if: steps.vars.outputs.env == 'dev'
+  deploy-dev:
+    name: Deploy DEV (SSH)
+    runs-on: ubuntu-latest
+    needs: [ push-deploy ]
+    if: needs.push-deploy.outputs.env_name == 'dev'
+    steps:
+      - name: Deploy to DEV via SSH (pull GHCR image)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEV_HOST }}
@@ -143,132 +165,152 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            REGISTRY="${{ env.REGISTRY }}"
-            IMAGE="${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}"
-            TAG="${{ github.sha }}"
-            LATEST="${{ steps.vars.outputs.latest }}"
-            NET="duckon-dev-net"
 
-            # GHCR가 Private일 때만 필요 (Public이면 자동 스킵)
+            REGISTRY="${{ env.REGISTRY }}"
+            IMAGE_REPO="${{ needs.push-deploy.outputs.image_repo }}"
+            TAG="${{ needs.push-deploy.outputs.tag_sha }}"
+            LATEST="${{ needs.push-deploy.outputs.tag_latest }}"
+
+            NET="${{ env.DEV_NET }}"
+            APP="${{ env.DEV_APP }}"
+
+            # ✅ dev 네트워크 보장 (GitLab과 동일 네이밍)
+            docker network create "$NET" >/dev/null 2>&1 || true
+            for s in mysql-dev redis-dev duckon-mongo-dev; do
+              docker network connect "$NET" "$s" 2>/dev/null || true
+            done
+
+            # ✅ GHCR private면 login 필요. public이면 실패해도 pull이 될 수 있어서 || true
             if [ -n "${{ secrets.DEV_GHCR_PAT || '' }}" ]; then
               echo "${{ secrets.DEV_GHCR_PAT }}" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
             fi
 
-            docker network create "$NET" || true
-            for s in mysql-dev redis-dev duckon-mongo-dev; do docker network connect "$NET" "$s" 2>/dev/null || true; done
+            echo "[pull] $IMAGE_REPO:$TAG (fallback: $LATEST)"
+            docker pull "$IMAGE_REPO:$TAG" || docker pull "$IMAGE_REPO:$LATEST"
 
-            docker pull "$REGISTRY/$IMAGE:$TAG" || docker pull "$REGISTRY/$IMAGE:$LATEST"
+            # ✅ env file: GitLab에서는 backend/dev.env였는데, 분리 후 위치는 서버에 그대로 둘 확률이 큼
+            #    지금 기존 yaml은 $HOME/dev.env를 쓰고 있어서 그대로 유지
+            ENV_FILE="$HOME/dev.env"
+            [ -f "$ENV_FILE" ] || { echo "[ERROR] $ENV_FILE not found"; exit 23; }
 
-            docker rm -f duckon-app-dev 2>/dev/null || true
-            docker run -d --name duckon-app-dev \
+            docker rm -f "$APP" 2>/dev/null || true
+            docker run -d --name "$APP" \
               --network "$NET" \
-              --env-file "$HOME/dev.env" \
+              --env-file "$ENV_FILE" \
               -e SPRING_PROFILES_ACTIVE=dev \
               -e JAVA_OPTS="-Xms256m -Xmx512m" \
               -p 18081:8080 \
               --restart unless-stopped \
-              "$REGISTRY/$IMAGE:$TAG"
+              "$IMAGE_REPO:$TAG"
 
-            sleep 3
-            curl -fsS http://127.0.0.1:18081/actuator/health || true
+            echo "[healthcheck]"
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18081/actuator/health || true)
+              if [ "$code" = "200" ] || [ "$code" = "401" ]; then
+                echo "OK ($code)"
+                exit 0
+              fi
+              echo "retry $i/30 (code=$code)"
+              sleep 3
+            done
+            echo "healthcheck failed"; exit 31
 
-      # -------- prod = SSM 배포 --------
-      - name: Install jq (for SSM params)
-        if: steps.vars.outputs.env == 'prod'
+  deploy-prod:
+    name: Deploy PROD (SSM)
+    runs-on: ubuntu-latest
+    needs: [ push-deploy ]
+    if: needs.push-deploy.outputs.env_name == 'prod'
+    steps:
+      - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Configure AWS (PROD)
-        if: steps.vars.outputs.env == 'prod'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
           aws-region: ${{ vars.AWS_REGION_PROD }}
 
-      - name: Deploy to PROD via SSM (debug + logs)
-        if: steps.vars.outputs.env == 'prod'
+      - name: Deploy to PROD via SSM (pull GHCR image)
+        env:
+          REGION: ${{ vars.AWS_REGION_PROD }}
+          INSTANCE: ${{ vars.PROD_INSTANCE_ID }}
+          IMAGE_REPO: ${{ needs.push-deploy.outputs.image_repo }}
+          TAG: ${{ needs.push-deploy.outputs.tag_sha }}
+          LATEST: ${{ needs.push-deploy.outputs.tag_latest }}
         run: |
           set -euo pipefail
-          REGION="${{ vars.AWS_REGION_PROD }}"
-          INSTANCE="${{ vars.PROD_INSTANCE_ID }}"
-          REPO="${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}"
-          TAG="${{ github.sha }}"
-          LATEST="${{ steps.vars.outputs.latest }}"
 
-          echo "== AWS identity =="
           aws sts get-caller-identity
 
-          echo "== EC2 instance check =="
-          aws ec2 describe-instances --instance-ids "$INSTANCE" \
-            --query 'Reservations[0].Instances[0].[InstanceId,State.Name,Placement.AvailabilityZone]' \
-            --output text
-
-          echo "== SSM managed check =="
-          aws ssm describe-instance-information \
-            --query "InstanceInformationList[?InstanceId=='$INSTANCE'].[InstanceId,PingStatus,PlatformType,AgentVersion,IsLatestVersion,IPAddress]" \
-            --output table || true
-
-          echo "== Build remote script =="
           SCRIPT=$(cat <<'EOS'
-          set -eu
-          REPO="__REPO__"
+          set -eux
+
+          IMAGE_REPO="__IMAGE_REPO__"
           TAG="__TAG__"
           LATEST="__LATEST__"
+          APP="__APP__"
+          ENV_FILE="/srv/duckon/compose/prod.env"
 
-          APP="duckon-app-prod"
-          ENV_FILE="/srv/duckon/prod.env"
-          if [ ! -f "$ENV_FILE" ]; then
-            echo "[ERROR] env file not found at $ENV_FILE"
-            ls -l /srv/duckon || true
-            exit 1
-          fi
+          [ -f "$ENV_FILE" ] || { echo "[ERROR] env file not found: $ENV_FILE"; exit 23; }
           echo "Using env file: $ENV_FILE"
 
-          # (옵션) GHCR 로그인: 패키지가 Private이면 필요. Public이면 빈값으로 넘어와 스킵됨.
+          # (옵션) GHCR 로그인(Private일 때만). Public이면 빈 값이라 스킵.
           GHCR_USER="__GHCR_USER__"
           GHCR_PAT="__GHCR_PAT__"
           if [ -n "$GHCR_PAT" ] && [ "$GHCR_PAT" != "__EMPTY__" ]; then
-            echo "[diag] docker login ghcr.io as $GHCR_USER"
             echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
           fi
 
-          # 프록시 네트워크 자동 감지(없으면 bridge)
-          NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy 2>/dev/null | awk '{print $1}')
-          [ -z "$NET" ] && NET="bridge"
+          # ✅ GitLab PROD 로직: duckon-proxy의 네트워크 자동 감지, 없으면 duckon-net 보장
+          NET=""
+          if docker inspect duckon-proxy >/dev/null 2>&1; then
+            NET=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{printf "%s " $k}}{{end}}' duckon-proxy | awk '{print $1}')
+          fi
+          if [ -z "$NET" ]; then
+            if docker network ls --format '{{.Name}}' | grep -q '^duckon-net$'; then
+              NET="duckon-net"
+            else
+              docker network create duckon-net >/dev/null 2>&1 || true
+              NET="duckon-net"
+            fi
+          fi
           echo "Using network: $NET"
 
-          # 진단
-          echo "[diag] whoami=$(whoami)"
-          echo "[diag] docker version:" && docker --version || true
-          echo "[diag] resolve ghcr.io:" && getent hosts ghcr.io || true
-          echo "[diag] curl ghcr.io/v2 (HEAD):" && curl -sSIL https://ghcr.io/v2/ | head -n 5 || true
+          echo "Pulling image $IMAGE_REPO:$TAG (fallback: $LATEST)"
+          docker pull "$IMAGE_REPO:$TAG" || docker pull "$IMAGE_REPO:$LATEST"
 
-          echo "Pulling image $REPO:$TAG (fallback: $LATEST)"
-          docker pull "$REPO:$TAG" || docker pull "$REPO:$LATEST"
-
-          echo "Stopping old container (if any)"
           docker rm -f "$APP" 2>/dev/null || true
-
-          echo "Starting $APP ..."
           docker run -d --name "$APP" \
             --network "$NET" \
             --env-file "$ENV_FILE" \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e JAVA_OPTS="-Xms256m -Xmx512m" \
             --restart unless-stopped \
-            "$REPO:$TAG"
+            "$IMAGE_REPO:$TAG"
 
-          echo "Container started. Current ps:"
           docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+
+          echo "[healthcheck]"
+          i=1
+          while [ $i -le 30 ]; do
+            code=$(curl -ksS -o /dev/null -w "%{http_code}" https://duckon.site/api/actuator/health || true)
+            if [ "$code" = "200" ] || [ "$code" = "401" ]; then
+              echo "OK ($code)"; exit 0
+            fi
+            echo "retry $i/30 (code=$code)"
+            i=$((i+1)); sleep 3
+          done
+          echo "healthcheck failed"; exit 31
           EOS
           )
 
-          # 자리표시자 치환
-          SCRIPT="${SCRIPT//__REPO__/$REPO}"
+          SCRIPT="${SCRIPT//__IMAGE_REPO__/$IMAGE_REPO}"
           SCRIPT="${SCRIPT//__TAG__/$TAG}"
           SCRIPT="${SCRIPT//__LATEST__/$LATEST}"
+          SCRIPT="${SCRIPT//__APP__/${{ env.PROD_APP }}}"
 
-          # GHCR 자격증명(없으면 빈값 주입되어 로그인 스킵)
+          # GHCR private면 필요. public이면 비워도 됨.
           GHCR_USER="${{ secrets.PROD_GHCR_USERNAME }}"
           GHCR_PAT="${{ secrets.PROD_GHCR_PAT }}"
           [ -z "$GHCR_USER" ] && GHCR_USER="__EMPTY__"
@@ -276,7 +318,6 @@ jobs:
           SCRIPT="${SCRIPT//__GHCR_USER__/$GHCR_USER}"
           SCRIPT="${SCRIPT//__GHCR_PAT__/$GHCR_PAT}"
 
-          echo "== Send command =="
           jq -n --arg script "$SCRIPT" '{commands: [$script]}' > ssm-params.json
 
           CMD_ID=$(aws ssm send-command \
@@ -290,16 +331,14 @@ jobs:
 
           echo "CommandId: $CMD_ID"
 
-          echo "== Polling command status =="
           while true; do
             OUT=$(aws ssm get-command-invocation \
               --command-id "$CMD_ID" \
               --instance-id "$INSTANCE" \
               --region "$REGION" \
               --output json || true)
-
             STATUS=$(echo "$OUT" | jq -r '.Status // empty')
-            echo "SSM status: $STATUS"
+            echo "SSM status: ${STATUS:-unknown}"
 
             if [ "$STATUS" = "Pending" ] || [ "$STATUS" = "InProgress" ] || [ "$STATUS" = "Delayed" ] || [ -z "$STATUS" ]; then
               sleep 3
@@ -310,11 +349,6 @@ jobs:
             echo "$OUT" | jq -r '.StandardOutputContent // ""'
             echo "----- STDERR -----"
             echo "$OUT" | jq -r '.StandardErrorContent // ""'
-            echo "----- END LOGS -----"
 
-            if [ "$STATUS" = "Success" ]; then
-              exit 0
-            else
-              exit 1
-            fi
+            [ "$STATUS" = "Success" ] && exit 0 || exit 1
           done
