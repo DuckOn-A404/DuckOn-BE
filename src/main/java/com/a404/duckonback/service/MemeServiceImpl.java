@@ -38,7 +38,6 @@ public class MemeServiceImpl implements MemeService {
     private final UserRepository userRepository;
     private final MemeFavoriteRepository memeFavoriteRepository;
     private final MemeHourlyTop10Repository memeHourlyTop10Repository;
-    private final SearchService searchService;
     private final S3ValidationService s3ValidationService;
 
 
