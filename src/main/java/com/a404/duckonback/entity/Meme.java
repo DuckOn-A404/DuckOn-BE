@@ -10,7 +10,9 @@ import java.util.Set;
 @Table(
         name = "meme",
         indexes = {
-                @Index(name = "idx_meme_creator_id", columnList = "creator_id")
+                @Index(name = "idx_meme_creator_id", columnList = "creator_id"),
+                @Index(name = "idx_meme_usage_cnt", columnList = "usage_cnt"),
+                @Index(name = "idx_meme_download_cnt", columnList = "download_cnt")
         }
 )
 @Getter

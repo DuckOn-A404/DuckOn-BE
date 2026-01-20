@@ -38,7 +38,6 @@ public class MemeServiceImpl implements MemeService {
     private final UserRepository userRepository;
     private final MemeFavoriteRepository memeFavoriteRepository;
     private final MemeHourlyTop10Repository memeHourlyTop10Repository;
-    private final SearchService searchService;
     private final S3ValidationService s3ValidationService;
 
 
@@ -160,42 +159,6 @@ public class MemeServiceImpl implements MemeService {
         .imageUrl(meme.getImageUrl())
         .tags(new ArrayList<>(normalizedTags))
         .build();
-
-        try {
-        // 1) S3에 실제로 존재하는지 확인
-        log.info("🔍 S3 존재 여부 확인 시작: key={}", upload.getKey());
-        boolean existsInS3 = s3ValidationService.existsInS3(upload.getKey());
-        log.info("🔍 S3 존재 여부 확인 결과: key={}, exists={}", upload.getKey(), existsInS3);
-
-        if (existsInS3) {
-                // 2) ImageDocument 생성
-                ImageDocument imageDocument = ImageDocument.builder()
-                        .s3_url(upload.getCdnUrl())
-                        .object_key(upload.getKey())
-                        .tags(new ArrayList<>(normalizedTags))
-                        .created_at(LocalDateTime.now())
-                        .build();
-
-                log.info("📦 ImageDocument 생성 완료: s3_url={}, object_key={}, tags={}",
-                        imageDocument.getS3_url(),
-                        imageDocument.getObject_key(),
-                        imageDocument.getTags());
-
-                // 3) OpenSearch에 저장
-                searchService.indexImage(imageDocument);
-
-                log.info("✅ Indexed to OpenSearch: objectKey={}, tags={}", upload.getKey(), normalizedTags);
-
-        } else {
-                log.warn("⚠️ S3 object not found, skipping OpenSearch indexing: {}", upload.getKey());
-        }
-
-        } catch (Exception e) {
-        // OpenSearch 저장 실패 시 로그만 남기고 계속 진행
-        log.error("❌ OpenSearch indexing failed: objectKey={}, tags={}, error={}",
-                upload.getKey(), normalizedTags, e.getMessage(), e);
-        // TODO: 나중에 재시도 큐 구현 시 여기에 추가
-        }
 
         return Optional.of(dto);
     }

@@ -67,7 +67,6 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    implementation 'org.opensearch.client:opensearch-java:2.11.0'
     implementation 'software.amazon.awssdk:apache-client:2.32.10'
 
 }

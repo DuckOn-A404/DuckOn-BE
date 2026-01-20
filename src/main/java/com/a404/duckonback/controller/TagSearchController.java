@@ -1,6 +1,7 @@
 package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.SearchTagLogRequestDTO;
+import com.a404.duckonback.dto.TagSearchResponseDTO;
 import com.a404.duckonback.dto.TrendingTagDTO;
 import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
@@ -29,6 +30,19 @@ public class TagSearchController {
     public ResponseEntity<ApiResponseDTO<Void>> logSearchKeyword(@RequestBody SearchTagLogRequestDTO request) {
         tagSearchService.logSearchKeyword(request.getKeyword());
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.TAG_SEARCH_LOG_SUCCESS));
+    }
+
+    @Operation(summary = "태그 자동완성 검색 (JWT 필요X)", description = "입력된 키워드로 태그를 검색합니다. 접두어 일치 결과를 우선으로, 부족하면 부분 일치 결과를 추가합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponseDTO<List<TagSearchResponseDTO>>> searchTags(
+            @RequestParam(name = "q") String keyword,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        List<TagSearchResponseDTO> results = tagSearchService.searchTags(keyword, limit)
+                .stream()
+                .map(TagSearchResponseDTO::fromEntity)
+                .toList();
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.TAG_SEARCH_SUCCESS, results));
     }
 
     // 실시간 인기 태그 조회

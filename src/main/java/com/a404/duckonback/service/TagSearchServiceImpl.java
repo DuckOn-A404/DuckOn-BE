@@ -13,8 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +53,45 @@ public class TagSearchServiceImpl implements TagSearchService{
         LocalDateTime from = LocalDateTime.now().minus(range);
         Pageable pageable = PageRequest.of(0, size);
         return tagSearchLogRepository.findTrendingTags(from, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Tag> searchTags(String keyword, int limit) {
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+
+        String normalizedKeyword = normalizeKeyword(keyword);
+        Pageable pageable = PageRequest.of(0, limit);
+
+        // 1. 접두어 검색 우선
+        List<Tag> prefixResults = tagRepository.findByTagNameStartingWithIgnoreCase(normalizedKeyword, pageable);
+
+        // 결과가 충분하면 바로 반환
+        if (prefixResults.size() >= limit) {
+            return prefixResults;
+        }
+
+        // 2. 부족하면 부분 일치 검색으로 보충
+        int remaining = limit - prefixResults.size();
+        Pageable remainingPageable = PageRequest.of(0, remaining + prefixResults.size());
+        List<Tag> containsResults = tagRepository.findByTagNameContainingIgnoreCase(normalizedKeyword, remainingPageable);
+
+        // 중복 제거 후 병합
+        Set<Long> prefixIds = prefixResults.stream()
+                .map(Tag::getId)
+                .collect(Collectors.toSet());
+
+        List<Tag> additionalResults = containsResults.stream()
+                .filter(tag -> !prefixIds.contains(tag.getId()))
+                .limit(remaining)
+                .toList();
+
+        List<Tag> result = new ArrayList<>(prefixResults);
+        result.addAll(additionalResults);
+
+        return result;
     }
 
     private String normalizeKeyword(String keyword) {
