@@ -4,7 +4,6 @@ import com.a404.duckonback.filter.CustomJsonUsernamePasswordAuthenticationFilter
 import com.a404.duckonback.filter.CustomOAuth2UserService;
 import com.a404.duckonback.filter.JWTFilter;
 import com.a404.duckonback.handler.*;
-import com.a404.duckonback.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +44,8 @@ public class SecurityConfig {
             "https://duckon.site",
             "https://www.duckon.site",
             "https://d3jianh0vyc8he.cloudfront.net",
-            "http://ec2-43-202-159-100.ap-northeast-2.compute.amazonaws.com",
+            "https://d18aj80emnxng9.cloudfront.net", //duckon dev
+            "http://ec2-43-201-71-116.ap-northeast-2.compute.amazonaws.com", // duckon dev
             "http://127.0.0.1:3000",
             "http://localhost:3000",
             "http://localhost:5173",

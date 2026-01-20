@@ -53,6 +53,10 @@ jobs:
           fi
           echo "Detected context=$DIR, dockerfile=$FOUND"
 
+      - name: Compute lowercase owner
+        run: |
+          echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -64,7 +68,8 @@ jobs:
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
           push: false
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
+
 
   push-deploy:
     if: github.event_name == 'push'
@@ -106,7 +111,6 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
 
-      # ✅ GitLab 원칙: push는 test 포함 build
       - name: Gradle build
         run: |
           set -eux
