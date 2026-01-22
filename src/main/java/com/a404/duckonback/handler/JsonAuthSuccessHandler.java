@@ -3,8 +3,10 @@ package com.a404.duckonback.handler;
 import com.a404.duckonback.dto.LoginResponseDTO;
 import com.a404.duckonback.dto.UserDTO;
 import com.a404.duckonback.entity.User;
+import com.a404.duckonback.filter.CustomUserPrincipal;
 import com.a404.duckonback.repository.UserRepository;
 import com.a404.duckonback.service.ArtistService;
+import com.a404.duckonback.service.AuthAuditService;
 import com.a404.duckonback.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,27 +15,28 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Instant;
 
 @Component
 @RequiredArgsConstructor
 public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper    objectMapper;
     private final JWTUtil         jwtUtil;
-    private final UserRepository  userRepository;
     private final ArtistService   artistService;
+    private final AuthAuditService authAuditService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest req,
                                         HttpServletResponse res,
                                         Authentication auth) throws IOException {
-        // UserDetails (폼 로그인) 에서 User 정보 조회
-        String principalName = ((UserDetails) auth.getPrincipal()).getUsername();
-        User user = userRepository.findByUserIdAndDeletedFalse(principalName);
+        CustomUserPrincipal principal = (CustomUserPrincipal) auth.getPrincipal();
+        User user = principal.getUser();
+
+        Instant now = authAuditService.markLoggedIn(user.getId());
 
         // 토큰 생성
         String access  = jwtUtil.generateAccessToken(user);
@@ -48,6 +51,7 @@ public class JsonAuthSuccessHandler implements AuthenticationSuccessHandler {
                 .role(user.getRole().name())
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
+                .lastLoginAt(now)
                 .artistList(artistService.findAllArtistIdByUserId(user.getId()))
                 .build();
 

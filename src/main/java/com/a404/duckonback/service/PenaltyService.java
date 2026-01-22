@@ -13,6 +13,7 @@ public interface PenaltyService {
     List<Penalty> getAllPenalties();
     Penalty updatePenalty(Long penaltyId, Penalty updatedPenalty);
     void deletePenalty(Long penaltyId);
+    Boolean isAccountSuspended(Long userId);
 
     List<Penalty> getPenaltiesByUser(Long id);
     List<Penalty> getPenaltiesByStatus(PenaltyStatus status);

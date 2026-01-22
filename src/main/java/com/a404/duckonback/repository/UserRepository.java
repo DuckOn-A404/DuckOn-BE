@@ -6,10 +6,12 @@ import com.a404.duckonback.repository.projection.UserBrief;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -88,5 +90,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /** 랜덤 보충용: 활성 유저 페이징 */
     Page<User> findAllByDeletedFalse(Pageable pageable);
+
+    /** 마지막 로그인 일시 update */
+    @Modifying
+    @Query("UPDATE User u SET u.lastLoginAt = :now WHERE u.id = :id")
+    int updateLastLoginAt(@Param("id") Long id, @Param("now") Instant now);
 
 }

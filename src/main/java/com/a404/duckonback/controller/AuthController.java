@@ -35,8 +35,8 @@ public class AuthController {
 
     @Operation(summary = "로그인 (JWT 필요X)", description = "사용자가 이메일과 비밀번호로 로그인합니다. 성공 시 JWT 토큰을 반환합니다.")
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest){
-        return ResponseEntity.ok(authService.login(loginRequest));
+    public void login(@RequestBody LoginRequestDTO loginRequest){
+//        return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     @Operation(summary = "회원가입 (JWT 필요X)", description = "새로운 사용자를 등록합니다. 프로필 사진을 포함한 회원가입을 지원합니다.")

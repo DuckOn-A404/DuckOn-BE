@@ -27,7 +27,7 @@ public class JsonAuthFailureHandler implements AuthenticationFailureHandler {
         res.setStatus(HttpStatus.UNAUTHORIZED.value());
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(res.getWriter(),
-                Map.of("message", "로그인에 실패했습니다. 다시 시도해주세요.")
+                Map.of("message", "아이디/이메일 혹은 비밀번호가 잘못되었습니다.")
         );
     }
 }

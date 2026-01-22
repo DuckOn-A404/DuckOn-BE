@@ -5,6 +5,7 @@ import com.a404.duckonback.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +70,9 @@ public class User {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
 
     @Builder.Default
     @OneToMany(mappedBy = "reporter")

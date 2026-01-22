@@ -2,6 +2,7 @@ package com.a404.duckonback.dto;
 
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,5 +19,6 @@ public class UserDTO {
     private String role;
     private String language;
     private String imgUrl;
+    private Instant lastLoginAt;
     private List<Long> artistList;
 }

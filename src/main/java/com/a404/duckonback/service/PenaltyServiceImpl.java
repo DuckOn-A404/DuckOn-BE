@@ -53,6 +53,13 @@ public class PenaltyServiceImpl implements PenaltyService {
     }
 
     @Override
+    public Boolean isAccountSuspended(Long userId) {
+        penaltyRepository.expireOldPenalties(userId, LocalDateTime.now());
+        List<Penalty> activePenalties = penaltyRepository.findByUser_IdAndStatus(userId, PenaltyStatus.ACTIVE);
+        return !activePenalties.isEmpty();
+    }
+
+    @Override
     public List<Penalty> getPenaltiesByUser(Long id) {
         return penaltyRepository.findByUser_Id(id);
     }
