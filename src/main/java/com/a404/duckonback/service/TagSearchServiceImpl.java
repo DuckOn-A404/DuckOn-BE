@@ -34,17 +34,14 @@ public class TagSearchServiceImpl implements TagSearchService{
             return;
         }
 
-        Tag tag = tagRepository.findByTagName(normalizedKeyword)
-                .orElseGet(() -> tagRepository.save(
-                        Tag.builder().tagName(normalizedKeyword).build()
-                ));
-
-        TagSearchLog tagSearchLog = TagSearchLog.builder()
-                .tag(tag)
-                .keywordRaw(keyword)
-                .build();
-
-        tagSearchLogRepository.save(tagSearchLog);
+        // 기존 태그가 있을 때만 로깅 (태그 자동 생성 X)
+        tagRepository.findByTagName(normalizedKeyword).ifPresent(tag -> {
+            TagSearchLog tagSearchLog = TagSearchLog.builder()
+                    .tag(tag)
+                    .keywordRaw(keyword)
+                    .build();
+            tagSearchLogRepository.save(tagSearchLog);
+        });
     }
 
     @Override
