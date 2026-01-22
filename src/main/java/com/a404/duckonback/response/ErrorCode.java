@@ -20,6 +20,7 @@ public enum ErrorCode {
     NEW_PASSWORD_EMPTY(400, HttpStatus.BAD_REQUEST, "새로운 비밀번호가 입력되지 않았습니다"),
     TRANSLATION_TEXT_EMPTY(400, HttpStatus.BAD_REQUEST, "번역할 텍스트가 없습니다."),
     TRANSLATION_UNSUPPORTED_LANG(400, HttpStatus.BAD_REQUEST, "지원하지 않는 언어 코드입니다."),
+    EXCEED_TOTAL_PAGES(400,HttpStatus.BAD_REQUEST,"존재하는 총 페이지 수보다 큰 페이지 번호입니다."),
 
     // 401 UNAUTHORIZED
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),

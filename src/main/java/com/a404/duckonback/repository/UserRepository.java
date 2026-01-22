@@ -1,5 +1,6 @@
 package com.a404.duckonback.repository;
 
+import com.a404.duckonback.dto.AdminUserListDTO;
 import com.a404.duckonback.entity.User;
 import com.a404.duckonback.enums.SocialProvider;
 import com.a404.duckonback.repository.projection.UserBrief;
@@ -95,5 +96,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("UPDATE User u SET u.lastLoginAt = :now WHERE u.id = :id")
     int updateLastLoginAt(@Param("id") Long id, @Param("now") Instant now);
+
+    @Query("""
+        select new com.a404.duckonback.dto.AdminUserListDTO(
+            u.id, u.email, u.userId, u.nickname, u.role, u.createdAt, u.lastLoginAt, u.deleted, u.deletedAt
+        )
+        from User u
+    """)
+    Page<AdminUserListDTO> getAdminUserList(Pageable pageable);
 
 }
