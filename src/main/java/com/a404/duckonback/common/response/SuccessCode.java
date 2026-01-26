@@ -40,6 +40,9 @@ public enum SuccessCode {
 
     // 번역 api 관련
     CHAT_TRANSLATION_SUCCESS(200, HttpStatus.OK, "채팅 번역을 성공적으로 수행했습니다."),
+
+    // 아티스트 관련
+    CREATE_EMERGING_ARTIST_SUCCESS(201, HttpStatus.CREATED, "라이징 아티스트 등록에 성공했습니다."),
     ;
 
 
