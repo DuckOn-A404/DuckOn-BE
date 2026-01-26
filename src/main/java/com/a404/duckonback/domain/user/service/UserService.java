@@ -1,0 +1,51 @@
+package com.a404.duckonback.domain.user.service;
+
+import com.a404.duckonback.domain.me.dto.FollowersResponseDTO;
+import com.a404.duckonback.domain.me.dto.PasswordChangeRequestDTO;
+import com.a404.duckonback.domain.me.dto.UpdateProfileRequestDTO;
+import com.a404.duckonback.domain.meme.dto.MemeResponseDTO;
+import com.a404.duckonback.domain.room.dto.RoomSummaryPageDTO;
+import com.a404.duckonback.common.enums.SocialProvider;
+import com.a404.duckonback.domain.user.entity.User;
+import com.a404.duckonback.domain.user.dto.FollowingResponseDTO;
+import com.a404.duckonback.domain.user.dto.RecommendUsersResponseDTO;
+import com.a404.duckonback.domain.user.dto.UserDetailInfoResponseDTO;
+import com.a404.duckonback.domain.user.dto.UserInfoResponseDTO;
+
+import java.util.Optional;
+
+public interface UserService {
+    User findByEmail(String email);
+    User findByUserId(String userId);
+    User findByNickname(String nickname);
+
+    default Optional<User> findActiveByProviderAndProviderId(SocialProvider provider, String providerId) { return Optional.empty(); }
+    void save(User user);
+    boolean isEmailDuplicate(String email);
+    boolean isUserIdDuplicate(String userId);
+    boolean isNicknameDuplicate(String nickname);
+
+    UserInfoResponseDTO getUserInfo(String myUserId, String otherUserId);
+    UserDetailInfoResponseDTO getUserDetailInfo(String userId);
+    RoomSummaryPageDTO getUserRoomCreateHistory(String userId, int size, int page);
+    void deleteUser(User user, String refreshToken);
+
+    FollowersResponseDTO getFollowers(String userId);
+    FollowingResponseDTO getFollowing(String userId);
+    void followUser(String myUserId, String otherUserId);
+    void unfollowUser(String userId, String otherUserId);
+
+    void updateUserInfo(String userId, UpdateProfileRequestDTO newUserInfo);
+
+    boolean verifyPassword(String userId, String inputPassword);
+    void changePassword(Long userId, PasswordChangeRequestDTO requestDTO);
+    void setPassword(Long userId,String newPassword);
+    User findActiveByEmail(String email);
+    User findActiveByUserId(String userId);
+
+    RecommendUsersResponseDTO recommendUsers(String myUserId, Long artistId, int size, boolean includeReasons); // 사용자 추천 기능
+
+    MemeResponseDTO getUserMemeCreateHistory(String userId, int page, int size);
+
+
+}
