@@ -1,14 +1,14 @@
-package com.a404.duckonback.domain.artist.service;
+package com.a404.duckonback.domain.artist.artist.service;
 
 import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.common.exception.CustomException;
-import com.a404.duckonback.domain.artist.dto.ArtistDTO;
-import com.a404.duckonback.domain.artist.dto.ArtistDetailDTO;
-import com.a404.duckonback.domain.artist.entity.Artist;
-import com.a404.duckonback.domain.artist.entity.ArtistFollow;
-import com.a404.duckonback.domain.artist.repository.ArtistFollowRepository;
-import com.a404.duckonback.domain.artist.repository.ArtistRepository;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDetailDTO;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.artist.repository.ArtistFollowRepository;
+import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import com.a404.duckonback.common.infra.s3.S3Service;
 import lombok.RequiredArgsConstructor;

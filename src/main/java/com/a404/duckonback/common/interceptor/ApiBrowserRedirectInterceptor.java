@@ -1,6 +1,6 @@
 package com.a404.duckonback.common.interceptor;
 
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

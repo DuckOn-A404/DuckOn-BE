@@ -7,7 +7,7 @@ import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
 import com.a404.duckonback.domain.admin.service.AdminService;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
 import com.a404.duckonback.domain.user.service.UserRankService;

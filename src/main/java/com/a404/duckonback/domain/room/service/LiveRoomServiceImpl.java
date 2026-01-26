@@ -1,8 +1,8 @@
 package com.a404.duckonback.domain.room.service;
 
 import com.a404.duckonback.common.infra.redis.RedisService;
-import com.a404.duckonback.domain.artist.service.ArtistService;
-import com.a404.duckonback.domain.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.room.entity.Room;
 import com.a404.duckonback.domain.room.dto.CreateRoomRequestDTO;
 import com.a404.duckonback.domain.room.dto.LiveRoomDTO;

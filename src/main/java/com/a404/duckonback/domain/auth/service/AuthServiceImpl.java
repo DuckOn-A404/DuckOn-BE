@@ -1,8 +1,8 @@
 package com.a404.duckonback.domain.auth.service;
 
 import com.a404.duckonback.common.dto.JWTDTO;
-import com.a404.duckonback.domain.artist.service.ArtistFollowService;
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistFollowService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.auth.dto.LoginRequestDTO;
 import com.a404.duckonback.domain.auth.dto.LoginResponseDTO;
 import com.a404.duckonback.domain.auth.dto.SignupRequestDTO;

@@ -1,6 +1,6 @@
-package com.a404.duckonback.domain.artist.repository;
+package com.a404.duckonback.domain.artist.artist.repository;
 
-import com.a404.duckonback.domain.artist.dto.ArtistDTO;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;

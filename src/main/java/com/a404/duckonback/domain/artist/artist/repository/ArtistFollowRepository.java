@@ -1,7 +1,7 @@
-package com.a404.duckonback.domain.artist.repository;
+package com.a404.duckonback.domain.artist.artist.repository;
 
-import com.a404.duckonback.domain.artist.entity.ArtistFollow;
-import com.a404.duckonback.domain.artist.entity.ArtistFollowId;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollowId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

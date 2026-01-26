@@ -1,4 +1,4 @@
-package com.a404.duckonback.domain.artist.entity;
+package com.a404.duckonback.domain.artist.artist.entity;
 
 import lombok.*;
 import java.io.Serializable;
