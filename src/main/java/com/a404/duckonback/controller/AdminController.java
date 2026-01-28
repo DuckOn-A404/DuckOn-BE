@@ -2,14 +2,12 @@ package com.a404.duckonback.controller;
 
 import com.a404.duckonback.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.dto.AdminArtistRequestDTO;
-import com.a404.duckonback.dto.UserRankDTO;
-import com.a404.duckonback.dto.UserRankLeaderboardDTO;
 import com.a404.duckonback.response.ApiResponseDTO;
 import com.a404.duckonback.response.SuccessCode;
 import com.a404.duckonback.service.ArtistService;
 import com.a404.duckonback.service.EngagementBatchService;
 import com.a404.duckonback.service.MemeRankingBatchService;
-import com.a404.duckonback.service.UserRankService;
+import com.a404.duckonback.service.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -19,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
+import com.a404.duckonback.dto.ReportDTO;
 import java.util.List;
 import java.util.Map;
 
@@ -32,9 +30,9 @@ import java.util.Map;
 public class AdminController {
 
     private final ArtistService artistService;
-    private final UserRankService userRankService;
     private final EngagementBatchService engagementBatchService;
     private final MemeRankingBatchService memeRankingBatchService;
+    private final ReportService reportService;
 
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
@@ -73,4 +71,14 @@ public class AdminController {
         memeRankingBatchService.aggregateHourlyTopMemes();
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_BUILD_MEME_HOURLY_TOP10_SUCCESS));
     }
+
+    @Operation(summary = "신고 목록 조회 (JWT 필요O)", description = "신고 목록을 조회합니다.")                                                                                       
+    @GetMapping("/reports")                                                                                                                                                           
+    public ResponseEntity<ApiResponseDTO<List<ReportDTO>>> getAllReports() {                                                                                                          
+        List<ReportDTO> reportDTOs = reportService.getAllReports()                                                                                                                    
+                .stream()                                                                                                                                                             
+                .map(ReportDTO::fromEntity)                                                                                                                                           
+                .toList();                                                                                                                                                            
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_SUCCESS, reportDTOs));                                                                      
+    }       
 }

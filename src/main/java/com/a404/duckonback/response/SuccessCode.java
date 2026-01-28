@@ -22,7 +22,8 @@ public enum SuccessCode {
     // 관리자 api 관련
     ADMIN_REBUILD_ENGAGEMENT_SUCCESS(200, HttpStatus.OK, "유저 참여도 지표 재생성에 성공했습니다."),
     ADMIN_BUILD_MEME_HOURLY_TOP10_SUCCESS(200, HttpStatus.OK, "시간별 밈 TOP10 집계가 완료되었습니다."),
-
+    ADMIN_GET_REPORT_LIST_SUCCESS(200, HttpStatus.OK, "신고 목록 조회에 성공했습니다."),
+    
     // 밈 api 관련
     MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
     MEME_DELETE_SUCCESS(200, HttpStatus.OK, "밈을 성공적으로 삭제했습니다."),
