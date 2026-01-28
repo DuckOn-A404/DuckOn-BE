@@ -1,6 +1,7 @@
 package com.a404.duckonback.domain.artist.repository;
 
 import com.a404.duckonback.domain.artist.entity.Artist;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
