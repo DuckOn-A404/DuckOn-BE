@@ -53,10 +53,6 @@ jobs:
           fi
           echo "Detected context=$DIR, dockerfile=$FOUND"
 
-      - name: Compute lowercase owner
-        run: |
-          echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -68,8 +64,7 @@ jobs:
           context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE_PATH }}
           push: false
-          tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
-
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:dryrun-${{ github.sha }}
 
   push-deploy:
     if: github.event_name == 'push'
@@ -111,6 +106,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
 
+      # ✅ GitLab 원칙: push는 test 포함 build
       - name: Gradle build
         run: |
           set -eux
@@ -155,12 +151,12 @@ jobs:
             ${{ steps.vars.outputs.image_repo }}:${{ steps.vars.outputs.tag_sha }}
 
   deploy-dev:
-    name: Deploy DEV (SSH, docker-compose)
+    name: Deploy DEV (SSH)
     runs-on: ubuntu-latest
     needs: [ push-deploy ]
     if: needs.push-deploy.outputs.env_name == 'dev'
     steps:
-      - name: Deploy to DEV via SSH (compose pull & up)
+      - name: Deploy to DEV via SSH (pull GHCR image)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEV_HOST }}
@@ -169,25 +165,48 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            cd /srv/duckon
 
-            # ✅ 이번 push 커밋 SHA 태그로 강제 배포
-            export IMAGE_TAG="${{ needs.push-deploy.outputs.tag_sha }}"
+            REGISTRY="${{ env.REGISTRY }}"
+            IMAGE_REPO="${{ needs.push-deploy.outputs.image_repo }}"
+            TAG="${{ needs.push-deploy.outputs.tag_sha }}"
+            LATEST="${{ needs.push-deploy.outputs.tag_latest }}"
 
-            echo "[deploy] IMAGE_TAG=$IMAGE_TAG"
+            NET="${{ env.DEV_NET }}"
+            APP="${{ env.DEV_APP }}"
 
-            # duckon-app-dev만 당겨도 되고, 전체 pull 해도 됨
-            docker compose -f docker-compose.dev.yml pull duckon-app-dev
+            # ✅ dev 네트워크 보장 (GitLab과 동일 네이밍)
+            docker network create "$NET" >/dev/null 2>&1 || true
+            for s in mysql-dev redis-dev duckon-mongo-dev; do
+              docker network connect "$NET" "$s" 2>/dev/null || true
+            done
 
-            # 컨테이너 재생성/재기동
-            docker compose -f docker-compose.dev.yml up -d --remove-orphans
+            # ✅ GHCR private면 login 필요. public이면 실패해도 pull이 될 수 있어서 || true
+            if [ -n "${{ secrets.DEV_GHCR_PAT || '' }}" ]; then
+              echo "${{ secrets.DEV_GHCR_PAT }}" | docker login "$REGISTRY" -u "${{ github.repository_owner }}" --password-stdin
+            fi
 
-            docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+            echo "[pull] $IMAGE_REPO:$TAG (fallback: $LATEST)"
+            docker pull "$IMAGE_REPO:$TAG" || docker pull "$IMAGE_REPO:$LATEST"
+
+            # ✅ env file: GitLab에서는 backend/dev.env였는데, 분리 후 위치는 서버에 그대로 둘 확률이 큼
+            #    지금 기존 yaml은 $HOME/dev.env를 쓰고 있어서 그대로 유지
+            ENV_FILE="$HOME/dev.env"
+            [ -f "$ENV_FILE" ] || { echo "[ERROR] $ENV_FILE not found"; exit 23; }
+
+            docker rm -f "$APP" 2>/dev/null || true
+            docker run -d --name "$APP" \
+              --network "$NET" \
+              --env-file "$ENV_FILE" \
+              -e SPRING_PROFILES_ACTIVE=dev \
+              -e JAVA_OPTS="-Xms256m -Xmx512m" \
+              -p 18081:8080 \
+              --restart unless-stopped \
+              "$IMAGE_REPO:$TAG"
 
             echo "[healthcheck]"
             for i in $(seq 1 30); do
-              code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/swagger-ui/index.html || true)
-              if [ "$code" = "200" ]; then
+              code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18081/actuator/health || true)
+              if [ "$code" = "200" ] || [ "$code" = "401" ]; then
                 echo "OK ($code)"
                 exit 0
               fi
