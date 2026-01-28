@@ -25,6 +25,7 @@ public enum SuccessCode {
     ADMIN_GET_USER_LIST_SUCCESS(200, HttpStatus.OK, "[관리자] 전체 사용자 목록 조회에 성공했습니다."),
     ADMIN_GET_REPORT_LIST_SUCCESS(200, HttpStatus.OK, "신고 목록 조회에 성공했습니다."),
     ADMIN_GET_ARTIST_LIST_SUCCESS(200, HttpStatus.OK, "[관리자] 전체 아티스트 목록 조회에 성공했습니다."),
+    ADMIN_DELETE_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 삭제에 성공했습니다."),
 
     // 밈 api 관련
     MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
