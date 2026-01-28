@@ -52,12 +52,12 @@ public class AdminController {
 
     @Operation(summary = "아티스트 정보 수정 (JWT 필요O)", description = "기존 아티스트의 정보를 수정합니다.")
     @PatchMapping("/artists/{artistId}")
-    public ResponseEntity<Map<String,String>> patchArtist(
+    public ResponseEntity<ApiResponseDTO<Void>> patchArtist(
             @PathVariable Long artistId,
             @ModelAttribute @Valid AdminArtistPatchDTO dto
     ) {
         artistService.patchArtist(artistId, dto);
-        return ResponseEntity.ok(Map.of("message", "아티스트 정보가 성공적으로 수정되었습니다."));
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_PATCH_ARTIST_SUCCESS));
     }
 
     @Operation(summary = "유저 참여도 지표 재생성 (JWT 필요O)", description = "유저 참여도 지표 스냅샷을 재생성합니다.")
