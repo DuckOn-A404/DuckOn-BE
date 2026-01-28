@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(
@@ -50,6 +52,11 @@ public class EmergingArtist {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "emergingArtist")
+    @Builder.Default
+    private List<EmergingArtistFollow> followers = new ArrayList<>();
+
 
     /**
      * 승격/강등 추적용 연결

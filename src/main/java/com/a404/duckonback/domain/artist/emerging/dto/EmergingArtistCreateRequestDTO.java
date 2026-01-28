@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmergingArtistCreateRequest {
+public class EmergingArtistCreateRequestDTO {
     @NotBlank @Size(min = 1, max = 50)
     private String nameKr;
     @NotBlank @Size(min = 1, max = 50)

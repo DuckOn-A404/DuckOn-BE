@@ -43,6 +43,8 @@ public enum SuccessCode {
 
     // 아티스트 관련
     CREATE_EMERGING_ARTIST_SUCCESS(201, HttpStatus.CREATED, "라이징 아티스트 등록에 성공했습니다."),
+    GET_EMERGING_ARTIST_LIST_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 목록 조회에 성공했습니다."),
+    GET_EMERGING_ARTIST_DETAIL_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 상세 조회에 성공했습니다."),
     ;
 
 

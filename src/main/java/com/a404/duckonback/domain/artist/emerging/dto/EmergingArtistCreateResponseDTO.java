@@ -7,6 +7,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmergingArtistCreateResponse {
+public class EmergingArtistCreateResponseDTO {
     private Long emergingArtistId;
 }
