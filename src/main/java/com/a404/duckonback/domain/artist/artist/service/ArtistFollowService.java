@@ -1,7 +1,7 @@
-package com.a404.duckonback.domain.artist.service;
+package com.a404.duckonback.domain.artist.artist.service;
 
-import com.a404.duckonback.domain.artist.dto.FollowedArtistDTO;
-import com.a404.duckonback.domain.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.artist.dto.FollowedArtistDTO;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

@@ -4,7 +4,7 @@ import com.a404.duckonback.domain.auth.dto.LoginResponseDTO;
 import com.a404.duckonback.domain.user.dto.UserDTO;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.auth.service.AuthAuditService;
 import com.a404.duckonback.common.util.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;

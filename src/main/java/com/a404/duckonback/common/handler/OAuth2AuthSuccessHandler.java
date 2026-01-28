@@ -4,7 +4,7 @@ import com.a404.duckonback.common.config.ServiceProperties;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import com.a404.duckonback.domain.user.repository.UserRepository;
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.common.util.JWTUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

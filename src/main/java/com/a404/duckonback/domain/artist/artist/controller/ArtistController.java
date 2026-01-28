@@ -1,11 +1,11 @@
-package com.a404.duckonback.domain.artist.controller;
+package com.a404.duckonback.domain.artist.artist.controller;
 
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
-import com.a404.duckonback.domain.artist.dto.ArtistDTO;
-import com.a404.duckonback.domain.artist.dto.ArtistDetailDTO;
-import com.a404.duckonback.domain.artist.dto.UpdateArtistFollowRequestDTO;
-import com.a404.duckonback.domain.artist.service.ArtistFollowService;
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDetailDTO;
+import com.a404.duckonback.domain.artist.artist.dto.UpdateArtistFollowRequestDTO;
+import com.a404.duckonback.domain.artist.artist.service.ArtistFollowService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

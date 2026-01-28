@@ -1,11 +1,11 @@
-package com.a404.duckonback.domain.artist.service;
+package com.a404.duckonback.domain.artist.artist.service;
 
-import com.a404.duckonback.domain.artist.dto.FollowedArtistDTO;
-import com.a404.duckonback.domain.artist.entity.Artist;
-import com.a404.duckonback.domain.artist.entity.ArtistFollow;
-import com.a404.duckonback.domain.artist.entity.ArtistFollowId;
-import com.a404.duckonback.domain.artist.repository.ArtistFollowRepository;
-import com.a404.duckonback.domain.artist.repository.ArtistRepository;
+import com.a404.duckonback.domain.artist.artist.dto.FollowedArtistDTO;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollowId;
+import com.a404.duckonback.domain.artist.artist.repository.ArtistFollowRepository;
+import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.domain.user.repository.UserRepository;

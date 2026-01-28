@@ -1,6 +1,6 @@
 package com.a404.duckonback.domain.user.entity;
 
-import com.a404.duckonback.domain.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
 import com.a404.duckonback.domain.meme.entity.Meme;
 import com.a404.duckonback.domain.penalty.entity.Penalty;
 import com.a404.duckonback.domain.report.entity.Report;

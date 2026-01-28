@@ -1,10 +1,10 @@
 package com.a404.duckonback.common.infra.redis;
 
-import com.a404.duckonback.domain.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.room.dto.*;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.exception.CustomException;
-import com.a404.duckonback.domain.artist.repository.ArtistRepository;
+import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;

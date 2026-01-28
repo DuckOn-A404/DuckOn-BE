@@ -1,4 +1,4 @@
-package com.a404.duckonback.domain.artist.dto;
+package com.a404.duckonback.domain.artist.artist.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

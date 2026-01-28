@@ -1,6 +1,6 @@
-package com.a404.duckonback.domain.artist.dto;
+package com.a404.duckonback.domain.artist.artist.dto;
 
-import com.a404.duckonback.domain.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

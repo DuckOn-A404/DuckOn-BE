@@ -1,6 +1,6 @@
 package com.a404.duckonback.domain.room.entity;
 
-import com.a404.duckonback.domain.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
