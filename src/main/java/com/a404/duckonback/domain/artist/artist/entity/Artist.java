@@ -32,9 +32,26 @@ public class Artist {
     @Column(name = "img_url", columnDefinition = "TEXT")
     private String imgUrl;
 
+    /**
+     * OFFICIAL: 메인 노출
+     * DEMOTED : 강등되어 메인에서 숨김(= emerging에서만 보이도록 UI 처리)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private ArtistStatus status;
+
     @OneToMany(mappedBy = "artist")
     private List<ArtistFollow> followers = new ArrayList<>();
 
     @OneToMany(mappedBy = "artist")
     private List<Room> rooms = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.status == null) this.status = ArtistStatus.OFFICIAL;
+    }
+
+    // 편의 메서드
+    public void demote() { this.status = ArtistStatus.DEMOTED; }
+    public void promote() { this.status = ArtistStatus.OFFICIAL; }
 }
