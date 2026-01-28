@@ -220,6 +220,20 @@ public class ArtistServiceImpl implements ArtistService {
     }
 
     @Override
+    public void deleteArtist(Long artistId) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
+                        HttpStatus.NOT_FOUND));
+
+        // S3에 저장된 이미지가 있으면 삭제
+        if (artist.getImgUrl() != null) {
+            s3Service.deleteFile(artist.getImgUrl());
+        }
+
+        artistRepository.delete(artist);
+    }
+
+    @Override
     public String findSlugById(Long artistId) {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,

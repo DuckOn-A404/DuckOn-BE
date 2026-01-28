@@ -5,12 +5,14 @@ import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
 import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
 import com.a404.duckonback.domain.admin.service.AdminService;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
+import com.a404.duckonback.domain.report.dto.ReportDTO;
+import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
-import com.a404.duckonback.domain.user.service.UserRankService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -20,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 
 @Tag(name = "관리자", description = "관리자 전용 API")
@@ -32,10 +33,10 @@ import java.util.Map;
 public class AdminController {
 
     private final ArtistService artistService;
-    private final UserRankService userRankService;
     private final EngagementBatchService engagementBatchService;
     private final MemeRankingBatchService memeRankingBatchService;
     private final AdminService adminService;
+    private final ReportService reportService;
 
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
@@ -50,12 +51,12 @@ public class AdminController {
 
     @Operation(summary = "아티스트 정보 수정 (JWT 필요O)", description = "기존 아티스트의 정보를 수정합니다.")
     @PatchMapping("/artists/{artistId}")
-    public ResponseEntity<Map<String,String>> patchArtist(
+    public ResponseEntity<ApiResponseDTO<Void>> patchArtist(
             @PathVariable Long artistId,
             @ModelAttribute @Valid AdminArtistPatchDTO dto
     ) {
         artistService.patchArtist(artistId, dto);
-        return ResponseEntity.ok(Map.of("message", "아티스트 정보가 성공적으로 수정되었습니다."));
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_PATCH_ARTIST_SUCCESS));
     }
 
     @Operation(summary = "유저 참여도 지표 재생성 (JWT 필요O)", description = "유저 참여도 지표 스냅샷을 재생성합니다.")
@@ -83,6 +84,33 @@ public class AdminController {
     ) {
         PageResponse<AdminUserListDTO> userList = adminService.getAdminUserList(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_USER_LIST_SUCCESS, userList));
+    }
+
+    @Operation(summary = "신고 목록 조회 (JWT 필요O)", description = "신고 목록을 조회합니다.")                                                                                       
+    @GetMapping("/reports")                                                                                                                                                           
+    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getAllReports(
+        @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {                                                                                
+        PageResponse<ReportDTO> reportDTOs = reportService.getAllReports(page, size);                                                                                                                                                                                                                                                                             
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_SUCCESS, reportDTOs));                                                                      
+    }     
+    
+    @Operation(summary = "아티스트 조회(JWT 필요O)", description = "전체 아티스트를 조회합니다.")
+    @GetMapping("/artists")
+    public ResponseEntity<ApiResponseDTO<PageResponse<AdminArtistListDTO>>> getAllArtists(
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        PageResponse<AdminArtistListDTO> artistDTOs = adminService.getAllArtists(page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_ARTIST_LIST_SUCCESS, artistDTOs));
+    }
+
+    @Operation(summary = "아티스트 삭제(JWT 필요O)", description = "아티스트를 삭제합니다.")
+    @DeleteMapping("/artists/{artistId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteArtist(@PathVariable Long artistId) {
+        artistService.deleteArtist(artistId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_DELETE_ARTIST_SUCCESS));
     }
 
 }
