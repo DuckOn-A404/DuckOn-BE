@@ -107,4 +107,11 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_ARTIST_LIST_SUCCESS, artistDTOs));
     }
 
+    @Operation(summary = "아티스트 삭제(JWT 필요O)", description = "아티스트를 삭제합니다.")
+    @DeleteMapping("/artists/{artistId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteArtist(@PathVariable Long artistId) {
+        artistService.deleteArtist(artistId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_DELETE_ARTIST_SUCCESS));
+    }
+
 }
