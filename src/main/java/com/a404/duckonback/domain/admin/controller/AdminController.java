@@ -5,6 +5,7 @@ import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
 import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
 import com.a404.duckonback.domain.admin.service.AdminService;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.domain.artist.service.ArtistService;
@@ -94,6 +95,16 @@ public class AdminController {
     ) {                                                                                
         PageResponse<ReportDTO> reportDTOs = reportService.getAllReports(page, size);                                                                                                                                                                                                                                                                             
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_SUCCESS, reportDTOs));                                                                      
-    }       
+    }     
+    
+    @Operation(summary = "아티스트 조회(JWT 필요O)", description = "전체 아티스트를 조회합니다.")
+    @GetMapping("/artists")
+    public ResponseEntity<ApiResponseDTO<PageResponse<AdminArtistListDTO>>> getAllArtists(
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        PageResponse<AdminArtistListDTO> artistDTOs = adminService.getAllArtists(page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_ARTIST_LIST_SUCCESS, artistDTOs));
+    }
 
 }
