@@ -9,6 +9,8 @@ import com.a404.duckonback.domain.admin.service.AdminService;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.domain.artist.service.ArtistService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
+import com.a404.duckonback.domain.report.dto.ReportDTO;
+import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
 import com.a404.duckonback.domain.user.service.UserRankService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 
 @Tag(name = "관리자", description = "관리자 전용 API")
@@ -32,10 +33,10 @@ import java.util.Map;
 public class AdminController {
 
     private final ArtistService artistService;
-    private final UserRankService userRankService;
     private final EngagementBatchService engagementBatchService;
     private final MemeRankingBatchService memeRankingBatchService;
     private final AdminService adminService;
+    private final ReportService reportService;
 
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
@@ -84,5 +85,15 @@ public class AdminController {
         PageResponse<AdminUserListDTO> userList = adminService.getAdminUserList(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_USER_LIST_SUCCESS, userList));
     }
+
+    @Operation(summary = "신고 목록 조회 (JWT 필요O)", description = "신고 목록을 조회합니다.")                                                                                       
+    @GetMapping("/reports")                                                                                                                                                           
+    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getAllReports(
+        @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {                                                                                
+        PageResponse<ReportDTO> reportDTOs = reportService.getAllReports(page, size);                                                                                                                                                                                                                                                                             
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_SUCCESS, reportDTOs));                                                                      
+    }       
 
 }
