@@ -6,8 +6,11 @@ import com.a404.duckonback.common.enums.ReportType;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
+import com.a404.duckonback.domain.report.dto.ReportCreateRequestDTO;
 import com.a404.duckonback.domain.report.entity.Report;
 import com.a404.duckonback.domain.report.repository.ReportRepository;
+import com.a404.duckonback.domain.user.entity.User;
+import com.a404.duckonback.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -23,10 +26,13 @@ import java.util.Optional;
 public class ReportServiceImpl implements ReportService {
 
     private final ReportRepository reportRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public Report createReport(Report report) {
-        return reportRepository.save(report);
+    public Report createReport(ReportCreateRequestDTO request, User reporter) {
+        User reported = userRepository.findByUserIdAndDeletedFalse(request.getReportedId());  
+
+        return reportRepository.save(request.toEntity(reporter, reported));
     }
 
     @Override
