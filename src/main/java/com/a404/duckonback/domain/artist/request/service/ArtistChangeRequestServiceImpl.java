@@ -4,9 +4,11 @@ import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.enums.RequestStatus;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
+import com.a404.duckonback.domain.admin.dto.UserSummaryDTO;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
 import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.artist.emerging.repository.EmergingArtistRepository;
+import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminDetailInfoDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminInfoDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestCreateRequestDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestInfoDTO;
@@ -98,6 +100,48 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
                         .build()
         );
         return PageResponse.from1Base(dtoPage);
+    }
+
+    @Override
+    public ArtistChangeRequestAdminDetailInfoDTO getDetail(Long requestId) {
+        ArtistProfileChangeRequest request = artistChangeRequestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND));
+
+        User requester = userRepository.findByIdAndDeletedFalse(request.getRequestedBy().getId());
+        User reviewer = null;
+        if(request.getReviewedBy() != null) {
+            reviewer = userRepository.findByIdAndDeletedFalse(request.getReviewedBy().getId());
+        }
+
+        return ArtistChangeRequestAdminDetailInfoDTO.builder()
+                .id(request.getId())
+                .targetType(request.getTargetType())
+                .targetId(request.getTargetId())
+                .artistNameEn(request.getTargetNameEn())
+                .artistNameKr(request.getTargetNameKr())
+                .content(request.getContent())
+                .attachment(request.getAttachment())
+                .status(request.getStatus().name())
+                .requester(UserSummaryDTO.builder()
+                        .id(requester.getId())
+                        .userId(requester.getUserId())
+                        .nickname(requester.getNickname())
+                        .role(requester.getRole())
+                        .imgUrl(requester.getImgUrl())
+                        .build())
+                .createdAt(request.getCreatedAt())
+                .updatedAt(request.getUpdatedAt())
+                .reviewedBy(request.getReviewedBy() != null ?
+                        UserSummaryDTO.builder()
+                                .id(reviewer.getId())
+                                .userId(reviewer.getUserId())
+                                .nickname(reviewer.getNickname())
+                                .role(reviewer.getRole())
+                                .imgUrl(reviewer.getImgUrl())
+                                .build() : null)
+                .reviewComment(request.getReviewComment())
+                .reviewedAt(request.getReviewedAt())
+                .build();
     }
 
     private ArtistReadable loadTargetArtist(ArtistChangeTargetType type, Long targetId) {
