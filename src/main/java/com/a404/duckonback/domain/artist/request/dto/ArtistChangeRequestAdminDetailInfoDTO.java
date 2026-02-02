@@ -16,7 +16,7 @@ public class ArtistChangeRequestAdminDetailInfoDTO {
 
     private ArtistChangeTargetType targetType;
     private Long targetId;
-    private String artistNameEn;;
+    private String artistNameEn;
     private String artistNameKr;
 
     private String content;
