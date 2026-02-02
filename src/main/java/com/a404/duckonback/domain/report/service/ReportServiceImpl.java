@@ -30,7 +30,15 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public Report createReport(ReportCreateRequestDTO request, User reporter) {
-        User reported = userRepository.findByUserIdAndDeletedFalse(request.getReportedId());  
+        User reported = userRepository.findByUserIdAndDeletedFalse(request.getReportedId()); 
+        
+        // 같은 사용자가 동일 컨텐츠 중복 신고 안되게
+        if (reportRepository.existsByReporterAndContentIdAndReportType(reporter,
+                request.getContentId(), request.getReportType())) {
+            throw new CustomException(ErrorCode.DUPLICATE_REPORT);
+        }
+        // todo: 자기 자신 신고 방지
+        // todo: contentId 유효성 검사
 
         return reportRepository.save(request.toEntity(reporter, reported));
     }
