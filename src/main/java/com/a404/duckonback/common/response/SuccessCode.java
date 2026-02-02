@@ -28,6 +28,9 @@ public enum SuccessCode {
     ADMIN_DELETE_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 삭제에 성공했습니다."),
     ADMIN_PATCH_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 정보 수정에 성공했습니다."),
 
+    // 신고 api 관련
+    REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),
+
     // 밈 api 관련
     MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
     MEME_DELETE_SUCCESS(200, HttpStatus.OK, "밈을 성공적으로 삭제했습니다."),
@@ -44,6 +47,11 @@ public enum SuccessCode {
 
     // 번역 api 관련
     CHAT_TRANSLATION_SUCCESS(200, HttpStatus.OK, "채팅 번역을 성공적으로 수행했습니다."),
+
+    // 아티스트 관련
+    CREATE_EMERGING_ARTIST_SUCCESS(201, HttpStatus.CREATED, "라이징 아티스트 등록에 성공했습니다."),
+    GET_EMERGING_ARTIST_LIST_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 목록 조회에 성공했습니다."),
+    GET_EMERGING_ARTIST_DETAIL_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 상세 조회에 성공했습니다."),
     ;
 
 

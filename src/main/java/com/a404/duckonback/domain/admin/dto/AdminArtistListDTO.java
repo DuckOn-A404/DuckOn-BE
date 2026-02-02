@@ -2,7 +2,7 @@ package com.a404.duckonback.domain.admin.dto;
 
 import java.time.LocalDate;
 
-import com.a404.duckonback.domain.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.entity.Artist;
 
 import lombok.*;
 

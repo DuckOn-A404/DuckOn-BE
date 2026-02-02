@@ -1,6 +1,6 @@
 package com.a404.duckonback.domain.chat.service;
 
-import com.a404.duckonback.domain.artist.service.ArtistFollowService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistFollowService;
 import com.a404.duckonback.domain.chat.dto.ChatMessageRequestDTO;
 import com.a404.duckonback.domain.chat.dto.ChatMessageResponseDTO;
 import com.a404.duckonback.domain.chat.entity.ChatMessage;

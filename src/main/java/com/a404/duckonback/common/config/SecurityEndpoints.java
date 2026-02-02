@@ -25,6 +25,8 @@ public final class SecurityEndpoints {
             "/api/artists",
             "/api/artists/random",
             "/api/artists/*",
+            "/api/emerging-artists",
+            "/api/emerging-artists/*",
 
             // artists chat
             "/api/chat/artist/**",
