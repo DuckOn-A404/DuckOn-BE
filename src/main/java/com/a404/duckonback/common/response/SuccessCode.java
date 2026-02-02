@@ -52,6 +52,9 @@ public enum SuccessCode {
     CREATE_EMERGING_ARTIST_SUCCESS(201, HttpStatus.CREATED, "라이징 아티스트 등록에 성공했습니다."),
     GET_EMERGING_ARTIST_LIST_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 목록 조회에 성공했습니다."),
     GET_EMERGING_ARTIST_DETAIL_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 상세 조회에 성공했습니다."),
+
+    // 아티스트 요청 관련
+    CREATE_ARTIST_CHANGE_REQUEST_SUCCESS(201, HttpStatus.CREATED, "아티스트 변경 요청이 성공적으로 접수되었습니다.")
     ;
 
 
