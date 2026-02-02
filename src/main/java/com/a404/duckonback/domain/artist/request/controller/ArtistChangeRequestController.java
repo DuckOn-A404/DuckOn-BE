@@ -8,6 +8,7 @@ import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestCreateRe
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestInfoDTO;
 import com.a404.duckonback.domain.artist.request.service.ArtistChangeRequestService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "아티스트 정보 변경 요청 관리", description = "사용자가 아티스트 정보 변경을 요청하고 자신의 요청 내역을 조회하는 기능을 제공합니다.")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/artist-change-requests")
