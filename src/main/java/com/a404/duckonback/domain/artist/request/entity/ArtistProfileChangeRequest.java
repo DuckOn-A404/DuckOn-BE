@@ -34,6 +34,12 @@ public class ArtistProfileChangeRequest {
     @Column(name = "target_id", nullable = false)
     private Long targetId;
 
+    @Column(name = "target_name_kr", nullable = false, length = 100)
+    private String targetNameKr;
+
+    @Column(name = "target_name_en", nullable = false, length = 100)
+    private String targetNameEn;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requested_by_user_id", nullable = false)
     private User requestedBy;
@@ -44,6 +50,12 @@ public class ArtistProfileChangeRequest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by_user_id")
     private User reviewedBy;
+
+    @Column(name = "review_comment", columnDefinition = "TEXT")
+    private String reviewComment;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)

@@ -5,7 +5,9 @@ import com.a404.duckonback.common.enums.RequestStatus;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
+import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.artist.emerging.repository.EmergingArtistRepository;
+import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminInfoDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestCreateRequestDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestInfoDTO;
 import com.a404.duckonback.domain.artist.request.entity.ArtistChangeTargetType;
@@ -35,14 +37,19 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. 대상 아티스트 또는 신인 아티스트 존재 여부 확인
-        validateTargetExists(req.getTargetType(), req.getTargetId());
+        // 3. 아티스트 정보 불러오기
+        ArtistReadable target = loadTargetArtist(
+                req.getTargetType(),
+                req.getTargetId()
+        );
 
         // 4. 아티스트 정보 변경 요청 생성 및 저장
         artistChangeRequestRepository.save(ArtistProfileChangeRequest.builder()
                 .requestedBy(user)
                 .targetType(req.getTargetType())
                 .targetId(req.getTargetId())
+                .targetNameKr(target.getNameKr())
+                .targetNameEn(target.getNameEn())
                 .status(RequestStatus.PENDING)
                 .content(req.getContent().trim())
                 .attachment(req.getAttachment() == null ? null : req.getAttachment().trim())
@@ -52,11 +59,7 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ArtistChangeRequestInfoDTO> getMyRequests(int page, int size, long userId) {
-        // 1. 사용자 존재 여부 확인
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        // 2. 페이징 처리된 아티스트 정보 변경 요청 조회
+        // 페이징 처리된 아티스트 정보 변경 요청 조회
         int safePage = Math.max(page - 1, 0); // 페이지 번호는 0부터 시작
         int safeSize = Math.min(Math.max(size, 1), 100); // 페이지 크기는 최소 1 이상
 
@@ -69,24 +72,44 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
         }
 
         Page<ArtistChangeRequestInfoDTO> dtoPage = pageResult.map(ArtistChangeRequestInfoDTO::fromEntity);
-
         return PageResponse.from1Base(dtoPage);
     }
 
-    private void validateTargetExists(ArtistChangeTargetType type, Long targetId) {
-        if (type == null || targetId == null) {
+    @Override
+    public PageResponse<ArtistChangeRequestAdminInfoDTO> getAllRequests(int page, int size) {
+        int safePage = Math.max(page - 1, 0); // 페이지 번호는 0부터 시작
+        int safeSize = Math.min(Math.max(size, 1), 100); // 페이지 크기는 최소 1 이상
+
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+        Page<ArtistProfileChangeRequest> pageResult = artistChangeRequestRepository.findAll(pageable);
+
+        Page<ArtistChangeRequestAdminInfoDTO> dtoPage = pageResult.map(e ->
+                ArtistChangeRequestAdminInfoDTO.builder()
+                        .id(e.getId())
+                        .targetType(e.getTargetType())
+                        .targetId(e.getTargetId())
+                        .artistNameEn(e.getTargetNameEn())
+                        .artistNameKr(e.getTargetNameKr())
+                        .status(e.getStatus())
+                        .requestedByUserId(e.getRequestedBy().getId())
+                        .content(e.getContent())
+                        .attachment(e.getAttachment())
+                        .requestedAt(e.getCreatedAt())
+                        .build()
+        );
+        return PageResponse.from1Base(dtoPage);
+    }
+
+    private ArtistReadable loadTargetArtist(ArtistChangeTargetType type, Long targetId) {
+        if(type == null || targetId == null) {
             throw new CustomException(ErrorCode.ARTIST_INFO_EMPTY);
         }
 
-        boolean exists;
-        if (type == ArtistChangeTargetType.ARTIST) {
-            exists = artistRepository.existsById(targetId);
-            if (!exists) throw new CustomException(ErrorCode.ARTIST_NOT_FOUND);
-        } else if (type == ArtistChangeTargetType.EMERGING_ARTIST) {
-            exists = emergingArtistRepository.existsById(targetId);
-            if (!exists) throw new CustomException(ErrorCode.EMERGING_ARTIST_NOT_FOUND);
-        } else {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
-        }
+        return switch (type){
+            case ARTIST -> artistRepository.findById(targetId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.ARTIST_NOT_FOUND));
+            case EMERGING_ARTIST -> emergingArtistRepository.findById(targetId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.EMERGING_ARTIST_NOT_FOUND));
+        };
     }
 }

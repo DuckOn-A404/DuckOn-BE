@@ -16,6 +16,8 @@ public class ArtistChangeRequestInfoDTO {
     private Long id;
     private ArtistChangeTargetType targetType;
     private Long targetId;
+    private String artistNameEn;
+    private String artistNameKr;
 
     @Size(max = 2000)
     @NotBlank
@@ -31,6 +33,8 @@ public class ArtistChangeRequestInfoDTO {
                 .id(e.getId())
                 .targetType(e.getTargetType())
                 .targetId(e.getTargetId())
+                .artistNameEn(e.getTargetNameEn())
+                .artistNameKr(e.getTargetNameKr())
                 .status(e.getStatus())
                 .content(e.getContent())
                 .attachment(e.getAttachment())
