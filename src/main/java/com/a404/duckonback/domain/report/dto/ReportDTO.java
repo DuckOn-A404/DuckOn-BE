@@ -15,6 +15,7 @@ public class ReportDTO {
     private Long reportId;
     private String reporterId;
     private String reportedId;
+    private Long contentId;
     private String reportedContent;
     private LocalDateTime reportedAt;
     private String reportStatus;
@@ -26,6 +27,7 @@ public class ReportDTO {
                 .reportId(report.getReportId())
                 .reporterId(report.getReporter().getUserId())
                 .reportedId(report.getReported().getUserId())
+                .contentId(report.getContentId())
                 .reportedContent(report.getReportedContent())
                 .reportedAt(report.getReportedAt())
                 .reportStatus(report.getReportStatus().name())
