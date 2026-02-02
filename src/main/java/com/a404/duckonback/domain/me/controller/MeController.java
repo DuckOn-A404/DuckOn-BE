@@ -1,6 +1,6 @@
 package com.a404.duckonback.domain.me.controller;
 
-import com.a404.duckonback.domain.artist.dto.FollowedArtistDTO;
+import com.a404.duckonback.domain.artist.artist.dto.FollowedArtistDTO;
 import com.a404.duckonback.domain.me.dto.PasswordChangeRequestDTO;
 import com.a404.duckonback.domain.me.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.domain.meme.dto.MemeDetailDTO;
@@ -11,7 +11,7 @@ import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.ErrorCode;
 import com.a404.duckonback.common.response.SuccessCode;
-import com.a404.duckonback.domain.artist.service.ArtistFollowService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistFollowService;
 import com.a404.duckonback.domain.meme.service.MemeService;
 import com.a404.duckonback.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;

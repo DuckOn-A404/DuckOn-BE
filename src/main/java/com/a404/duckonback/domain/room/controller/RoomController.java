@@ -1,11 +1,11 @@
 package com.a404.duckonback.domain.room.controller;
 
 import com.a404.duckonback.common.infra.redis.RedisService;
-import com.a404.duckonback.domain.artist.dto.ArtistDTO;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
 import com.a404.duckonback.common.enums.RoomSyncEventType;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
-import com.a404.duckonback.domain.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.room.dto.*;
 import com.a404.duckonback.domain.room.service.LiveRoomService;
 import com.a404.duckonback.domain.user.service.UserService;

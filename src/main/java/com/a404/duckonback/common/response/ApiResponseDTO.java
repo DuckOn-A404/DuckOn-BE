@@ -34,6 +34,24 @@ public record ApiResponseDTO<T>(
                 .build();
     }
 
+    public static <T> ApiResponseDTO<T> created(final SuccessCode successCode, @Nullable final T data) {
+        return ApiResponseDTO.<T>builder()
+                .httpStatus(HttpStatus.CREATED)
+                .status(successCode.getCode())
+                .message(successCode.getMessage())
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponseDTO<T> created(final SuccessCode successCode) {
+        return ApiResponseDTO.<T>builder()
+                .httpStatus(HttpStatus.CREATED)
+                .status(successCode.getCode())
+                .message(successCode.getMessage())
+                .data(null)
+                .build();
+    }
+
     public static <T> ApiResponseDTO<T> fail(final ErrorCode errorCode) {
         return ApiResponseDTO.<T>builder()
                 .httpStatus(errorCode.getHttpStatus())

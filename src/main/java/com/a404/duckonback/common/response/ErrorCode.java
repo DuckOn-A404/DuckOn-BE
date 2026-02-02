@@ -21,6 +21,11 @@ public enum ErrorCode {
     TRANSLATION_TEXT_EMPTY(400, HttpStatus.BAD_REQUEST, "번역할 텍스트가 없습니다."),
     TRANSLATION_UNSUPPORTED_LANG(400, HttpStatus.BAD_REQUEST, "지원하지 않는 언어 코드입니다."),
     EXCEED_TOTAL_PAGES(400,HttpStatus.BAD_REQUEST,"존재하는 총 페이지 수보다 큰 페이지 번호입니다."),
+    ARTIST_NAME_KR_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 한글명이 비어있습니다."),
+    ARTIST_NAME_EN_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 영문명이 비어있습니다."),
+    ARTIST_PROFILE_IMAGE_URL_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 프로필 이미지 URL이 비어있습니다."),
+    DUPLICATE_EMERGING_ARTIST(400,HttpStatus.BAD_REQUEST,"이미 존재하는 라이징 아티스트입니다."),
+    SIZE_NOT_VALID(400,HttpStatus.BAD_REQUEST,"잘못된 크기 값입니다."),
 
     // 401 UNAUTHORIZED
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
@@ -41,6 +46,8 @@ public enum ErrorCode {
     NOT_FOUND(404, HttpStatus.NOT_FOUND, "해당 API를 찾을 수 없습니다."),
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
     MEME_NOT_FOUND(404, HttpStatus.NOT_FOUND, "밈을 찾을 수 없습니다."),
+    EMERGING_ARTIST_NOT_FOUND(404,HttpStatus.NOT_FOUND,"존재하지 않는 라이징 아티스트입니다."),
+    NOT_FOUND_ARTIST(404, HttpStatus.NOT_FOUND, "아티스트를 찾을 수 없습니다."),
 
     //409 CONFLICT
     ROOM_CREATION_CONFLICT(409, HttpStatus.CONFLICT, "이미 방 생성 요청이 처리 중입니다."),
