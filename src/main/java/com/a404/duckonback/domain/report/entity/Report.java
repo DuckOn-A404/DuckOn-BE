@@ -29,8 +29,11 @@ public class Report {
     @JoinColumn(name = "reporter_user_id", nullable = false)
     private User reporter;
 
+    @Column(name = "content_id")
+    private Long contentId;  // room_id, meme_id, message_id
+
     @Column(name = "reported_content", length = 255)
-    private String reportedContent;
+    private String reportedContent;  // 방제, 밈 url, 채팅 내용
 
     @Column(name = "reported_at", nullable = false)
     private LocalDateTime reportedAt;
