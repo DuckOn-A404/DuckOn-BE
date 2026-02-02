@@ -1,7 +1,10 @@
 package com.a404.duckonback.common.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.formatter.qual.InvalidFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.a404.duckonback.common.response.ApiResponseDTO;
@@ -72,6 +75,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(code.getHttpStatus())
                 .body(ApiResponseDTO.fail(code));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponseDTO<Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        Throwable root = getRootCause(ex);
+
+        // 1. Enum 타입 불일치
+        if(root instanceof InvalidFormatException ife){
+            // 어떤 필드에서 발생했는지 확인
+            String fieldName = null;
+            if(ife.getPath() != null && !ife.getPath().isEmpty()){
+                fieldName = ife.getPath().get(0).getFieldName();
+            }
+
+            // targetType이 error인 경우
+            if("targetType".equals(fieldName)){
+                return ResponseEntity
+                        .status(ErrorCode.INVALID_TARGET_TYPE.getHttpStatus())
+                        .body(ApiResponseDTO.fail(ErrorCode.INVALID_TARGET_TYPE));
+            }
+
+            // 그 외 필드의 enum 불일치
+            return ResponseEntity
+                    .status(ErrorCode.INVALID_ENUM_VALUE.getHttpStatus())
+                    .body(ApiResponseDTO.fail(ErrorCode.INVALID_ENUM_VALUE));
+        }
+        // JSON 자체가 깨진 경우(파싱 불가)
+        return ResponseEntity
+                .status(ErrorCode.INVALID_REQUEST.getHttpStatus())
+                .body(ApiResponseDTO.fail(ErrorCode.INVALID_REQUEST));
     }
 
     private Throwable getRootCause(Throwable t) {
