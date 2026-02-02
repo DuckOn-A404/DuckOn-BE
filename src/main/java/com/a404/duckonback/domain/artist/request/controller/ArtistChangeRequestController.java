@@ -1,9 +1,11 @@
 package com.a404.duckonback.domain.artist.request.controller;
 
+import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestCreateRequestDTO;
+import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestInfoDTO;
 import com.a404.duckonback.domain.artist.request.service.ArtistChangeRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -11,10 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,5 +33,19 @@ public class ArtistChangeRequestController {
     ){
         artistChangeRequestService.create(principal.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDTO.created(SuccessCode.CREATE_ARTIST_CHANGE_REQUEST_SUCCESS));
+    }
+
+    @Operation(
+            summary = "내 아티스트 정보 변경 요청 조회",
+            description = "사용자가 자신의 아티스트 정보 변경 요청 내역을 조회합니다. JWT 인증이 필요합니다."
+    )
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponseDTO<PageResponse<ArtistChangeRequestInfoDTO>>> getMyRequests(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        PageResponse<ArtistChangeRequestInfoDTO> response = artistChangeRequestService.getMyRequests(page, size, principal.getId());
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_MY_ARTIST_CHANGE_REQUEST_LIST_SUCCESS, response));
     }
 }
