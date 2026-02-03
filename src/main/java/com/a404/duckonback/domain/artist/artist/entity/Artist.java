@@ -1,5 +1,6 @@
 package com.a404.duckonback.domain.artist.artist.entity;
 
+import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.room.entity.Room;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +15,7 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Artist {
+public class Artist implements ArtistReadable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,4 +55,19 @@ public class Artist {
     // 편의 메서드
     public void demote() { this.status = ArtistStatus.DEMOTED; }
     public void promote() { this.status = ArtistStatus.OFFICIAL; }
+
+    @Override
+    public Long getId() {
+        return this.artistId;
+    }
+
+    @Override
+    public String getNameEn(){
+        return this.nameEn;
+    }
+
+    @Override
+    public String getNameKr(){
+        return this.nameKr;
+    }
 }

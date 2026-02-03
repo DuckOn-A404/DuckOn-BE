@@ -21,13 +21,21 @@ public enum ErrorCode {
     TRANSLATION_TEXT_EMPTY(400, HttpStatus.BAD_REQUEST, "번역할 텍스트가 없습니다."),
     TRANSLATION_UNSUPPORTED_LANG(400, HttpStatus.BAD_REQUEST, "지원하지 않는 언어 코드입니다."),
     EXCEED_TOTAL_PAGES(400,HttpStatus.BAD_REQUEST,"존재하는 총 페이지 수보다 큰 페이지 번호입니다."),
+    INVALID_REQUEST(400, HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다."),
+    INVALID_ENUM_VALUE(400,HttpStatus.BAD_REQUEST,"잘못된 ENUM 값이 입력되었습니다."),
+
+    // artist 관련 에러 코드
     ARTIST_NAME_KR_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 한글명이 비어있습니다."),
     ARTIST_NAME_EN_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 영문명이 비어있습니다."),
     ARTIST_PROFILE_IMAGE_URL_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 프로필 이미지 URL이 비어있습니다."),
     DUPLICATE_EMERGING_ARTIST(400,HttpStatus.BAD_REQUEST,"이미 존재하는 라이징 아티스트입니다."),
     SIZE_NOT_VALID(400,HttpStatus.BAD_REQUEST,"잘못된 크기 값입니다."),
     DUPLICATE_REPORT(400,HttpStatus.BAD_REQUEST,"이미 신고한 컨텐츠입니다."),
-    
+    ARTIST_INFO_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 정보가 비어있습니다."),
+    ARTIST_NOT_FOUND(400,HttpStatus.BAD_REQUEST,"존재하지 않는 아티스트입니다."),
+    ARTIST_CHANGE_REQUEST_CONTENT_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 변경 요청 내용이 비어있습니다."),
+    INVALID_TARGET_TYPE(400, HttpStatus.BAD_REQUEST, "targetType 값이 올바르지 않습니다. (ARTIST 또는 EMERGING_ARTIST 중 하나를 입력해주세요.)"),
+
     // 401 UNAUTHORIZED
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
     INVALID_PASSWORD(401, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 올바르지 않습니다."),
