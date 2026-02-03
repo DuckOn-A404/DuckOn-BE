@@ -57,7 +57,8 @@ public enum SuccessCode {
 
     // 아티스트 요청 관련
     CREATE_ARTIST_CHANGE_REQUEST_SUCCESS(201, HttpStatus.CREATED, "아티스트 변경 요청이 성공적으로 접수되었습니다."),
-    GET_MY_ARTIST_CHANGE_REQUEST_LIST_SUCCESS(200, HttpStatus.OK, "아티스트 변경 요청 내역 조회에 성공했습니다.")
+    GET_MY_ARTIST_CHANGE_REQUEST_LIST_SUCCESS(200, HttpStatus.OK, "아티스트 변경 요청 내역 조회에 성공했습니다."),
+    ADMIN_REVIEW_ARTIST_CHANGE_REQUEST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 변경 요청 검토에 성공했습니다.")
     ;
 
 

@@ -2,16 +2,14 @@ package com.a404.duckonback.domain.artist.request.service;
 
 import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.enums.RequestStatus;
+import com.a404.duckonback.common.enums.UserRole;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
 import com.a404.duckonback.domain.admin.dto.UserSummaryDTO;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
 import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.artist.emerging.repository.EmergingArtistRepository;
-import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminDetailInfoDTO;
-import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminInfoDTO;
-import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestCreateRequestDTO;
-import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestInfoDTO;
+import com.a404.duckonback.domain.artist.request.dto.*;
 import com.a404.duckonback.domain.artist.request.entity.ArtistChangeTargetType;
 import com.a404.duckonback.domain.artist.request.entity.ArtistProfileChangeRequest;
 import com.a404.duckonback.domain.artist.request.repository.ArtistChangeRequestRepository;
@@ -142,6 +140,27 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
                 .reviewComment(request.getReviewComment())
                 .reviewedAt(request.getReviewedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void reviewRequest(Long requestId, Long adminId, ArtistChangeRequestAdminReviewRequestDTO approveRequestDTO) {
+        ArtistProfileChangeRequest request = artistChangeRequestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND));
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if(admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        String comment = approveRequestDTO.getReviewComment().trim();
+
+        switch(approveRequestDTO.getAction()){
+            case APPROVE -> request.approve(admin, comment);
+            case REJECT -> request.reject(admin, comment);
+        }
     }
 
     private ArtistReadable loadTargetArtist(ArtistChangeTargetType type, Long targetId) {
