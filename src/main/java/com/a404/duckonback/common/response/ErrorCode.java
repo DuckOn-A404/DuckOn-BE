@@ -57,6 +57,8 @@ public enum ErrorCode {
     MEME_NOT_FOUND(404, HttpStatus.NOT_FOUND, "밈을 찾을 수 없습니다."),
     EMERGING_ARTIST_NOT_FOUND(404,HttpStatus.NOT_FOUND,"존재하지 않는 라이징 아티스트입니다."),
     NOT_FOUND_ARTIST(404, HttpStatus.NOT_FOUND, "아티스트를 찾을 수 없습니다."),
+    NOTIFICATION_NOT_FOUND(404,HttpStatus.NOT_FOUND,"존재하지 않는 알림입니다."),
+    EMERGING_ARTIST_FOLLOW_NOT_FOUND(404,HttpStatus.NOT_FOUND,"라이징 아티스트를 팔로우하고있지 않습니다."),
 
     //409 CONFLICT
     ROOM_CREATION_CONFLICT(409, HttpStatus.CONFLICT, "이미 방 생성 요청이 처리 중입니다."),
