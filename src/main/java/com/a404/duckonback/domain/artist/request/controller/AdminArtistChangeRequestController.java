@@ -1,16 +1,20 @@
 package com.a404.duckonback.domain.artist.request.controller;
 
 import com.a404.duckonback.common.dto.PageResponse;
+import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
+import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminReviewRequestDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminDetailInfoDTO;
 import com.a404.duckonback.domain.artist.request.dto.ArtistChangeRequestAdminInfoDTO;
 import com.a404.duckonback.domain.artist.request.service.ArtistChangeRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "관리자 아티스트 정보 변경 요청 관리", description = "관리자가 아티스트 정보 변경 요청을 관리하는 기능을 제공합니다.")
@@ -44,6 +48,20 @@ public class AdminArtistChangeRequestController {
     ) {
         ArtistChangeRequestAdminDetailInfoDTO response = artistChangeRequestService.getDetail(requestId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_ARTIST_CHANGE_REQUEST_DETAIL_SUCCESS, response));
+    }
+
+    @Operation(
+            summary = "아티스트 정보 변경 요청 검토 및 처리",
+            description = "관리자가 특정 아티스트 정보 변경 요청을 승인하거나 거부합니다. 관리자 권한이 필요합니다."
+    )
+    @PatchMapping("/{requestId}")
+    public ResponseEntity<ApiResponseDTO<Void>> reviewRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal CustomUserPrincipal customUserPrincipal,
+            @Valid @RequestBody ArtistChangeRequestAdminReviewRequestDTO approveRequestDTO
+    ) {
+        artistChangeRequestService.reviewRequest(requestId, customUserPrincipal.getId(), approveRequestDTO);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_REVIEW_ARTIST_CHANGE_REQUEST_SUCCESS));
     }
 
 }

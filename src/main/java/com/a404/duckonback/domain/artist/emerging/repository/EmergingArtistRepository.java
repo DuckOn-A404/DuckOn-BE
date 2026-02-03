@@ -15,35 +15,6 @@ import java.util.Optional;
 public interface EmergingArtistRepository extends JpaRepository<EmergingArtist, Long>, EmergingArtistRepositoryCustom {
     boolean existsByNameKrAndNameEnAndStatus(String nameKr, String nameEn, EmergingArtistStatus status);
 
-    @Query("""
-        SELECT new com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistDetailResponseDTO(
-            ea.emergingArtistId,
-            ea.createdAt,
-            ea.debutDate,
-            ea.nameKr,
-            ea.nameEn,
-            ea.imgUrl,
-            ea.status,
-            u.nickname,
-            COUNT(f)
-        )
-        FROM EmergingArtist ea
-        JOIN ea.createdBy u
-        LEFT JOIN ea.followers f
-        WHERE ea.emergingArtistId = :id
-          AND ea.status <> com.a404.duckonback.domain.artist.emerging.entity.EmergingArtistStatus.DELETED
-        GROUP BY
-                ea.emergingArtistId,
-                ea.createdAt,
-                ea.debutDate,
-                ea.nameKr,
-                ea.nameEn,
-                ea.imgUrl,
-                ea.status,
-                u.nickname
-    """)
-    Optional<EmergingArtistDetailResponseDTO> getEmergingArtistDetail(@Param("id") Long id);
-
     @Query(value = """
         SELECT
             ea.emerging_artist_id AS emergingArtistId,

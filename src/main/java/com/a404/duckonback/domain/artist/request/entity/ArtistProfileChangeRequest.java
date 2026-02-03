@@ -95,4 +95,18 @@ public class ArtistProfileChangeRequest {
     public void cancelByRequester() {
         this.status = RequestStatus.CANCELED;
     }
+
+    public void approve(User admin, String reviewComment){
+        this.status = RequestStatus.APPROVED;
+        this.reviewedBy = admin;
+        this.reviewComment = reviewComment;
+        this.reviewedAt = LocalDateTime.now();
+    }
+
+    public void reject(User admin, String reviewComment){
+        this.status = RequestStatus.REJECTED;
+        this.reviewedBy = admin;
+        this.reviewComment = reviewComment;
+        this.reviewedAt = LocalDateTime.now();
+    }
 }

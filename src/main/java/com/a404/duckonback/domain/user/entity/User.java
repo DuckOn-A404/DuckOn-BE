@@ -1,6 +1,7 @@
 package com.a404.duckonback.domain.user.entity;
 
 import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.emerging.entity.EmergingArtistFollow;
 import com.a404.duckonback.domain.meme.entity.Meme;
 import com.a404.duckonback.domain.penalty.entity.Penalty;
 import com.a404.duckonback.domain.report.entity.Report;
@@ -106,6 +107,10 @@ public class User {
     @Builder.Default
     @OneToMany(mappedBy = "user")
     private List<ArtistFollow> artistFollows = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user")
+    private List<EmergingArtistFollow> emergingArtistFollows = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "user")
