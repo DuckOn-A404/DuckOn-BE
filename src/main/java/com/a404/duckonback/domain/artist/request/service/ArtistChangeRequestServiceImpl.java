@@ -13,6 +13,7 @@ import com.a404.duckonback.domain.artist.request.dto.*;
 import com.a404.duckonback.domain.artist.request.entity.ArtistChangeTargetType;
 import com.a404.duckonback.domain.artist.request.entity.ArtistProfileChangeRequest;
 import com.a404.duckonback.domain.artist.request.repository.ArtistChangeRequestRepository;
+import com.a404.duckonback.domain.notification.service.NotificationService;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
     private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
     private final EmergingArtistRepository emergingArtistRepository;
+    private final NotificationService notificationService;
 
     @Override
     public void create(Long userId, ArtistChangeRequestCreateRequestDTO req) {
@@ -161,6 +163,9 @@ public class ArtistChangeRequestServiceImpl implements ArtistChangeRequestServic
             case APPROVE -> request.approve(admin, comment);
             case REJECT -> request.reject(admin, comment);
         }
+
+        // 유저에게 알림 전송
+        notificationService.notifyArtistChangeRequestReview(request);
     }
 
     private ArtistReadable loadTargetArtist(ArtistChangeTargetType type, Long targetId) {
