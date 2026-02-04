@@ -65,7 +65,10 @@ public enum SuccessCode {
 
     // 알림 관련
     GET_MY_NOTIFICATION_LIST_SUCCESS(200, HttpStatus.OK, "내 알림 목록 조회에 성공했습니다."),
-    MARK_NOTIFICATION_AS_READ_SUCCESS(200, HttpStatus.OK, "알림을 읽음 처리하는 데 성공했습니다.")
+    MARK_NOTIFICATION_AS_READ_SUCCESS(200, HttpStatus.OK, "알림을 읽음 처리하는 데 성공했습니다."),
+
+    // 파일 업로드 관련
+    PRESIGNED_URL_CREATION_SUCCESS(200, HttpStatus.OK, "파일의 presigned url을 생성하는 데 성공했습니다."),
     ;
 
 
