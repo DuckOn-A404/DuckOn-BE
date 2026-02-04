@@ -13,7 +13,7 @@ import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
-import com.a404.duckonback.domain.user.entity.User;
+import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,7 +43,7 @@ public class AdminController {
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
     public ResponseEntity<Map<String,String>> createArtist(
-            @AuthenticationPrincipal User principal,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @RequestBody @Valid AdminArtistCreateRequestDTO dto
     ) {
         Long userId = principal.getId();
@@ -56,10 +56,11 @@ public class AdminController {
     @Operation(summary = "아티스트 정보 수정 (JWT 필요O)", description = "기존 아티스트의 정보를 수정합니다.")
     @PatchMapping("/artists/{artistId}")
     public ResponseEntity<ApiResponseDTO<Void>> patchArtist(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long artistId,
             @ModelAttribute @Valid AdminArtistPatchDTO dto
     ) {
-        artistService.patchArtist(artistId, dto);
+        artistService.patchArtist(principal.getId(), artistId, dto);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_PATCH_ARTIST_SUCCESS));
     }
 
