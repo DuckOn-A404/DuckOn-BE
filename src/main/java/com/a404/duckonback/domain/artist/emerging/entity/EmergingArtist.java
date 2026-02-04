@@ -1,6 +1,7 @@
 package com.a404.duckonback.domain.artist.emerging.entity;
 
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,7 +25,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmergingArtist {
+public class EmergingArtist implements ArtistReadable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -90,5 +91,20 @@ public class EmergingArtist {
 
     public void markActive() {
         this.status = EmergingArtistStatus.ACTIVE;
+    }
+
+    @Override
+    public Long getId() {
+        return this.emergingArtistId;
+    }
+
+    @Override
+    public String getNameEn() {
+        return this.nameEn;
+    }
+
+    @Override
+    public String getNameKr() {
+        return this.nameKr;
     }
 }

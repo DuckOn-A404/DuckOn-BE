@@ -21,4 +21,5 @@ public class EmergingArtistDetailResponseDTO {
     private EmergingArtistStatus status;
     private String createdByUserNickName;
     private Long followerCount;
+    private boolean following;
 }

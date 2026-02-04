@@ -18,6 +18,7 @@ public class UserDetailInfoResponseDTO {
     private String language;
     private String imgUrl;
     private List<Long> artistList;
+    private List<Long> emergingArtistList;
     private int followingCount;
     private int followerCount;
     private boolean socialLogin;
@@ -27,4 +28,6 @@ public class UserDetailInfoResponseDTO {
     // 랭킹
     private UserRankDTO userRank;
 
+    // 읽지 않은 알림 개수
+    private Long unreadNotificationCount;
 }

@@ -7,6 +7,7 @@ import com.a404.duckonback.domain.me.dto.PasswordChangeRequestDTO;
 import com.a404.duckonback.domain.me.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.domain.meme.dto.MemeItemDTO;
 import com.a404.duckonback.domain.meme.dto.MemeResponseDTO;
+import com.a404.duckonback.domain.notification.repository.NotificationRepository;
 import com.a404.duckonback.domain.penalty.service.PenaltyService;
 import com.a404.duckonback.domain.meme.entity.Meme;
 import com.a404.duckonback.domain.penalty.entity.Penalty;
@@ -63,6 +64,7 @@ public class UserServiceImpl implements UserService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserRankService userRankService;
     private final MemeRepository memoRepository;
+    private final NotificationRepository notificationRepository;
 
     // --- 가벼운 규칙 상수 ---
     private static final int SIZE_DEFAULT = 10;
@@ -115,7 +117,6 @@ public class UserServiceImpl implements UserService {
     public UserDetailInfoResponseDTO getUserDetailInfo(String userId) {
         User user = userRepository.findUserDetailWithArtistFollows(userId)
                 .orElseThrow(() -> new CustomException("사용자 없음", HttpStatus.NOT_FOUND));
-
         return toDTO(user);
     }
 
@@ -173,6 +174,13 @@ public class UserServiceImpl implements UserService {
                 .filter(Objects::nonNull)
                 .toList();
 
+        List<Long> emergingArtistList = Optional.ofNullable(user.getEmergingArtistFollows())
+                .orElse(List.of())
+                .stream()
+                .map(af -> af.getEmergingArtist()!= null ? af.getEmergingArtist().getEmergingArtistId() : null)
+                .filter(Objects::nonNull)
+                .toList();
+
         List<RoomDTO> roomList = Optional.ofNullable(user.getRooms())
                 .orElse(List.of())
                 .stream()
@@ -190,6 +198,8 @@ public class UserServiceImpl implements UserService {
                         .build())
                 .toList();
 
+        long unreadNotificationCount = notificationRepository.countByUser_IdAndReadAtIsNull(user.getId());
+
         return UserDetailInfoResponseDTO.builder()
                 .userId(user.getUserId())
                 .email(user.getEmail())
@@ -198,12 +208,14 @@ public class UserServiceImpl implements UserService {
                 .language(user.getLanguage())
                 .imgUrl(user.getImgUrl())
                 .artistList(artistList)
+                .emergingArtistList(emergingArtistList)
                 .followingCount(Optional.ofNullable(user.getFollowing()).orElse(List.of()).size())
                 .followerCount(Optional.ofNullable(user.getFollowers()).orElse(List.of()).size())
                 .socialLogin(isSocial)
                 .penaltyList(pennaltyList)
                 .roomList(roomList)
                 .userRank(userRankService.getUserRank(user.getId()))
+                .unreadNotificationCount(unreadNotificationCount)
                 .build();
     }
 

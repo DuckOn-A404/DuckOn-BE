@@ -11,6 +11,7 @@ import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistListResponse
 import com.a404.duckonback.domain.artist.emerging.entity.EmergingArtist;
 import com.a404.duckonback.domain.artist.emerging.entity.EmergingArtistSort;
 import com.a404.duckonback.domain.artist.emerging.entity.EmergingArtistStatus;
+import com.a404.duckonback.domain.artist.emerging.repository.EmergingArtistFollowRepository;
 import com.a404.duckonback.domain.artist.emerging.repository.EmergingArtistRepository;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.domain.user.repository.UserRepository;
@@ -29,6 +30,7 @@ import java.util.List;
 public class EmergingArtistServiceImpl implements EmergingArtistService {
     private final EmergingArtistRepository emergingArtistRepository;
     private final UserRepository userRepository;
+    private final EmergingArtistFollowRepository emergingArtistFollowRepository;
 
     @Override
     public EmergingArtistCreateResponseDTO create(Long userId, EmergingArtistCreateRequestDTO req) {
@@ -84,9 +86,28 @@ public class EmergingArtistServiceImpl implements EmergingArtistService {
     }
 
     @Override
-    public EmergingArtistDetailResponseDTO getEmergingArtistDetail(Long emergingArtistId) {
-        return emergingArtistRepository.getEmergingArtistDetail(emergingArtistId)
+    public EmergingArtistDetailResponseDTO getEmergingArtistDetail(Long emergingArtistId, Long userId) {
+        EmergingArtist emergingArtist = emergingArtistRepository.findById(emergingArtistId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EMERGING_ARTIST_NOT_FOUND));
+
+        boolean following = false;
+        if(userId != null){
+            following = emergingArtistFollowRepository.findByUser_IdAndEmergingArtist(userId, emergingArtist) != null;
+        }
+
+        long followersCount = emergingArtistFollowRepository.countByEmergingArtist(emergingArtist);
+
+        return EmergingArtistDetailResponseDTO.builder()
+                .emergingArtistId(emergingArtist.getEmergingArtistId())
+                .createdAt(emergingArtist.getCreatedAt())
+                .debutDate(emergingArtist.getDebutDate())
+                .nameKr(emergingArtist.getNameKr())
+                .nameEn(emergingArtist.getNameEn())
+                .imgUrl(emergingArtist.getImgUrl())
+                .status(emergingArtist.getStatus())
+                .followerCount(followersCount)
+                .following(following)
+                .build();
     }
 
     @Override

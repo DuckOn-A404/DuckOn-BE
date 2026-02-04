@@ -11,6 +11,6 @@ import java.util.List;
 public interface EmergingArtistService {
     EmergingArtistCreateResponseDTO create(Long userId, EmergingArtistCreateRequestDTO emergingArtistCreateRequestDTO);
     PageResponse<EmergingArtistListResponseDTO> getList(int page, int size, String sort, String order, String keyword);
-    EmergingArtistDetailResponseDTO getEmergingArtistDetail(Long emergingArtistId);
+    EmergingArtistDetailResponseDTO getEmergingArtistDetail(Long emergingArtistId, Long userId);
     List<EmergingArtistListResponseDTO> getRandomEmergingArtistList(int count);
 }

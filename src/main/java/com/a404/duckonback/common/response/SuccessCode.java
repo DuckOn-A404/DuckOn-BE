@@ -27,6 +27,9 @@ public enum SuccessCode {
     ADMIN_GET_ARTIST_LIST_SUCCESS(200, HttpStatus.OK, "[관리자] 전체 아티스트 목록 조회에 성공했습니다."),
     ADMIN_DELETE_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 삭제에 성공했습니다."),
     ADMIN_PATCH_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 정보 수정에 성공했습니다."),
+    ADMIN_GET_ARTIST_CHANGE_REQUEST_LIST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 정보 변경 요청 목록 조회에 성공했습니다."),
+    ADMIN_GET_ARTIST_CHANGE_REQUEST_DETAIL_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 정보 변경 요청 상세 조회에 성공했습니다."),
+    ADMIN_REVIEW_ARTIST_CHANGE_REQUEST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 변경 요청 검토에 성공했습니다."),
 
     // 신고 api 관련
     REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),
@@ -52,6 +55,16 @@ public enum SuccessCode {
     CREATE_EMERGING_ARTIST_SUCCESS(201, HttpStatus.CREATED, "라이징 아티스트 등록에 성공했습니다."),
     GET_EMERGING_ARTIST_LIST_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 목록 조회에 성공했습니다."),
     GET_EMERGING_ARTIST_DETAIL_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 상세 조회에 성공했습니다."),
+    FOLLOW_EMERGING_ARTIST_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 팔로우에 성공했습니다."),
+    UNFOLLOW_EMERGING_ARTIST_SUCCESS(200, HttpStatus.OK, "라이징 아티스트 언팔로우에 성공했습니다."),
+
+    // 아티스트 요청 관련
+    CREATE_ARTIST_CHANGE_REQUEST_SUCCESS(201, HttpStatus.CREATED, "아티스트 변경 요청이 성공적으로 접수되었습니다."),
+    GET_MY_ARTIST_CHANGE_REQUEST_LIST_SUCCESS(200, HttpStatus.OK, "아티스트 변경 요청 내역 조회에 성공했습니다."),
+
+    // 알림 관련
+    GET_MY_NOTIFICATION_LIST_SUCCESS(200, HttpStatus.OK, "내 알림 목록 조회에 성공했습니다."),
+    GET_NOTIFICATION_DETAIL_SUCCESS(200, HttpStatus.OK, "알림 상세 조회에 성공했습니다.")
     ;
 
 

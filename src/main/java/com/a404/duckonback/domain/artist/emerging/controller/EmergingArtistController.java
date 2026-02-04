@@ -8,6 +8,7 @@ import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistCreateReques
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistCreateResponseDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistDetailResponseDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistListResponseDTO;
+import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistFollowService;
 import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EmergingArtistController {
     private final EmergingArtistService emergingArtistService;
+    private final EmergingArtistFollowService emergingArtistFollowService;
 
     @Operation(summary = "라이징 아티스트 등록", description = "라이징 아티스트를 등록합니다.")
     @PostMapping
@@ -55,12 +57,13 @@ public class EmergingArtistController {
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_EMERGING_ARTIST_LIST_SUCCESS, res));
     }
 
-    @Operation(summary = "라이징 아티스트 상세 조회", description = "라이징 아티스트의 상세 정보를 조회합니다.")
+    @Operation(summary = "라이징 아티스트 상세 조회", description = "라이징 아티스트의 상세 정보를 조회합니다. 로그인, 비로그인 사용자 모두 사용할 수 있습니다.")
     @GetMapping("/{emergingArtistId}")
     public ResponseEntity<ApiResponseDTO<EmergingArtistDetailResponseDTO>> getEmergingArtistDetail(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long emergingArtistId
     ){
-        EmergingArtistDetailResponseDTO res = emergingArtistService.getEmergingArtistDetail(emergingArtistId);
+        EmergingArtistDetailResponseDTO res = emergingArtistService.getEmergingArtistDetail(emergingArtistId, principal != null ? principal.getId() : null);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_EMERGING_ARTIST_DETAIL_SUCCESS, res));
     }
 
@@ -71,6 +74,26 @@ public class EmergingArtistController {
     ){
         List<EmergingArtistListResponseDTO> res = emergingArtistService.getRandomEmergingArtistList(count);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_EMERGING_ARTIST_LIST_SUCCESS, res));
+    }
+
+    @Operation(summary = "라이징 아티스트 팔로우", description = "라이징 아티스트를 팔로우합니다.")
+    @PostMapping("/{emergingArtistId}/follow")
+    public ResponseEntity<ApiResponseDTO<Void>> followEmergingArtist(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long emergingArtistId
+    ){
+        emergingArtistFollowService.followEmergingArtist(principal.getId(), emergingArtistId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.FOLLOW_EMERGING_ARTIST_SUCCESS));
+    }
+
+    @Operation(summary = "라이징 아티스트 언팔로우", description = "라이징 아티스트를 언팔로우합니다.")
+    @DeleteMapping("/{emergingArtistId}/follow")
+    public ResponseEntity<ApiResponseDTO<Void>> unfollowEmergingArtist(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long emergingArtistId
+    ){
+        emergingArtistFollowService.unfollowEmergingArtist(principal.getId(), emergingArtistId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.UNFOLLOW_EMERGING_ARTIST_SUCCESS));
     }
 
 }
