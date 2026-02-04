@@ -1,16 +1,21 @@
 package com.a404.duckonback.domain.artist.artist.service;
 
 import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
-import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistCreateRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistCreateResponseDTO;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
 import com.a404.duckonback.domain.artist.artist.dto.ArtistDetailDTO;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.artist.artist.entity.ArtistFollow;
+import com.a404.duckonback.domain.artist.artist.entity.ArtistStatus;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistFollowRepository;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
 import com.a404.duckonback.domain.user.repository.UserRepository;
+import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.infra.s3.S3Service;
+import com.a404.duckonback.common.response.ErrorCode;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -107,80 +112,81 @@ public class ArtistServiceImpl implements ArtistService {
     }
 
     @Override
-    public Artist createArtist(AdminArtistRequestDTO dto) {
-        // 1) 중복 검사
-        if (artistRepository.existsByNameEnOrNameKr(dto.getNameEn(), dto.getNameKr())) {
-            throw new CustomException("이미 존재하는 아티스트입니다.", HttpStatus.CONFLICT);
-        }
-
-        // 2) debutDate 기본값
-        LocalDate debut = dto.getDebutDate() != null
-                ? dto.getDebutDate()
-                : LocalDate.now();
-
-        // 3) 이미지 업로드 (선택)
-        String imgUrl = null;
-        MultipartFile file = dto.getImage();
-        if (file != null && !file.isEmpty()) {
-            // artist/{nameEn}/... 경로 아래 저장
-            String prefix = String.format("artist/%s", dto.getNameEn());
-            imgUrl = s3Service.uploadFile(file, prefix);
-        }
-
-        // 4) 엔티티 생성 및 저장
-        Artist artist = Artist.builder()
-                .nameEn(dto.getNameEn())
-                .nameKr(dto.getNameKr())
-                .debutDate(debut)
-                .imgUrl(imgUrl)
-                .build();
-        return artistRepository.save(artist);
+    public AdminArtistCreateResponseDTO createArtist(Long userId, AdminArtistCreateRequestDTO dto) {
+        // 1. 중복 검사
+        boolean exists = artistRepository.existsByNameEnOrNameKr(
+            dto.getNameEn().trim(),
+            dto.getNameKr().trim()
+    );
+    if(exists){
+        throw new CustomException(ErrorCode.DUPLICATE_ARTIST);
     }
 
-    @Override
-    public Artist updateArtist(Long artistId, AdminArtistRequestDTO dto) {
-        // 1) 기존 아티스트 조회
-        Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
-                        HttpStatus.NOT_FOUND));
-
-        // 2) 이름 중복 검사 (다른 레코드에 같은 영문/한글명이 있는지)
-        Optional<Artist> conflict = artistRepository
-                .findByNameEnOrNameKr(dto.getNameEn(), dto.getNameKr())
-                .filter(a -> !a.getArtistId().equals(artistId));
-        if (conflict.isPresent()) {
-            throw new CustomException("이미 존재하는 아티스트 이름입니다.", HttpStatus.CONFLICT);
-        }
-
-        // 3) debutDate 갱신
-        LocalDate debut = dto.getDebutDate() != null
-                ? dto.getDebutDate()
-                : artist.getDebutDate();
-        artist.setDebutDate(debut);
-
-        // 4) 이름 갱신
-        artist.setNameEn(dto.getNameEn());
-        artist.setNameKr(dto.getNameKr());
-
-        // 5) 이미지 파일 처리
-        MultipartFile file = dto.getImage();
-        if (file != null && !file.isEmpty()) {
-            // 기존 이미지가 있으면 삭제
-            if (artist.getImgUrl() != null) {
-                s3Service.deleteFile(artist.getImgUrl());
-            }
-            // 새로 업로드 (artist/{nameEn}/... 경로)
-            String prefix = String.format("artist/%s", dto.getNameEn());
-            String newUrl = s3Service.uploadFile(file, prefix);
-            artist.setImgUrl(newUrl);
-        }
-
-        // 6) 저장
-        return artistRepository.save(artist);
+    // 2. 사용자 조회
+    User user = userRepository.findByIdAndDeletedFalse(userId);
+    if(user == null){
+        throw new CustomException(ErrorCode.USER_NOT_FOUND);
     }
 
+    // 3. 아티스트 생성
+    Artist artist = artistRepository.save(Artist.builder()
+            .nameKr(dto.getNameKr().trim())
+            .nameEn(dto.getNameEn().trim())
+            .imgUrl(dto.getImgUrl().trim())
+            .debutDate(dto.getDebutDate())
+            .status(ArtistStatus.OFFICIAL)
+            .build());
+
+    return AdminArtistCreateResponseDTO.builder()
+            .artistId(artist.getArtistId())
+            .build();
+}
+    
+
+//    @Override
+//    public Artist updateArtist(Long artistId, AdminArtistCreateRequestDTO dto) {
+//        // 1) 기존 아티스트 조회
+//        Artist artist = artistRepository.findById(artistId)
+//                .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
+//                        HttpStatus.NOT_FOUND));
+//
+//        // 2) 이름 중복 검사 (다른 레코드에 같은 영문/한글명이 있는지)
+//        Optional<Artist> conflict = artistRepository
+//                .findByNameEnOrNameKr(dto.getNameEn(), dto.getNameKr())
+//                .filter(a -> !a.getArtistId().equals(artistId));
+//        if (conflict.isPresent()) {
+//            throw new CustomException("이미 존재하는 아티스트 이름입니다.", HttpStatus.CONFLICT);
+//        }
+//
+//        // 3) debutDate 갱신
+//        LocalDate debut = dto.getDebutDate() != null
+//                ? dto.getDebutDate()
+//                : artist.getDebutDate();
+//        artist.setDebutDate(debut);
+//
+//        // 4) 이름 갱신
+//        artist.setNameEn(dto.getNameEn());
+//        artist.setNameKr(dto.getNameKr());
+//
+//        // 5) 이미지 파일 처리
+//        String imageUrl = dto.getImgUrl();
+//        if (imageUrl != null && !imageUrl.isEmpty()) {
+//            // 기존 이미지가 있으면 삭제
+//            if (artist.getImgUrl() != null) {
+//                s3Service.deleteFile(artist.getImgUrl());
+//            }
+//            // 새로 업로드 (artist/{nameEn}/... 경로)
+//            String prefix = String.format("artist/%s", dto.getNameEn());
+//            String newUrl = s3Service.uploadFile(imageUrl, prefix);
+//            artist.setImgUrl(newUrl);
+//        }
+//
+//        // 6) 저장
+//        return artistRepository.save(artist);
+//    }
+
     @Override
-    public Artist patchArtist(Long artistId, AdminArtistPatchDTO dto) {
+    public AdminArtistPatchDTO patchArtist(Long artistId, AdminArtistPatchDTO dto) {
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
                         HttpStatus.NOT_FOUND));
@@ -201,22 +207,23 @@ public class ArtistServiceImpl implements ArtistService {
             artist.setDebutDate(dto.getDebutDate());
         }
         if (dto.getNameEn() != null) {
-            artist.setNameEn(dto.getNameEn());
+            artist.setNameEn(dto.getNameEn().trim());
         }
         if (dto.getNameKr() != null) {
-            artist.setNameKr(dto.getNameKr());
+            artist.setNameKr(dto.getNameKr().trim());
         }
-        if (dto.getImage() != null && !dto.getImage().isEmpty()) {
-            // 기존 이미지 삭제
-            if (artist.getImgUrl() != null) {
-                s3Service.deleteFile(artist.getImgUrl());
-            }
-            String prefix = String.format("artist/%s", artist.getNameEn());
-            String newUrl = s3Service.uploadFile(dto.getImage(), prefix);
-            artist.setImgUrl(newUrl);
+        if (dto.getImgUrl() != null && !dto.getImgUrl().trim().isEmpty()) {
+            artist.setImgUrl(dto.getImgUrl().trim());
         }
 
-        return artistRepository.save(artist);
+        Artist savedArtist = artistRepository.save(artist);
+
+        return AdminArtistPatchDTO.builder()
+                .nameEn(savedArtist.getNameEn())
+                .nameKr(savedArtist.getNameKr())
+                .debutDate(savedArtist.getDebutDate())
+                .imgUrl(savedArtist.getImgUrl())
+                .build();
     }
 
     @Override

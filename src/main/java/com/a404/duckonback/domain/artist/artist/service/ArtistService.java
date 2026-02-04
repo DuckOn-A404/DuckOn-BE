@@ -1,7 +1,8 @@
 package com.a404.duckonback.domain.artist.artist.service;
 
 import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
-import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistCreateRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistCreateResponseDTO;
 import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
 import com.a404.duckonback.domain.artist.artist.dto.ArtistDetailDTO;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
@@ -20,9 +21,8 @@ public interface ArtistService {
     List<ArtistDTO> searchArtists(String keyword);
     List<ArtistDTO> getRandomArtists(int size);
 
-    Artist createArtist(AdminArtistRequestDTO dto);
-    Artist updateArtist(Long artistId, AdminArtistRequestDTO dto);
-    Artist patchArtist(Long artistId, AdminArtistPatchDTO dto);
+    AdminArtistCreateResponseDTO createArtist(Long userId,AdminArtistCreateRequestDTO dto);
+    AdminArtistPatchDTO patchArtist(Long artistId, AdminArtistPatchDTO dto);
     void deleteArtist(Long artistId);
 
     String findSlugById(Long artistId);
