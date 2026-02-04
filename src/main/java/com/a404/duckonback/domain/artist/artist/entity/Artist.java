@@ -1,5 +1,6 @@
 package com.a404.duckonback.domain.artist.artist.entity;
 
+import com.a404.duckonback.common.entity.BaseLastModifiedAuditEntity;
 import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.room.entity.Room;
 import jakarta.persistence.*;
@@ -15,7 +16,7 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Artist implements ArtistReadable {
+public class Artist extends BaseLastModifiedAuditEntity implements ArtistReadable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

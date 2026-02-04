@@ -1,6 +1,7 @@
 package com.a404.duckonback.domain.artist.emerging.service;
 
 import com.a404.duckonback.common.dto.PageResponse;
+import com.a404.duckonback.domain.admin.dto.AdminEmergingArtistUpdateRequestDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistCreateRequestDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistCreateResponseDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistDetailResponseDTO;
@@ -13,4 +14,5 @@ public interface EmergingArtistService {
     PageResponse<EmergingArtistListResponseDTO> getList(int page, int size, String sort, String order, String keyword);
     EmergingArtistDetailResponseDTO getEmergingArtistDetail(Long emergingArtistId, Long userId);
     List<EmergingArtistListResponseDTO> getRandomEmergingArtistList(int count);
+    void updateEmergingArtist(Long emergingArtistId, AdminEmergingArtistUpdateRequestDTO dto);
 }

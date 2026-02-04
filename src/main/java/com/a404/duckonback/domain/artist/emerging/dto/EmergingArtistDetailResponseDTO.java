@@ -22,4 +22,5 @@ public class EmergingArtistDetailResponseDTO {
     private String createdByUserNickName;
     private Long followerCount;
     private boolean following;
+    private LocalDateTime updatedAt;
 }

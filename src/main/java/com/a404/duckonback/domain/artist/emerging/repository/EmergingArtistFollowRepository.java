@@ -15,9 +15,10 @@ import java.util.Optional;
 
 @Repository
 public interface EmergingArtistFollowRepository extends JpaRepository<EmergingArtistFollow, EmergingArtistFollowId> {
+    boolean existsByUser_IdAndEmergingArtist_EmergingArtistId(Long userId, Long emergingArtistEmergingArtistId);
     Optional<EmergingArtistFollow> findByUser_IdAndEmergingArtist(Long userId, EmergingArtist emergingArtist);
     void deleteByUser_IdAndEmergingArtist(Long userId, EmergingArtist emergingArtist);
-    long countByEmergingArtist(EmergingArtist emergingArtist);
+    long countByEmergingArtist_EmergingArtistId(Long emergingArtistId);
     List<EmergingArtistFollow> findAllByUser_Id(Long userId);
 
     @Query("""
