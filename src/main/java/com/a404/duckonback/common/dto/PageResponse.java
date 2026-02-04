@@ -39,4 +39,14 @@ public class PageResponse<T> {
                 .items(page.getContent())
                 .build();
     }
+
+    public static <T> PageResponse<T> from1Base(Page<?> pageMeta, List<T> items) {
+        return PageResponse.<T>builder()
+                .page(pageMeta.getNumber() + 1)
+                .size(pageMeta.getSize())
+                .totalElements(pageMeta.getTotalElements())
+                .totalPages(pageMeta.getTotalPages())
+                .items(items)
+                .build();
+    }
 }

@@ -1,6 +1,9 @@
 package com.a404.duckonback.domain.me.controller;
 
+import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.domain.artist.artist.dto.FollowedArtistDTO;
+import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistListResponseDTO;
+import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistFollowService;
 import com.a404.duckonback.domain.me.dto.PasswordChangeRequestDTO;
 import com.a404.duckonback.domain.me.dto.UpdateProfileRequestDTO;
 import com.a404.duckonback.domain.meme.dto.MemeDetailDTO;
@@ -23,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,11 +36,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/me")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class MeController {
 
     private final UserService userService;
     private final ArtistFollowService artistFollowService;
     private final MemeService memeService;
+    private final EmergingArtistFollowService emergingArtistFollowService;
 
     /**
      * 기본 정보
@@ -162,6 +168,21 @@ public class MeController {
                 "totalPages", dtoPage.getTotalPages(),
                 "totalElements", dtoPage.getTotalElements()
         ));
+    }
+
+    @Operation(
+            summary = "내가 팔로우한 라이징 아티스트 목록 조회 (JWT 필요O)",
+            description = "로그인한 사용자가 팔로우한 라이징 아티스트 목록을 페이지 단위로 조회합니다."
+    )
+    @GetMapping("/emerging-artists")
+    public ResponseEntity<ApiResponseDTO<PageResponse<EmergingArtistListResponseDTO>>> getMyFollowedEmergingArtists(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+        )
+    {
+        PageResponse<EmergingArtistListResponseDTO> res = emergingArtistFollowService.getFollowedEmergingArtists(principal.getId(), page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_EMERGING_ARTIST_LIST_SUCCESS, res));
     }
 
     /**
