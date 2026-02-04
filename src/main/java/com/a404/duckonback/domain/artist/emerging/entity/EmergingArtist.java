@@ -1,5 +1,6 @@
 package com.a404.duckonback.domain.artist.emerging.entity;
 
+import com.a404.duckonback.common.entity.BaseLastModifiedAuditEntity;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.artist.common.ArtistReadable;
 import com.a404.duckonback.domain.user.entity.User;
@@ -25,7 +26,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmergingArtist implements ArtistReadable {
+public class EmergingArtist extends BaseLastModifiedAuditEntity implements ArtistReadable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -3,12 +3,10 @@ package com.a404.duckonback.domain.admin.controller;
 import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
-import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
-import com.a404.duckonback.domain.admin.dto.AdminArtistCreateRequestDTO;
-import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
+import com.a404.duckonback.domain.admin.dto.*;
 import com.a404.duckonback.domain.admin.service.AdminService;
-import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.domain.artist.artist.service.ArtistService;
+import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.domain.report.service.ReportService;
@@ -39,6 +37,7 @@ public class AdminController {
     private final MemeRankingBatchService memeRankingBatchService;
     private final AdminService adminService;
     private final ReportService reportService;
+    private final EmergingArtistService emergingArtistService;
 
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
@@ -63,6 +62,17 @@ public class AdminController {
         artistService.patchArtist(principal.getId(), artistId, dto);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_PATCH_ARTIST_SUCCESS));
     }
+
+    @Operation(summary = "라이징 아티스트 정보 수정 (JWT 필요O)", description = "기존 라이징 아티스트의 정보를 수정합니다.")
+    @PatchMapping("/emerging-artists/{emergingArtistId}")
+    public ResponseEntity<ApiResponseDTO<Void>> updateEmergingArtist(
+            @PathVariable Long emergingArtistId,
+            @RequestBody @Valid AdminEmergingArtistUpdateRequestDTO dto
+    ) {
+        emergingArtistService.updateEmergingArtist(emergingArtistId, dto);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_PATCH_EMERGING_ARTIST_SUCCESS));
+    }
+
 
     @Operation(summary = "유저 참여도 지표 재생성 (JWT 필요O)", description = "유저 참여도 지표 스냅샷을 재생성합니다.")
     @PostMapping("/batch/engagement/rebuild")

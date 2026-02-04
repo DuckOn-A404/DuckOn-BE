@@ -4,6 +4,7 @@ import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.enums.SortOrder;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
+import com.a404.duckonback.domain.admin.dto.AdminEmergingArtistUpdateRequestDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistCreateRequestDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistCreateResponseDTO;
 import com.a404.duckonback.domain.artist.emerging.dto.EmergingArtistDetailResponseDTO;
@@ -56,6 +57,7 @@ public class EmergingArtistServiceImpl implements EmergingArtistService {
                 .nameEn(req.getNameEn().trim())
                 .imgUrl(req.getImgUrl().trim())
                 .createdBy(user)
+                .debutDate(req.getDebutDate())
                 .build());
 
         return EmergingArtistCreateResponseDTO.builder()
@@ -87,18 +89,22 @@ public class EmergingArtistServiceImpl implements EmergingArtistService {
 
     @Override
     public EmergingArtistDetailResponseDTO getEmergingArtistDetail(Long emergingArtistId, Long userId) {
-        EmergingArtist emergingArtist = emergingArtistRepository.findById(emergingArtistId)
+        // 1. 라이징 아티스트 정보 가져오기
+        EmergingArtist emergingArtist = emergingArtistRepository.findDetailById(emergingArtistId)
                 .orElseThrow(() -> new CustomException(ErrorCode.EMERGING_ARTIST_NOT_FOUND));
 
-        boolean following = false;
-        if(userId != null){
-            following = emergingArtistFollowRepository.findByUser_IdAndEmergingArtist(userId, emergingArtist) != null;
-        }
+        // 2. 로그인 한 유저의 경우 팔로잉 여부 확인
+        boolean following = (userId != null) && emergingArtistFollowRepository.existsByUser_IdAndEmergingArtist_EmergingArtistId(userId, emergingArtistId);
 
-        long followersCount = emergingArtistFollowRepository.countByEmergingArtist(emergingArtist);
+        // 3. 팔로워 수 집계
+        long followersCount = emergingArtistFollowRepository.countByEmergingArtist_EmergingArtistId(emergingArtistId);
+
+        // 4. 라이징 아티스트 생성한 유저의 닉네임 불러오기
+        String createdByUserNickName = emergingArtist.getCreatedBy().getNickname();
 
         return EmergingArtistDetailResponseDTO.builder()
                 .emergingArtistId(emergingArtist.getEmergingArtistId())
+                .createdByUserNickName(createdByUserNickName)
                 .createdAt(emergingArtist.getCreatedAt())
                 .debutDate(emergingArtist.getDebutDate())
                 .nameKr(emergingArtist.getNameKr())
@@ -107,6 +113,7 @@ public class EmergingArtistServiceImpl implements EmergingArtistService {
                 .status(emergingArtist.getStatus())
                 .followerCount(followersCount)
                 .following(following)
+                .updatedAt(emergingArtist.getUpdatedAt())
                 .build();
     }
 
@@ -126,8 +133,29 @@ public class EmergingArtistServiceImpl implements EmergingArtistService {
                         .nameEn(v.getNameEn())
                         .imgUrl(v.getImgUrl())
                         .status(EmergingArtistStatus.valueOf(v.getStatus()))
+                        .followerCount(v.getFollowerCount())
                         .build()
                 )
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public void updateEmergingArtist(Long emergingArtistId, AdminEmergingArtistUpdateRequestDTO dto) {
+        EmergingArtist emergingArtist = emergingArtistRepository.findById(emergingArtistId)
+                .orElseThrow(() -> new CustomException(ErrorCode.EMERGING_ARTIST_NOT_FOUND));
+
+        if(dto.getNameKr() != null){
+            emergingArtist.setNameKr(dto.getNameKr().trim());
+        }
+        if(dto.getNameEn() != null){
+            emergingArtist.setNameEn(dto.getNameEn().trim());
+        }
+        if(dto.getImgUrl() != null){
+            emergingArtist.setImgUrl(dto.getImgUrl().trim());
+        }
+        if(dto.getDebutDate() != null){
+            emergingArtist.setDebutDate(dto.getDebutDate());
+        }
     }
 }
