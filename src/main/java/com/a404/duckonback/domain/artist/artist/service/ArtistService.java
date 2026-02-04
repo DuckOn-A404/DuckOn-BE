@@ -22,7 +22,7 @@ public interface ArtistService {
     List<ArtistDTO> getRandomArtists(int size);
 
     AdminArtistCreateResponseDTO createArtist(Long userId,AdminArtistCreateRequestDTO dto);
-    AdminArtistPatchDTO patchArtist(Long artistId, AdminArtistPatchDTO dto);
+    AdminArtistPatchDTO patchArtist(Long userId, Long artistId, AdminArtistPatchDTO dto);
     void deleteArtist(Long artistId);
 
     String findSlugById(Long artistId);

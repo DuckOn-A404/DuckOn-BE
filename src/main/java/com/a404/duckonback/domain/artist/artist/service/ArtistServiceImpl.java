@@ -186,7 +186,12 @@ public class ArtistServiceImpl implements ArtistService {
 //    }
 
     @Override
-    public AdminArtistPatchDTO patchArtist(Long artistId, AdminArtistPatchDTO dto) {
+    public AdminArtistPatchDTO patchArtist(Long userId, Long artistId, AdminArtistPatchDTO dto) {
+        User user = userRepository.findByIdAndDeletedFalse(userId);
+        if(user == null){
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
         Artist artist = artistRepository.findById(artistId)
                 .orElseThrow(() -> new CustomException("아티스트를 찾을 수 없습니다. ID: " + artistId,
                         HttpStatus.NOT_FOUND));
