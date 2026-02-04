@@ -4,7 +4,6 @@ import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
-import com.a404.duckonback.domain.notification.dto.NotificationDetailDTO;
 import com.a404.duckonback.domain.notification.dto.NotificationListDTO;
 import com.a404.duckonback.domain.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,15 +37,15 @@ public class NotificationController {
     }
 
     @Operation(
-            summary = "알림 상세 조회",
-            description = "로그인한 사용자가 특정 알림의 상세 내역을 조회합니다. JWT 인증이 필요합니다."
+            summary = "알림 읽음 처리",
+            description = "로그인한 사용자가 특정 알림을 읽음 처리합니다. JWT 인증이 필요합니다."
     )
-    @GetMapping("/{notificationId}")
-    public ResponseEntity<ApiResponseDTO<NotificationDetailDTO>> getNotificationDetail(
+    @PatchMapping("/{notificationId}")
+    public ResponseEntity<ApiResponseDTO<Void>> markNotificationAsRead(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long notificationId
-    ) {
-        NotificationDetailDTO res = notificationService.getNotificationDetail(notificationId, principal.getId());
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.GET_NOTIFICATION_DETAIL_SUCCESS, res));
+    ){
+        notificationService.markAsRead(principal.getId(), notificationId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.MARK_NOTIFICATION_AS_READ_SUCCESS));
     }
 }
