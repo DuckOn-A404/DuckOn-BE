@@ -5,13 +5,13 @@ import com.a404.duckonback.common.enums.RequestStatus;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
 import com.a404.duckonback.domain.artist.request.entity.ArtistProfileChangeRequest;
-import com.a404.duckonback.domain.notification.dto.NotificationDetailDTO;
 import com.a404.duckonback.domain.notification.dto.NotificationListDTO;
 import com.a404.duckonback.domain.notification.entity.Notification;
 import com.a404.duckonback.domain.notification.entity.NotificationSourceType;
 import com.a404.duckonback.domain.notification.entity.NotificationType;
 import com.a404.duckonback.domain.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -64,37 +65,32 @@ public class NotificationServiceImpl implements NotificationService {
                         .id(e.getId())
                         .type(e.getType())
                         .title(e.getTitle())
+                        .body(e.getBody())
                         .createdAt(e.getCreatedAt())
                         .readAt(e.getReadAt())
                         .linkUrl(e.getLinkUrl())
+                        .sourceId(e.getSourceId())
+                        .sourceType(e.getSourceType())
                         .build()
         );
         return PageResponse.from1Base(dtoPage);
     }
 
     @Override
-    public NotificationDetailDTO getNotificationDetail(Long notificationId, Long userId) {
+    @Transactional
+    public void markAsRead(Long userId, Long notificationId) {
+        // 1. 알림 존재 여부 확인
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
+        // 2. 알림 소유자 확인
         if(!notification.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
+        // 3. 읽음 처리
         if(notification.getReadAt() == null) {
             notification.markRead();
         }
-
-        return NotificationDetailDTO.builder()
-                .id(notification.getId())
-                .type(notification.getType())
-                .sourceType(notification.getSourceType())
-                .sourceId(notification.getSourceId())
-                .title(notification.getTitle())
-                .body(notification.getBody())
-                .createdAt(notification.getCreatedAt())
-                .readAt(notification.getReadAt())
-                .linkUrl(notification.getLinkUrl())
-                .build();
     }
 }

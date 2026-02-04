@@ -15,8 +15,10 @@ public class NotificationListDTO {
     private Long id;
     private NotificationType type;
     private String title;
+    private String body;
     private LocalDateTime createdAt;
     private LocalDateTime readAt;
     private String linkUrl;
-
+    private Long sourceId;
+    private NotificationSourceType sourceType;
 }
