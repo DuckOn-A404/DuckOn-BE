@@ -8,6 +8,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Slf4j
 @Service
@@ -22,19 +23,18 @@ public class S3ValidationServiceImpl implements S3ValidationService {
     @Override
     public boolean existsInS3(String objectKey) {
         try {
-            HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+            s3Client.headObject(HeadObjectRequest.builder()
                     .bucket(bucketName)
                     .key(objectKey)
-                    .build();
-            s3Client.headObject(headObjectRequest);
-            log.debug("✅ S3 object exists: {}", objectKey);
+                    .build());
             return true;
-        } catch (NoSuchKeyException e) {
-            log.warn("⚠️ S3 object not found: {}", objectKey);
+        } catch(S3Exception e){
+            if(e.statusCode() == 404) return false;
+            log.error("S3 headObject error: key={}, objectKey={}, error={}",
+                     objectKey, e.statusCode(), e.getMessage());
             return false;
         } catch (Exception e) {
-            log.error("❌ S3 validation error: objectKey={}, error={}", 
-                     objectKey, e.getMessage());
+            log.error("S3 validation error: key={}, error={}", objectKey, e.getMessage());
             return false;
         }
     }
