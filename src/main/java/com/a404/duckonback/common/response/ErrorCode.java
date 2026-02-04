@@ -61,6 +61,7 @@ public enum ErrorCode {
     EMERGING_ARTIST_FOLLOW_NOT_FOUND(404,HttpStatus.NOT_FOUND,"라이징 아티스트를 팔로우하고있지 않습니다."),
 
     //409 CONFLICT
+    DUPLICATE_ARTIST(409, HttpStatus.CONFLICT, "이미 존재하는 아티스트입니다."),
     ROOM_CREATION_CONFLICT(409, HttpStatus.CONFLICT, "이미 방 생성 요청이 처리 중입니다."),
 
     //413 PAYLOAD TOO LARGE

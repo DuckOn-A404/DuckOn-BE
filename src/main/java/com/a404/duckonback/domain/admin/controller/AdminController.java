@@ -4,7 +4,7 @@ import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
 import com.a404.duckonback.domain.admin.dto.AdminArtistPatchDTO;
-import com.a404.duckonback.domain.admin.dto.AdminArtistRequestDTO;
+import com.a404.duckonback.domain.admin.dto.AdminArtistCreateRequestDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
 import com.a404.duckonback.domain.admin.service.AdminService;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
@@ -13,14 +13,15 @@ import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
+import com.a404.duckonback.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -40,11 +41,13 @@ public class AdminController {
     private final ReportService reportService;
 
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
-    @PostMapping(value = "/artists", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/artists")
     public ResponseEntity<Map<String,String>> createArtist(
-            @ModelAttribute @Valid AdminArtistRequestDTO dto
+            @AuthenticationPrincipal User principal,
+            @RequestBody @Valid AdminArtistCreateRequestDTO dto
     ) {
-        artistService.createArtist(dto);
+        Long userId = principal.getId();
+        artistService.createArtist(userId, dto);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of("message", "아티스트가 성공적으로 등록되었습니다."));
