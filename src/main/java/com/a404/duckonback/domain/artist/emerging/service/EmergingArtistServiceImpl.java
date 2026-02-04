@@ -56,6 +56,7 @@ public class EmergingArtistServiceImpl implements EmergingArtistService {
                 .nameEn(req.getNameEn().trim())
                 .imgUrl(req.getImgUrl().trim())
                 .createdBy(user)
+                .debutDate(req.getDebutDate())
                 .build());
 
         return EmergingArtistCreateResponseDTO.builder()
