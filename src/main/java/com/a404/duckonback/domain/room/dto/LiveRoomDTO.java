@@ -1,5 +1,6 @@
 package com.a404.duckonback.domain.room.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,9 +22,15 @@ public class LiveRoomDTO {
     private List<String> playlist;
     private int currentVideoIndex;
     private double currentTime;
+
+    @JsonProperty("playing")
     private boolean playing;
+
     private long lastUpdated;
+
+    @JsonProperty("locked")
     private boolean locked;
+
     private String entryQuestion;
     private String entryAnswer;
     private long participantCount;
