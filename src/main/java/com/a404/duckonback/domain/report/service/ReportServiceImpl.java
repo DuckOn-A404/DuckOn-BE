@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -73,6 +74,15 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public PageResponse<ReportDTO> getReportsByReporter(Long id, int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
+        Page<Report> pageResult = reportRepository.findByReporter_Id(id, pageable);
+        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
+    }
+
+    @Override
     public Report updateReport(Long reportId, Report updatedReport) {
         return reportRepository.findById(reportId)
                 .map(report -> {
@@ -91,11 +101,6 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public void deleteReport(Long reportId) {
         reportRepository.deleteById(reportId);
-    }
-
-    @Override
-    public List<Report> getReportsByReporter(Long id) {
-        return reportRepository.findByReporter_Id(id);
     }
 
     @Override
