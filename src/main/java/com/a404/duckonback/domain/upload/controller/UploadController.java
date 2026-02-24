@@ -7,6 +7,7 @@ import com.a404.duckonback.domain.upload.dto.UploadPresignRequestDTO;
 import com.a404.duckonback.domain.upload.dto.UploadPresignResponseDTO;
 import com.a404.duckonback.domain.upload.service.UploadService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/uploads")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "UploadController", description = "파일 업로드 관련 API")
 public class UploadController {
 
     private final UploadService uploadService;
