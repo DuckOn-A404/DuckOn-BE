@@ -39,9 +39,9 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException(ErrorCode.DUPLICATE_REPORT);
         }
         // todo: 자기 자신 신고 방지
-        if (reporter.getId().equals(reported.getId())) {
-            throw new CustomException(ErrorCode.SELF_REPORT);
-        }
+        // if (reporter.getId().equals(reported.getId())) {
+        //     throw new CustomException(ErrorCode.SELF_REPORT);
+        // }
         // todo: contentId 유효성 검사
 
         return reportRepository.save(request.toEntity(reporter, reported));
