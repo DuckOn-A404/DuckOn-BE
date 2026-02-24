@@ -34,6 +34,7 @@ public final class SecurityEndpoints {
             // rooms
             "/api/rooms",
             "/api/rooms/*",
+            "/api/rooms/trending",
             "/api/rooms/trending/*",
             "/api/rooms/home",
 
