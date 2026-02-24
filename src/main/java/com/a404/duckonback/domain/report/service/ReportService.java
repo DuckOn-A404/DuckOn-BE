@@ -19,8 +19,8 @@ public interface ReportService {
     Report updateReport(Long reportId, Report updatedReport);
     void deleteReport(Long reportId);
 
-    List<Report> getReportsByReporter(Long id);
-    List<Report> getReportsByReported(Long id);
-    List<Report> getReportsByStatus(ReportStatus status);
-    List<Report> getReportsByType(ReportType type);
+    PageResponse<ReportDTO> getReportsByReporter(Long id, int page, int size);
+    PageResponse<ReportDTO> getReportsByReported(Long id, int page, int size);
+    PageResponse<ReportDTO> getReportsByStatus(ReportStatus status, int page, int size);
+    PageResponse<ReportDTO> getReportsByContentType(ReportType contentType, int page, int size);
 }
