@@ -6,6 +6,7 @@ import com.a404.duckonback.domain.report.dto.ReportCreateRequestDTO;
 import com.a404.duckonback.domain.report.entity.Report;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.common.dto.PageResponse;
+import com.a404.duckonback.domain.admin.dto.ReportSearchCondition;
 import com.a404.duckonback.domain.user.entity.User;
 
 import java.util.List;
@@ -17,10 +18,6 @@ public interface ReportService {
     ReportDTO getReportDetail(Long reportId);
     PageResponse<ReportDTO> getAllReports(int page, int size);
     Report updateReport(Long reportId, Report updatedReport);
-    void deleteReport(Long reportId);
 
-    PageResponse<ReportDTO> getReportsByReporter(String userId, int page, int size);
-    PageResponse<ReportDTO> getReportsByReported(String userId, int page, int size);
-    PageResponse<ReportDTO> getReportsByStatus(ReportStatus status, int page, int size);
-    PageResponse<ReportDTO> getReportsByContentType(ReportType contentType, int page, int size);
+    PageResponse<ReportDTO> searchReports(ReportSearchCondition condition, int page, int size);
 }

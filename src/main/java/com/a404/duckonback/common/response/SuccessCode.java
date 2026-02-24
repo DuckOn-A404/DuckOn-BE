@@ -34,6 +34,7 @@ public enum SuccessCode {
 
     // 신고 api 관련
     REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),
+    REPORT_SEARCH_SUCCESS(200, HttpStatus.OK, "신고 검색에 성공했습니다."),
     ADMIN_GET_REPORT_DETAIL_SUCCESS(200, HttpStatus.OK, "신고 상세 조회에 성공했습니다."),
     ADMIN_GET_REPORT_LIST_BY_REPORTER_SUCCESS(200, HttpStatus.OK, "신고자 별 조회에 성공했습니다."),
     ADMIN_GET_REPORT_LIST_BY_REPORTED_SUCCESS(200, HttpStatus.OK, "피신고자 별 조회에 성공했습니다."),
