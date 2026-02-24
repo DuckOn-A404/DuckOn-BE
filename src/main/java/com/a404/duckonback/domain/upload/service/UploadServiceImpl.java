@@ -86,8 +86,9 @@ public class UploadServiceImpl implements  UploadService {
         if(req.getPurpose() == UploadPurpose.ARTIST_IMAGE_TEMP && !isAdmin) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
-        if(req.getRefId() == null || req.getRefId() <= 0) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        // 새로운 아티스트 이미지 업로드 시에만 refId가 null이 될 수 있도록 허용
+        if(req.getPurpose() != UploadPurpose.ARTIST_IMAGE_TEMP && (req.getRefId() == null || req.getRefId() <= 0)) {
+            throw new CustomException(ErrorCode.INVALID_NEW_ARTIST_IMAGE_REQUEST);
         }
     }
 

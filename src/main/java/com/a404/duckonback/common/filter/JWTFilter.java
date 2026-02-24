@@ -1,6 +1,7 @@
 package com.a404.duckonback.common.filter;
 
 import com.a404.duckonback.common.config.JWTAuthenticationEntryPoint;
+import com.a404.duckonback.common.config.SecurityEndpoints;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.enums.TokenStatus;
 import com.a404.duckonback.common.exception.JwtAuthenticationException;
@@ -57,6 +58,28 @@ public class JWTFilter extends OncePerRequestFilter {
         return false;
     }
 
+    private boolean matchesAny(String uri, String[] patterns) {
+        for (String p : patterns) if (PATH_MATCHER.match(p, uri)) return true;
+        return false;
+    }
+
+    private boolean isPublic(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String method = request.getMethod();
+
+        if (matchesAny(uri, SecurityEndpoints.SWAGGER)) return true;
+        if (matchesAny(uri, SecurityEndpoints.WS)) return true;
+
+        // ANY permitAll
+        if (matchesAny(uri, SecurityEndpoints.PUBLIC_ANY)) return true;
+
+        // Method-based permitAll
+        if ("GET".equalsIgnoreCase(method) && matchesAny(uri, SecurityEndpoints.PUBLIC_GET)) return true;
+        if ("POST".equalsIgnoreCase(method) && matchesAny(uri, SecurityEndpoints.PUBLIC_POST)) return true;
+
+        return false;
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
@@ -76,19 +99,37 @@ public class JWTFilter extends OncePerRequestFilter {
 
         // 1) 토큰 없음
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // 게스트 허용 경로면 그대로 통과 (게스트)
-            if (matchesAny(uri, GUEST_ALLOWED)) {
+            if(isPublic(request) || matchesAny(uri, GUEST_ALLOWED)){
                 SecurityContextHolder.clearContext();
                 chain.doFilter(request, response);
                 return;
             }
-            // 그 외는 SecurityConfig 인가 규칙에 맡김 (permitAll이면 통과, authenticated면 401)
-            chain.doFilter(request, response);
+
+            entryPoint.commence(
+                    request, response,
+                    new JwtAuthenticationException("인증 토큰이 필요합니다.", "MISSING")
+            );
             return;
         }
 
         // 2) 토큰 있음 → 상태 평가
         String token = authHeader.substring(7).trim();
+
+        // Bearer 뒤 토큰이 비어있으면 missing 처리
+        if(token.isEmpty()){
+            if(isPublic(request) || matchesAny(uri, GUEST_ALLOWED)){
+                SecurityContextHolder.clearContext();
+                chain.doFilter(request, response);
+                return;
+            }
+
+            entryPoint.commence(
+                    request, response,
+                    new JwtAuthenticationException("인증 토큰이 필요합니다.", "MISSING")
+            );
+            return;
+        }
+
         TokenStatus status = jwtUtil.getTokenValidationStatus(token);
         boolean revoked = blacklistService.isBlacklisted(token);
         boolean bad = (status == TokenStatus.EXPIRED) || (status == TokenStatus.INVALID) || revoked;
