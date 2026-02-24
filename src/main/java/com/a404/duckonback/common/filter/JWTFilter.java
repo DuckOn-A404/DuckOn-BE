@@ -82,13 +82,30 @@ public class JWTFilter extends OncePerRequestFilter {
                 chain.doFilter(request, response);
                 return;
             }
-            // 그 외는 SecurityConfig 인가 규칙에 맡김 (permitAll이면 통과, authenticated면 401)
-            chain.doFilter(request, response);
+            entryPoint.commence(
+                    request, response,
+                    new JwtAuthenticationException("인증 토큰이 필요합니다.", "MISSING")
+            );
             return;
         }
 
         // 2) 토큰 있음 → 상태 평가
         String token = authHeader.substring(7).trim();
+
+        // Bearer 뒤 토큰이 비어있으면 missing 처리
+        if(token.isEmpty()){
+            if(matchesAny(uri, GUEST_ALLOWED)){
+                SecurityContextHolder.clearContext();
+                chain.doFilter(request, response);
+                return;
+            }
+            entryPoint.commence(
+                    request, response,
+                    new JwtAuthenticationException("인증 토큰이 필요합니다.", "MISSING")
+            );
+            return;
+        }
+
         TokenStatus status = jwtUtil.getTokenValidationStatus(token);
         boolean revoked = blacklistService.isBlacklisted(token);
         boolean bad = (status == TokenStatus.EXPIRED) || (status == TokenStatus.INVALID) || revoked;

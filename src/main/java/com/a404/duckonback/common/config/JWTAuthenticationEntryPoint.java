@@ -29,10 +29,14 @@ public class JWTAuthenticationEntryPoint implements AuthenticationEntryPoint {
         // JWT 커스텀 예외 매핑
         if(authException instanceof JwtAuthenticationException jwtEx){
             String reason = jwtEx.getCode();
-            if("EXPIRED".equalsIgnoreCase(reason)){
+            if ("MISSING".equalsIgnoreCase(reason)) {
+                code = ErrorCode.MISSING_JWT_TOKEN;
+            } else if ("EXPIRED".equalsIgnoreCase(reason)) {
                 code = ErrorCode.EXPIRED_JWT_TOKEN;
-            } else if("INVALID".equalsIgnoreCase(reason)){
+            } else if ("INVALID".equalsIgnoreCase(reason)) {
                 code = ErrorCode.INVALID_JWT_TOKEN;
+            } else if ("REVOKED".equalsIgnoreCase(reason)) {
+                code = ErrorCode.REVOKED_JWT_TOKEN; // 있으면 추가
             }
         }
 

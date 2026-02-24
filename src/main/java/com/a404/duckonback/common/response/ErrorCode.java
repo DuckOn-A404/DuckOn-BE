@@ -35,10 +35,13 @@ public enum ErrorCode {
     ARTIST_NOT_FOUND(400,HttpStatus.BAD_REQUEST,"존재하지 않는 아티스트입니다."),
     ARTIST_CHANGE_REQUEST_CONTENT_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 변경 요청 내용이 비어있습니다."),
     INVALID_TARGET_TYPE(400, HttpStatus.BAD_REQUEST, "targetType 값이 올바르지 않습니다. (ARTIST 또는 EMERGING_ARTIST 중 하나를 입력해주세요.)"),
+    INVALID_NEW_ARTIST_IMAGE_REQUEST(400, HttpStatus.BAD_REQUEST, "새로운 아티스트 등록 요청의 경우 refId 값이 필수입니다."),
 
     // 401 UNAUTHORIZED
     USER_NOT_AUTHENTICATED(401, HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
     INVALID_PASSWORD(401, HttpStatus.UNAUTHORIZED, "현재 비밀번호가 올바르지 않습니다."),
+    MISSING_JWT_TOKEN(401, HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+    REVOKED_JWT_TOKEN(400, HttpStatus.BAD_REQUEST, "사용이 취소된 토큰입니다."),
 
     // JWT 관련 에러 코드
     INVALID_JWT_TOKEN(401, HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
