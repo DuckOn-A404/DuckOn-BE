@@ -11,6 +11,7 @@ import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
+import com.a404.duckonback.domain.admin.dto.ReportSearchCondition;
 import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
@@ -102,6 +103,26 @@ public class AdminController {
         PageResponse<AdminUserListDTO> userList = adminService.getAdminUserList(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_USER_LIST_SUCCESS, userList));
     }
+    
+    @Operation(summary = "신고 다중 필터 검색", description = "신고자, 피신고자, 상태, 유형으로 필터링합니다.")
+    @GetMapping("/reports/search")
+    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> searchReports(
+        @RequestParam(required = false) String reporterUserId,
+        @RequestParam(required = false) String reportedUserId,
+        @RequestParam(required = false) ReportStatus status,
+        @RequestParam(required = false) ReportType type,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        ReportSearchCondition condition = new ReportSearchCondition();
+        condition.setReporterUserId(reporterUserId);
+        condition.setReportedUserId(reportedUserId);
+        condition.setStatus(status);
+        condition.setType(type);
+        
+        PageResponse<ReportDTO> result = reportService.searchReports(condition, page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.REPORT_SEARCH_SUCCESS, result));
+    }
 
     @Operation(summary = "신고 목록 조회 (JWT 필요O)", description = "신고 목록을 조회합니다.")                                                                                       
     @GetMapping("/reports")                                                                                                                                                           
@@ -118,50 +139,6 @@ public class AdminController {
     public ResponseEntity<ApiResponseDTO<ReportDTO>> getReportDetail(@PathVariable Long reportId) {
         ReportDTO reportDTO = reportService.getReportDetail(reportId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_DETAIL_SUCCESS, reportDTO));
-    }
-
-    @Operation(summary = "신고자 별 조회(JWT 필요O)", description = "신고자 별 조회를 합니다.")
-    @GetMapping("/reports/reporter/{reporterId}")
-    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getReportsByReporter(
-        @PathVariable("reporterId") String userId, 
-        @RequestParam(defaultValue = "1") int page, 
-        @RequestParam(defaultValue = "20") int size
-    ) {
-        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByReporter(userId, page, size);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_BY_REPORTER_SUCCESS, reportDTOs));
-    }
-
-    @Operation(summary = "피신고자 별 조회(JWT 필요O)", description = "피신고자 별 조회를 합니다.")
-    @GetMapping("/reports/reported/{reportedId}")
-    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getReportsByReported(
-        @PathVariable("reportedId") String userId, 
-        @RequestParam(defaultValue = "1") int page, 
-        @RequestParam(defaultValue = "20") int size
-    ) {
-        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByReported(userId, page, size);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_BY_REPORTED_SUCCESS, reportDTOs));
-    }
-
-    @Operation(summary = "신고 상태 별 조회(JWT 필요O)", description = "신고 상태 별 조회를 합니다.")
-    @GetMapping("/reports/status/{status}")
-    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getReportsByStatus(
-        @PathVariable ReportStatus status, 
-        @RequestParam(defaultValue = "1") int page, 
-        @RequestParam(defaultValue = "20") int size
-    ) {
-        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByStatus(status, page, size);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_BY_STATUS_SUCCESS, reportDTOs));
-    }
-
-    @Operation(summary = "신고 컨텐츠 별 조회(JWT 필요O)", description = "신고 컨텐츠 유형 별 조회를 합니다. (Meme, Room, Message)")
-    @GetMapping("/reports/content/{contentType}")
-    public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getReportsByContentType(
-        @PathVariable ReportType contentType, 
-        @RequestParam(defaultValue = "1") int page, 
-        @RequestParam(defaultValue = "20") int size
-    ) {
-        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByContentType(contentType, page, size);
-        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_BY_CONTENT_TYPE_SUCCESS, reportDTOs));
     }
 
     @Operation(summary = "아티스트 조회(JWT 필요O)", description = "전체 아티스트를 조회합니다.")
