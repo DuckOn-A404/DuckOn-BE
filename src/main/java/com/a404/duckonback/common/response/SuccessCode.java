@@ -36,6 +36,9 @@ public enum SuccessCode {
     REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),
     ADMIN_GET_REPORT_DETAIL_SUCCESS(200, HttpStatus.OK, "신고 상세 조회에 성공했습니다."),
     ADMIN_GET_REPORT_LIST_BY_REPORTER_SUCCESS(200, HttpStatus.OK, "신고자 별 조회에 성공했습니다."),
+    ADMIN_GET_REPORT_LIST_BY_REPORTED_SUCCESS(200, HttpStatus.OK, "피신고자 별 조회에 성공했습니다."),
+    ADMIN_GET_REPORT_LIST_BY_STATUS_SUCCESS(200, HttpStatus.OK, "신고 상태 별 조회에 성공했습니다."),
+    ADMIN_GET_REPORT_LIST_BY_CONTENT_TYPE_SUCCESS(200, HttpStatus.OK, "신고 컨텐츠 유형 별 조회에 성공했습니다."),
 
     // 밈 api 관련
     MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
