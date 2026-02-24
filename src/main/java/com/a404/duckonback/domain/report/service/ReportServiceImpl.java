@@ -66,6 +66,13 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public ReportDTO getReportDetail(Long reportId) {
+        return reportRepository.findById(reportId)
+                .map(ReportDTO::fromEntity)
+                .orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
+    }
+
+    @Override
     public Report updateReport(Long reportId, Report updatedReport) {
         return reportRepository.findById(reportId)
                 .map(report -> {
