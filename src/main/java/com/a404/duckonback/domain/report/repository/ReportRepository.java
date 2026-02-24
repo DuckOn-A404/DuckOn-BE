@@ -9,14 +9,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public interface ReportRepository extends JpaRepository<Report, Long> {
-    List<Report> findByReported_Id(Long id);
     Page<Report> findByReporter_Id(Long id, Pageable pageable);
-    List<Report> findByReportStatus(ReportStatus status);
-    List<Report> findByReportType(ReportType type);
+    Page<Report> findByReported_Id(Long id, Pageable pageable);
+    Page<Report> findByReportStatus(ReportStatus status, Pageable pageable);
+    Page<Report> findByReportType(ReportType contentType, Pageable pageable);
     boolean existsByReporterAndContentIdAndReportType(User reporter, Long contentId, ReportType
             reportType);
 }

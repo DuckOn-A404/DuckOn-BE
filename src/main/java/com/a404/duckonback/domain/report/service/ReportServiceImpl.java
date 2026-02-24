@@ -104,17 +104,30 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public List<Report> getReportsByReported(Long id) {
-        return reportRepository.findByReported_Id(id);
+    public PageResponse<ReportDTO> getReportsByReported(Long id, int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
+        Page<Report> pageResult = reportRepository.findByReported_Id(id, pageable);
+        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
     }
 
     @Override
-    public List<Report> getReportsByStatus(ReportStatus status) {
-        return reportRepository.findByReportStatus(status);
+    public PageResponse<ReportDTO> getReportsByStatus(ReportStatus status, int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
+        Page<Report> pageResult = reportRepository.findByReportStatus(status, pageable);
+        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
     }
 
     @Override
-    public List<Report> getReportsByType(ReportType type) {
-        return reportRepository.findByReportType(type);
+    public PageResponse<ReportDTO> getReportsByContentType(ReportType contentType, int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
+        Page<Report> pageResult = reportRepository.findByReportType(contentType, pageable);
+        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
     }
+
 }
