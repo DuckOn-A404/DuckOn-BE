@@ -87,7 +87,8 @@ public class UploadServiceImpl implements  UploadService {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
         // 새로운 아티스트 이미지 업로드 시에만 refId가 null이 될 수 있도록 허용
-        if(req.getPurpose() != UploadPurpose.ARTIST_IMAGE_TEMP && (req.getRefId() == null || req.getRefId() <= 0)) {
+        if(!(req.getPurpose() == UploadPurpose.ARTIST_IMAGE_TEMP || req.getPurpose() == UploadPurpose.RISING_ARTIST_IMAGE_TEMP)
+                && (req.getRefId() == null || req.getRefId() <= 0)) {
             throw new CustomException(ErrorCode.INVALID_NEW_ARTIST_IMAGE_REQUEST);
         }
     }
