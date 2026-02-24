@@ -34,6 +34,7 @@ public enum SuccessCode {
 
     // 신고 api 관련
     REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),
+    ADMIN_GET_REPORT_DETAIL_SUCCESS(200, HttpStatus.OK, "신고 상세 조회에 성공했습니다."),
 
     // 밈 api 관련
     MEME_UPLOAD_SUCCESS(200, HttpStatus.OK, "밈 업로드를 성공했습니다."),
