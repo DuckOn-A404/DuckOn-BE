@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface ReportService {
     Report createReport(ReportCreateRequestDTO request, User reporter);
     Optional<Report> getReportById(Long reportId);
+    ReportDTO getReportDetail(Long reportId);
     PageResponse<ReportDTO> getAllReports(int page, int size);
     Report updateReport(Long reportId, Report updatedReport);
     void deleteReport(Long reportId);

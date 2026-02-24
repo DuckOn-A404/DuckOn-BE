@@ -110,6 +110,13 @@ public class AdminController {
         PageResponse<ReportDTO> reportDTOs = reportService.getAllReports(page, size);                                                                                                                                                                                                                                                                             
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_SUCCESS, reportDTOs));                                                                      
     }     
+
+    @Operation(summary = "신고 상세 조회(JWT 필요O)", description = "신고 상세를 조회합니다.")
+    @GetMapping("/reports/{reportId}")
+    public ResponseEntity<ApiResponseDTO<ReportDTO>> getReportDetail(@PathVariable Long reportId) {
+        ReportDTO reportDTO = reportService.getReportDetail(reportId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_DETAIL_SUCCESS, reportDTO));
+    }
     
     @Operation(summary = "아티스트 조회(JWT 필요O)", description = "전체 아티스트를 조회합니다.")
     @GetMapping("/artists")
