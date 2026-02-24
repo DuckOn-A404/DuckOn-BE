@@ -39,6 +39,9 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException(ErrorCode.DUPLICATE_REPORT);
         }
         // todo: 자기 자신 신고 방지
+        if (reporter.getId().equals(reported.getId())) {
+            throw new CustomException(ErrorCode.SELF_REPORT);
+        }
         // todo: contentId 유효성 검사
 
         return reportRepository.save(request.toEntity(reporter, reported));
@@ -74,11 +77,11 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public PageResponse<ReportDTO> getReportsByReporter(Long id, int page, int size) {
+    public PageResponse<ReportDTO> getReportsByReporter(String userId, int page, int size) {
         int safePage = Math.max(page - 1, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
-        Page<Report> pageResult = reportRepository.findByReporter_Id(id, pageable);
+        Page<Report> pageResult = reportRepository.findByReporter_UserId(userId, pageable);
         return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
     }
 
@@ -104,11 +107,11 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public PageResponse<ReportDTO> getReportsByReported(Long id, int page, int size) {
+    public PageResponse<ReportDTO> getReportsByReported(String userId, int page, int size) {
         int safePage = Math.max(page - 1, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
-        Page<Report> pageResult = reportRepository.findByReported_Id(id, pageable);
+        Page<Report> pageResult = reportRepository.findByReported_UserId(userId, pageable);
         return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
     }
 

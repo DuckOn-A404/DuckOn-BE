@@ -123,22 +123,22 @@ public class AdminController {
     @Operation(summary = "신고자 별 조회(JWT 필요O)", description = "신고자 별 조회를 합니다.")
     @GetMapping("/reports/reporter/{reporterId}")
     public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getReportsByReporter(
-        @PathVariable Long reporterId, 
+        @PathVariable("reporterId") String userId, 
         @RequestParam(defaultValue = "1") int page, 
         @RequestParam(defaultValue = "20") int size
     ) {
-        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByReporter(reporterId, page, size);
+        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByReporter(userId, page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_BY_REPORTER_SUCCESS, reportDTOs));
     }
 
     @Operation(summary = "피신고자 별 조회(JWT 필요O)", description = "피신고자 별 조회를 합니다.")
     @GetMapping("/reports/reported/{reportedId}")
     public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> getReportsByReported(
-        @PathVariable Long reportedId, 
+        @PathVariable("reportedId") String userId, 
         @RequestParam(defaultValue = "1") int page, 
         @RequestParam(defaultValue = "20") int size
     ) {
-        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByReported(reportedId, page, size);
+        PageResponse<ReportDTO> reportDTOs = reportService.getReportsByReported(userId, page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_REPORT_LIST_BY_REPORTED_SUCCESS, reportDTOs));
     }
 
