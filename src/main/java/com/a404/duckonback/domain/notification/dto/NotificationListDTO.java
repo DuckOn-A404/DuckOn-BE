@@ -1,6 +1,5 @@
 package com.a404.duckonback.domain.notification.dto;
 
-import com.a404.duckonback.domain.notification.entity.NotificationSourceType;
 import com.a404.duckonback.domain.notification.entity.NotificationType;
 import lombok.*;
 
@@ -18,7 +17,5 @@ public class NotificationListDTO {
     private String body;
     private LocalDateTime createdAt;
     private LocalDateTime readAt;
-    private String linkUrl;
     private Long sourceId;
-    private NotificationSourceType sourceType;
 }
