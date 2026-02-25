@@ -52,7 +52,10 @@ public final class SecurityEndpoints {
             "/api/memes/search",
 
             //youtube
-            "/api/public/youtube/search"
+            "/api/public/youtube/search",
+
+            //home
+            "/api/home/search-placeholder"
     };
 
     public static final String[] PUBLIC_POST = {

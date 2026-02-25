@@ -9,6 +9,9 @@ import com.a404.duckonback.domain.admin.dto.*;
 import com.a404.duckonback.domain.admin.service.AdminService;
 import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistService;
+import com.a404.duckonback.domain.home.dto.HomeSearchPlaceholderResponseDTO;
+import com.a404.duckonback.domain.home.dto.HomeSearchPlaceholderUpdateRequestDTO;
+import com.a404.duckonback.domain.home.service.HomeSearchPlaceholderService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.domain.admin.dto.ReportSearchCondition;
@@ -41,6 +44,7 @@ public class AdminController {
     private final AdminService adminService;
     private final ReportService reportService;
     private final EmergingArtistService emergingArtistService;
+    private final HomeSearchPlaceholderService homeSearchPlaceholderService;
 
     @Operation(summary = "아티스트 등록 (JWT 필요O)", description = "새로운 아티스트를 등록합니다.")
     @PostMapping("/artists")
@@ -156,6 +160,19 @@ public class AdminController {
     public ResponseEntity<ApiResponseDTO<Void>> deleteArtist(@PathVariable Long artistId) {
         artistService.deleteArtist(artistId);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_DELETE_ARTIST_SUCCESS));
+    }
+
+    @Operation(
+            summary = "홈 검색창 플레이스홀더 수정 (JWT 필요O)",
+            description = "관리자가 홈 검색창에 표시될 플레이스홀더 목록을 전체 교체합니다."
+    )
+    @PutMapping("/home/search-placeholder")
+    public ResponseEntity<ApiResponseDTO<HomeSearchPlaceholderResponseDTO>> updateHomeSearchPlaceholder(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody @Valid HomeSearchPlaceholderUpdateRequestDTO request
+    ) {
+        HomeSearchPlaceholderResponseDTO response = homeSearchPlaceholderService.updatePlaceholders(request.getItems(), principal.getId());
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_UPDATE_HOME_SEARCH_PLACEHOLDER_SUCCESS, response));
     }
 
 }
