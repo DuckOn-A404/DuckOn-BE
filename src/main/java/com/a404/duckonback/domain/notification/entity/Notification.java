@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_notification_user_created_at", columnList = "user_id, created_at"),
                 @Index(name = "idx_notification_user_read_at", columnList = "user_id, read_at"),
-                @Index(name = "idx_notification_source", columnList = "source_type, source_id")
+                @Index(name = "idx_notification_source", columnList = "type, source_id")
         }
 )
 @Getter
@@ -51,21 +51,6 @@ public class Notification {
      */
     @Column(name = "body", nullable = false, columnDefinition = "TEXT")
     private String body;
-
-    /**
-     * 클릭 시 이동할 링크 (프론트 라우팅용)
-     * 예: /me/artist-change-requests/123
-     */
-    @Column(name = "link_url", length = 500)
-    private String linkUrl;
-
-    /**
-     * 어떤 도메인 이벤트에서 생성됐는지 추적용
-     * 예: sourceType=ARTIST_PROFILE_CHANGE_REQUEST, sourceId=123
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "source_type", nullable = false, length = 80)
-    private NotificationSourceType sourceType;
 
     @Column(name = "source_id", nullable = false)
     private Long sourceId;
