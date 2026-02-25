@@ -52,7 +52,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .user(request.getRequestedBy())
                 .type(NotificationType.ARTIST_CHANGE_REQUEST)
                 .title(title)
-                .body(request.getReviewComment())
+                .body(request.getReviewComment() != null ? request.getReviewComment() : "")
                 .sourceId(request.getId())
                 .build();
 
@@ -101,16 +101,24 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public NotificationDetailDTO<? extends NotificationPayload> getNotificationById(Long userId, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         if(!notification.getUser().getId().equals(userId)) {
+            log.warn(
+                    "Notification ownership mismatch. notificationId={}, requestedUserId={}, notificationUserId={}",
+                    notification.getId(), userId, notification.getUser().getId()
+            );
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
         NotificationPayload payload = mapPayload(notification);
+
+        // 알림 상세 조회는 읽음 처리도 함께 수행
+        if(notification.getReadAt() == null) {
+            notification.markRead();
+        }
 
         return NotificationDetailDTO.<NotificationPayload>builder()
                 .id(notification.getId())
@@ -120,25 +128,36 @@ public class NotificationServiceImpl implements NotificationService {
                 .createdAt(notification.getCreatedAt())
                 .readAt(notification.getReadAt())
                 .sourceId(notification.getSourceId())
-                .type(notification.getType())
                 .payload(payload)
                 .build();
     }
 
     private NotificationPayload mapPayload(Notification notification) {
         return switch(notification.getType()){
-            case ARTIST_CHANGE_REQUEST -> buildArtistChangeRequestPayload(notification.getSourceId());
+            case ARTIST_CHANGE_REQUEST -> buildArtistChangeRequestPayload(notification);
             case PENALTY -> buildPenaltyPayload(notification);
             case SYSTEM_ALERT, REPORT_RESULT -> EmptyPayload.INSTANCE;
             default -> EmptyPayload.INSTANCE;
         };
     }
 
-    private ArtistChangeRequestPayload buildArtistChangeRequestPayload(Long requestId) {
-        ArtistProfileChangeRequest req = artistChangeRequestRepository.findById(requestId)
+    private ArtistChangeRequestPayload buildArtistChangeRequestPayload(Notification notification) {
+        ArtistProfileChangeRequest req = artistChangeRequestRepository.findById(notification.getSourceId())
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_SOURCE_NOT_FOUND));
 
-        // 1) 타겟 아티스트 요약 만들기
+        // 1. 보안 체크 - 알림의 소유자와 아티스트 정보 변경 요청의 요청자가 일치하는지 확인
+        if(!req.getRequestedBy().getId().equals(notification.getUser().getId())) {
+            log.warn(
+                    "Artist Change Request ownership mismatch. notificationId={}, ArtistProfileChangeRequestId={}, notificationUserId={}, ArtistProfileChangeRequesterUserId={}",
+                    notification.getId(),
+                    req.getId(),
+                    notification.getUser().getId(),
+                    req.getRequestedBy().getId()
+            );
+            throw  new CustomException(ErrorCode.NOTIFICATION_SOURCE_NOT_FOUND);
+        }
+
+        // 2. 타겟 아티스트 요약 만들기
         ArtistSummaryDTO artist = ArtistSummaryDTO.builder()
                 .targetType(req.getTargetType())
                 .id(req.getTargetId())
@@ -146,7 +165,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .nameEn(req.getTargetNameEn())
                 .build();
 
-        // 2) payload 조립
+        // 3. payload 조립
         return ArtistChangeRequestPayload.builder()
                 .requestId(req.getId())
                 .artist(artist)
@@ -173,7 +192,7 @@ public class NotificationServiceImpl implements NotificationService {
                     notification.getUser().getId(),
                     p.getUser().getId()
             );
-            throw new CustomException(ErrorCode.FORBIDDEN);
+            throw new CustomException(ErrorCode.NOTIFICATION_SOURCE_NOT_FOUND);
         }
 
         return PenaltyPayload.builder()
