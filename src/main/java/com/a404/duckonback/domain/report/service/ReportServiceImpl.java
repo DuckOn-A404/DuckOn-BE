@@ -5,10 +5,12 @@ import com.a404.duckonback.common.enums.ReportStatus;
 import com.a404.duckonback.common.enums.ReportType;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
+import com.a404.duckonback.domain.admin.dto.ReportSearchCondition;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.domain.report.dto.ReportCreateRequestDTO;
 import com.a404.duckonback.domain.report.entity.Report;
 import com.a404.duckonback.domain.report.repository.ReportRepository;
+import com.a404.duckonback.domain.report.repository.ReportSpecification;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -70,19 +73,26 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public PageResponse<ReportDTO> searchReports(ReportSearchCondition condition, int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
+
+        Specification<Report> spec = Specification
+                .where(ReportSpecification.hasReporterUserId(condition.getReporterUserId()))
+                .and(ReportSpecification.hasReportedUserId(condition.getReportedUserId()))
+                .and(ReportSpecification.hasStatus(condition.getStatus()))
+                .and(ReportSpecification.hasType(condition.getType()));
+
+        Page<Report> pageResult = reportRepository.findAll(spec, pageable);
+        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
+}
+
+    @Override
     public ReportDTO getReportDetail(Long reportId) {
         return reportRepository.findById(reportId)
                 .map(ReportDTO::fromEntity)
                 .orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
-    }
-
-    @Override
-    public PageResponse<ReportDTO> getReportsByReporter(String userId, int page, int size) {
-        int safePage = Math.max(page - 1, 0);
-        int safeSize = Math.min(Math.max(size, 1), 100);
-        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
-        Page<Report> pageResult = reportRepository.findByReporter_UserId(userId, pageable);
-        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
     }
 
     @Override
@@ -101,36 +111,5 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new IllegalArgumentException("Report not found with ID: " + reportId));
     }
 
-    @Override
-    public void deleteReport(Long reportId) {
-        reportRepository.deleteById(reportId);
-    }
-
-    @Override
-    public PageResponse<ReportDTO> getReportsByReported(String userId, int page, int size) {
-        int safePage = Math.max(page - 1, 0);
-        int safeSize = Math.min(Math.max(size, 1), 100);
-        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
-        Page<Report> pageResult = reportRepository.findByReported_UserId(userId, pageable);
-        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
-    }
-
-    @Override
-    public PageResponse<ReportDTO> getReportsByStatus(ReportStatus status, int page, int size) {
-        int safePage = Math.max(page - 1, 0);
-        int safeSize = Math.min(Math.max(size, 1), 100);
-        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
-        Page<Report> pageResult = reportRepository.findByReportStatus(status, pageable);
-        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
-    }
-
-    @Override
-    public PageResponse<ReportDTO> getReportsByContentType(ReportType contentType, int page, int size) {
-        int safePage = Math.max(page - 1, 0);
-        int safeSize = Math.min(Math.max(size, 1), 100);
-        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());
-        Page<Report> pageResult = reportRepository.findByReportType(contentType, pageable);
-        return PageResponse.from1Base(pageResult.map(ReportDTO::fromEntity));
-    }
-
+    
 }
