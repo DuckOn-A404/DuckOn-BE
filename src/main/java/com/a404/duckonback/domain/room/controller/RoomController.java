@@ -8,7 +8,6 @@ import com.a404.duckonback.common.filter.CustomUserPrincipal;
 import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.room.dto.*;
 import com.a404.duckonback.domain.room.service.LiveRoomService;
-import com.a404.duckonback.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +39,6 @@ public class RoomController {
     private final RedisService redisService;
     private final ArtistService artistService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final UserService userService;
     private final StringRedisTemplate stringRedisTemplate;
 
 
@@ -231,22 +229,29 @@ public class RoomController {
             throw new CustomException("존재하지 않는 방입니다", HttpStatus.NOT_FOUND);
         }
 
+        // 비밀번호 방 처리
         if (room.isLocked()) {
-
+            // 입장 질문이 있는데 답변이 없는 경우 -> 입장 불가 + 질문 포함 응답
             if (entryAnswer == null || entryAnswer.isBlank()) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("entryQuestion", room.getEntryQuestion());
-                map.put("hostId", room.getHostId());
-                throw new CustomException(
-                        "잠금 방입니다. 입장 질문에 대한 정답을 입력해야 합니다.",
-                        HttpStatus.FORBIDDEN,   // 정답 미입력: 403 (FORBIDDEN)
-                        map
-                );
+                Map<String, Object> lockedResp = new HashMap<>();
+                lockedResp.put("locked", true);
+                lockedResp.put("needsAnswer", true);
+                lockedResp.put("entryQuestion", room.getEntryQuestion());
+                lockedResp.put("hostId", room.getHostId());
+                return ResponseEntity.ok(lockedResp);
             }
 
+            // 오답
             if (!entryAnswer.equals(room.getEntryAnswer())) {
-                throw new CustomException("정답이 일치하지 않습니다.", HttpStatus.FORBIDDEN);  // 정답 오답: 403 (FORBIDDEN)
+                Map<String, Object> lockedResp = new HashMap<>();
+                lockedResp.put("locked", true);
+                lockedResp.put("wrong", true);
+                lockedResp.put("entryQuestion", room.getEntryQuestion()); // UX상 다시 보여주려면
+                lockedResp.put("hostId", room.getHostId());
+                return ResponseEntity.ok(lockedResp);
             }
+
+            // 3) 정답이면 아래 성공 로직으로 진행
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -265,7 +270,7 @@ public class RoomController {
         }else{// 로그인 하지 않더라도 참여자 수 증가
             String sessionId = http.getSession(true).getId();
             String guestId = "guest:" + sessionId;
-            String nickname = "익명의 오리#" + java.util.UUID.randomUUID().toString().substring(0, 6);;
+            String nickname = "익명의 오리#" + java.util.UUID.randomUUID().toString().substring(0, 6);
             result.put("userId", guestId);
             result.put("nickname", nickname);
             redisService.addParticipantCountToRoom(roomId.toString());
@@ -278,6 +283,7 @@ public class RoomController {
         );
         room.setParticipantCount(participantCount);
 
+        result.put("locked", false);
         result.put("room", room);
 
         return ResponseEntity.ok(result);
