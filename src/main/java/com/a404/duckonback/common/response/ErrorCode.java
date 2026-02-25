@@ -23,6 +23,7 @@ public enum ErrorCode {
     EXCEED_TOTAL_PAGES(400,HttpStatus.BAD_REQUEST,"존재하는 총 페이지 수보다 큰 페이지 번호입니다."),
     INVALID_REQUEST(400, HttpStatus.BAD_REQUEST, "유효하지 않은 요청입니다."),
     INVALID_ENUM_VALUE(400,HttpStatus.BAD_REQUEST,"잘못된 ENUM 값이 입력되었습니다."),
+    INVALID_PLACEHOLDERS(400,HttpStatus.BAD_REQUEST,"잘못된 검색창 플레이스홀더입니다. 최대 10개까지 입력할 수 있으며, 각 플레이스홀더는 30자 이하여야 합니다."),
 
     // artist 관련 에러 코드
     ARTIST_NAME_KR_EMPTY(400,HttpStatus.BAD_REQUEST,"아티스트 한글명이 비어있습니다."),

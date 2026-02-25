@@ -31,6 +31,7 @@ public enum SuccessCode {
     ADMIN_GET_ARTIST_CHANGE_REQUEST_DETAIL_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 정보 변경 요청 상세 조회에 성공했습니다."),
     ADMIN_REVIEW_ARTIST_CHANGE_REQUEST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 변경 요청 검토에 성공했습니다."),
     ADMIN_PATCH_EMERGING_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 라이징 아티스트 정보 수정에 성공했습니다."),
+    ADMIN_UPDATE_HOME_SEARCH_PLACEHOLDER_SUCCESS(200, HttpStatus.OK, "[관리자] 홈 검색창 플레이스홀더 업데이트에 성공했습니다."),
 
     // 신고 api 관련
     REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),
@@ -76,6 +77,9 @@ public enum SuccessCode {
 
     // 파일 업로드 관련
     PRESIGNED_URL_CREATION_SUCCESS(200, HttpStatus.OK, "파일의 presigned url을 생성하는 데 성공했습니다."),
+
+    // 홈 검색창 플레이스홀더 관련
+    GET_HOME_SEARCH_PLACEHOLDER_SUCCESS(200, HttpStatus.OK, "홈 검색창 플레이스홀더 조회에 성공했습니다.")
     ;
 
 

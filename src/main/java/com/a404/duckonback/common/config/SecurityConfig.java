@@ -82,6 +82,9 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
+        // 프론트에서 response.headers.get('etag') 읽을 수 있게 노출
+        config.setExposedHeaders(List.of("ETag", "Cache-Control"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
