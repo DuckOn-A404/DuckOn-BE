@@ -11,6 +11,7 @@ import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.artist.emerging.service.EmergingArtistService;
 import com.a404.duckonback.domain.home.dto.HomeSearchPlaceholderResponseDTO;
 import com.a404.duckonback.domain.home.dto.HomeSearchPlaceholderUpdateRequestDTO;
+import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
 import com.a404.duckonback.domain.home.service.HomeSearchPlaceholderService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
@@ -29,6 +30,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import java.util.List;
 
 @Tag(name = "관리자", description = "관리자 전용 API")
 @RestController
@@ -153,6 +155,15 @@ public class AdminController {
     ) {
         PageResponse<AdminArtistListDTO> artistDTOs = adminService.getAllArtists(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_ARTIST_LIST_SUCCESS, artistDTOs));
+    }
+
+    @Operation(summary = "아티스트 검색 (JWT 필요O)", description = "아티스트 이름이나 설명을 키워드로 검색합니다.")
+    @GetMapping("/artists/search")
+    public ResponseEntity<ApiResponseDTO<List<ArtistDTO>>> searchArtists(
+        @RequestParam String keyword
+    ) {
+        List<ArtistDTO> artists = artistService.searchArtists(keyword);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_SEARCH_ARTIST_SUCCESS, artists));
     }
 
     @Operation(summary = "아티스트 삭제(JWT 필요O)", description = "아티스트를 삭제합니다.")
