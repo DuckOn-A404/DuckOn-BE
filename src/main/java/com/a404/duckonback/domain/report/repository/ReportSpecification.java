@@ -10,7 +10,8 @@ public class ReportSpecification {
     public static Specification<Report> hasReporterUserId(String userId) {
         return (root, query, cb) -> {
             if (userId == null || userId.isBlank()) return null;
-            return cb.equal(root.get("reporter").get("userId"), userId);
+            // LIKE 검색으로 변경
+            return cb.like(root.get("reporter").get("userId"), "%" + userId + "%");
         };
     }
 
