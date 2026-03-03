@@ -14,6 +14,8 @@ public enum SuccessCode {
     GET_USER_ROOM_CREATE_HISTORY_SUCCESS(200, HttpStatus.OK, "유저의 방 생성 기록을 성공적으로 불러왔습니다."),
     GET_USER_MEME_CREATE_HISTORY_SUCCESS(200, HttpStatus.OK, "유저의 밈 생성 기록을 성공적으로 불러왔습니다."),
     EMAIL_VERIFIED(200,HttpStatus.OK,"이메일 인증이 완료되었습니다."),
+    AUTH_REFRESH_SUCCESS(200, HttpStatus.OK, "인증 토큰이 성공적으로 갱신되었습니다."),
+    AUTH_LOGOUT_SUCCESS(200, HttpStatus.OK, "로그아웃이 성공적으로 처리되었습니다."),
 
     // 회원가입 관련
     USER_SIGNUP_SUCCESS(201, HttpStatus.CREATED, "회원가입이 완료되었습니다."),

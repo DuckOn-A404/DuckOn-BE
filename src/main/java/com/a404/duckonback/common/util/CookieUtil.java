@@ -8,28 +8,45 @@ import java.util.Arrays;
 
 public class CookieUtil {
 
+    private CookieUtil(){}
+
     /**
      * HttpOnly 쿠키 추가
      */
-    public static void addHttpOnlyCookie(HttpServletResponse response, String name, String value, int maxAgeInSeconds) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);    // JavaScript에서 접근 불가
-        cookie.setSecure(true);      // HTTPS에서만 전송 (개발 환경에서는 false 가능)
-        cookie.setMaxAge(maxAgeInSeconds);
-        response.addCookie(cookie);
+    public static void setHttpOnlyCookie(
+            HttpServletResponse response,
+            String name,
+            String value,
+            boolean secure,
+            String sameSite,
+            Integer maxAgeSec
+    ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("=").append(value).append("; Path=/; HttpOnly; ");
+
+        if(secure) sb.append("Secure; ");
+        if(sameSite!=null) sb.append("SameSite=").append(sameSite).append("; ");
+        if(maxAgeSec != null) sb.append("Max-Age=").append(maxAgeSec).append("; ");
+
+        response.addHeader("Set-Cookie", sb.toString());
     }
 
     /**
      * 쿠키 삭제 (같은 이름의 빈값 쿠키 추가)
      */
-    public static void deleteCookie(HttpServletResponse response, String name) {
-        Cookie cookie = new Cookie(name, "");
-        cookie.setPath("/");
-        cookie.setMaxAge(0);         // 0초 = 즉시 만료
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        response.addCookie(cookie);
+    public static void deleteCookie(
+            HttpServletResponse response,
+            String name,
+            boolean secure,
+            String sameSite
+    ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("=; Path=/; HttpOnly; Max-Age=0; ");
+
+        if(secure) sb.append("Secure; ");
+        if(sameSite!=null) sb.append("SameSite=").append(sameSite).append("; ");
+
+        response.addHeader("Set-Cookie", sb.toString());
     }
 
     /**

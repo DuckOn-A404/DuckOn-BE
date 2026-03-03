@@ -5,6 +5,7 @@ import com.a404.duckonback.common.enums.UserRole;
 import com.a404.duckonback.common.oauth.userinfo.OAuth2UserInfo;
 import com.a404.duckonback.common.oauth.userinfo.OAuth2UserInfoFactory;
 import com.a404.duckonback.domain.user.repository.UserRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,15 +40,26 @@ public class CustomJsonUsernamePasswordAuthenticationFilter extends UsernamePass
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-            throws AuthenticationException {
+    public Authentication attemptAuthentication(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws AuthenticationException {
         try {
             // JSON 요청 바디 파싱
-            Map<String, String> requestMap = objectMapper.readValue(request.getInputStream(), Map.class);
+            Map<String, Object> requestMap = objectMapper.readValue(request.getInputStream(), new TypeReference<Map<String, Object>>() {});
 
-            String email = requestMap.get("email");
-            String userId = requestMap.get("userId");
-            String password = requestMap.get("password");
+            String email = requestMap.get("email") == null ? null : requestMap.get("email").toString();
+            String userId = requestMap.get("userId") == null ? null : requestMap.get("userId").toString();
+            String password = requestMap.get("password") == null ? "" : requestMap.get("password").toString();
+
+            // rememberMe 파싱
+            Object rememberMeRaw = requestMap.get("rememberMe");
+            boolean rememberMe = false;
+            if(rememberMeRaw instanceof Boolean b) rememberMe = b;
+            else if (rememberMeRaw instanceof String s) rememberMe = "true".equalsIgnoreCase(s);
+
+            // SuccessHandler로 rememberMe 정보 전달 (Authentication 객체에 담아서)
+            request.setAttribute("rememberMe", rememberMe);
 
             String principal = (email != null && !email.isBlank()) ? email : userId;
 
