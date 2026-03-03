@@ -3,6 +3,7 @@ package com.a404.duckonback.domain.admin.service;
 import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
+import com.a404.duckonback.domain.admin.dto.UserSearchConditionDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
 import com.a404.duckonback.domain.admin.dto.AdminUserDetailDTO;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
@@ -59,5 +60,17 @@ public class AdminServiceImpl implements AdminService {
     public AdminUserDetailDTO getUserDetail(String userId) {
         User user = userRepository.findByUserId(userId);
         return AdminUserDetailDTO.fromEntity(user);
+    }
+
+    @Override
+    public PageResponse<AdminUserListDTO> searchAdminUserList(UserSearchConditionDTO condition, int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+        Page<AdminUserListDTO> pageResult = userRepository.searchAdminUserList(
+            condition.getKeyword(), 
+            condition.getRole(), 
+            pageable);
+        return PageResponse.from1Base(pageResult);
     }
 }
