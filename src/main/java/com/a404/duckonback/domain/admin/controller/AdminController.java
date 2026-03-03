@@ -3,6 +3,7 @@ package com.a404.duckonback.domain.admin.controller;
 import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.enums.ReportStatus;
 import com.a404.duckonback.common.enums.ReportType;
+import com.a404.duckonback.common.enums.UserRole;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.SuccessCode;
 import com.a404.duckonback.domain.admin.dto.*;
@@ -98,6 +99,22 @@ public class AdminController {
     public ResponseEntity<ApiResponseDTO<Void>> runMemeHourlyTop10Batch() {
         memeRankingBatchService.aggregateHourlyTopMemes();
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_BUILD_MEME_HOURLY_TOP10_SUCCESS));
+    }
+
+    @Operation(summary = "유저 검색 (JWT 필요O)", description = "키워드와 역할로 유저를 검색합니다.")
+    @GetMapping("/users/search")
+    public ResponseEntity<ApiResponseDTO<PageResponse<AdminUserListDTO>>> searchUsers(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) UserRole role,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        UserSearchConditionDTO condition = new UserSearchConditionDTO();
+        condition.setKeyword(keyword);
+        condition.setRole(role);
+        
+        PageResponse<AdminUserListDTO> result = adminService.searchAdminUserList(condition, page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_SEARCH_USER_SUCCESS, result));
     }
 
     @Operation(summary = "관리자 유저 리스트 조회 (JWT 필요O)", description = "관리자용 유저 리스트를 페이징 처리하여 조회합니다.")
