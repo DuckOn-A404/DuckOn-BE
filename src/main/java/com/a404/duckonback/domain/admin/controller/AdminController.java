@@ -109,7 +109,14 @@ public class AdminController {
         PageResponse<AdminUserListDTO> userList = adminService.getAdminUserList(page, size);
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_USER_LIST_SUCCESS, userList));
     }
-    
+
+    @Operation(summary = "유저 디테일 조회 (JWT 필요O)", description = "유저 디테일을 조회합니다. - 관리자.ver")
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<ApiResponseDTO<AdminUserDetailDTO>> getUserDetail(@PathVariable String userId) {
+        AdminUserDetailDTO userDetail = adminService.getUserDetail(userId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_USER_DETAIL_SUCCESS, userDetail));
+    }
+
     @Operation(summary = "신고 다중 필터 검색", description = "신고자, 피신고자, 상태, 유형으로 필터링합니다.")
     @GetMapping("/reports/search")
     public ResponseEntity<ApiResponseDTO<PageResponse<ReportDTO>>> searchReports(
