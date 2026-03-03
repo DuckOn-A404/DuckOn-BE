@@ -2,6 +2,7 @@ package com.a404.duckonback.domain.user.repository;
 
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.common.enums.SocialProvider;
+import com.a404.duckonback.common.enums.UserRole;
 import com.a404.duckonback.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -105,4 +106,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     """)
     Page<AdminUserListDTO> getAdminUserList(Pageable pageable);
 
+    @Query("""
+        SELECT new com.a404.duckonback.domain.admin.dto.AdminUserListDTO(
+            u.id, u.email, u.userId, u.nickname, u.role, u.createdAt, u.lastLoginAt, u.deleted, u.deletedAt
+        )
+        FROM User u
+        WHERE (:keyword IS NULL OR :keyword = '' 
+              OR u.userId LIKE CONCAT('%', :keyword, '%')
+              OR u.nickname LIKE CONCAT('%', :keyword, '%')
+              OR u.email LIKE CONCAT('%', :keyword, '%'))
+          AND (:role IS NULL OR u.role = :role)
+        """)
+        Page<AdminUserListDTO> searchAdminUserList(
+            @Param("keyword") String keyword,
+            @Param("role") UserRole role,
+            Pageable pageable
+        );
 }
