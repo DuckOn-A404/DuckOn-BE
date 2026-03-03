@@ -39,8 +39,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         if (user != null) return new StompPrincipal(user.getUserId());
 
                         // 게스트 허용 케이스
-                        String guestId = (String) attributes.getOrDefault("guestId", "guest:" + java.util.UUID.randomUUID());
-                        return new StompPrincipal(guestId);
+                        String guestId = (String) attributes.get("guestId");
+                        if(guestId != null) return new StompPrincipal(guestId);
+
+                        return null;
                     }
                 })
                 .addInterceptors(jwtHandshakeInterceptor)

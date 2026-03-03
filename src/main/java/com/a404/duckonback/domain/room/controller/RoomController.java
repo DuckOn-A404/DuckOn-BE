@@ -264,16 +264,21 @@ public class RoomController {
                 throw new CustomException("강퇴된 사용자입니다. 입장할 수 없습니다.",HttpStatus.BAD_REQUEST);
             }
 
-            redisService.addUserToRoom(roomId.toString(), principal.getUser());
+            redisService.addViewerToRoom(roomId.toString(), userId);
             result.put("userId", userId);
             result.put("nickname", principal.getUser().getNickname());
-        }else{// 로그인 하지 않더라도 참여자 수 증가
+        }else{
+            // Guest 처리: 세션 ID 기반으로 임시 guest ID 생성하여 참여자 목록에 추가
             String sessionId = http.getSession(true).getId();
             String guestId = "guest:" + sessionId;
-            String nickname = "익명의 오리#" + java.util.UUID.randomUUID().toString().substring(0, 6);
+
+            String nickname = redisService.getOrCreateGuestNickname(guestId);
+
+            boolean added = redisService.addViewerToRoom(roomId.toString(), guestId);
+
             result.put("userId", guestId);
             result.put("nickname", nickname);
-            redisService.addParticipantCountToRoom(roomId.toString());
+            result.put("added", added); // 디버깅용
         }
 
         long participantCount = redisService.getRoomUserCount(roomId.toString());
@@ -294,25 +299,27 @@ public class RoomController {
     public ResponseEntity<?> exitRoom(
             @PathVariable Long roomId,
             @RequestParam Long artistId,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            HttpServletRequest http
     ) {
 
-        if (principal != null) {
-            redisService.removeUserFromRoom(
-                    artistId.toString(),
-                    roomId.toString(),
-                    principal.getUser().getUserId()
-            );
-        }else{
-            redisService.decreaseParticipantCountFromRoom(roomId.toString());
+        String roomIdStr = roomId.toString();
+
+        if(principal != null){
+            String userId = principal.getUser().getUserId();
+            // 멱등: 방 삭제 상태면 false 반환
+            redisService.removeViewerFromRoom(artistId.toString(), roomIdStr, userId);
+        } else {
+            String sessionId = http.getSession(true).getId();
+            String guestId = "guest:" + sessionId;
+            redisService.removeViewerFromRoom(artistId.toString(), roomIdStr, guestId);
         }
 
-        long participantCount = redisService.getRoomUserCount(roomId.toString());
+        long participantCount = redisService.getRoomUserCount(roomIdStr);
         messagingTemplate.convertAndSend(
                 "/topic/room/" + roomId + "/presence",
                 new RoomPresenceDTO(roomId, participantCount)
         );
-
         return ResponseEntity.ok("방에서 퇴장하였습니다.");
     }
 
@@ -343,7 +350,7 @@ public class RoomController {
         //강퇴 대상 user에게 강퇴 메세지 전송
         messagingTemplate.convertAndSendToUser(targetId,"/queue/kick",roomId);
 
-        redisService.removeUserFromRoom(
+        redisService.removeViewerFromRoom(
                 artistId.toString(),
                 roomId.toString(),
                 targetId

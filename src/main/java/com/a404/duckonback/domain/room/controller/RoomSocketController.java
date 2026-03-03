@@ -31,7 +31,7 @@ public class RoomSocketController {
     private final UserRankService userRankService;
 
     // 영상 동기화 메시지
-    @Operation(summary = "방 내 영상 동기화 메시지 (JWT 필요X)")
+    @Operation(summary = "방 내 영상 동기화 메시지 (JWT 필요O, 호스트만 가능)")
     @MessageMapping("/room/update")
     public void updateRoom(@Payload LiveRoomSyncDTO dto,
                            StompHeaderAccessor accessor) {
@@ -61,8 +61,10 @@ public class RoomSocketController {
         User user = (User) accessor.getSessionAttributes().get("user");
         Boolean isGuest = (Boolean) accessor.getSessionAttributes().getOrDefault("guest", Boolean.FALSE);
 
-        if(!message.isImage() &&message.getContent().length() > 100){
-            throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
+        String content = message.getContent();
+        if(!message.isImage()){
+            if(content == null) throw new CustomException("채팅 내용이 없습니다.", HttpStatus.BAD_REQUEST);
+            if(content.length() > 100) throw new CustomException("채팅은 100자 이하만 가능합니다.", HttpStatus.BAD_REQUEST);
         }
 
         String rateKey;
@@ -79,16 +81,28 @@ public class RoomSocketController {
             String guestNickname = (String) accessor.getSessionAttributes().get("guestNickname");
             String guestLang = (String) accessor.getSessionAttributes().get("guestLang");
 
-            if (guestId == null) guestId = "guest:" + java.util.UUID.randomUUID();
-            if (guestNickname == null) guestNickname = "게스트";
-            if (guestLang == null) guestLang = "en"; // 기본 언어는 영어로
 
-            message.setSenderId(guestId);            // 문자열 ID 허용(프론트 필터링에도 사용됨)
+            // handshake에서 무조건 세팅되어야함
+            // 누락 시 랜덤 생성하지 않고 drop(+로그) 처리
+            if (guestId == null || guestId.isBlank()) {
+                throw new CustomException("게스트 정보 누락", HttpStatus.UNAUTHORIZED);
+            }
+
+            if (guestNickname == null || guestNickname.isBlank()) {
+                // 랜덤 생성 대신 redis에서 재조회하여 복구
+                guestNickname = redisService.getOrCreateGuestNickname(guestId);
+            }
+
+            if (guestLang == null || guestLang.isBlank()) {
+                guestLang = "en"; // 기본값
+            }
+            message.setSenderId(guestId);
             message.setSenderNickName(guestNickname);
             message.setSenderLang(guestLang);
 
-            rateKey = chatRateLimiter.userKey(guestId); // 같은 레이트리밋 로직 재사용
+            rateKey = chatRateLimiter.userKey(guestId);
         }
+
 
         boolean allowed = chatRateLimiter.allow(rateKey, 5, Duration.ofSeconds(5));
         if (!allowed) {
