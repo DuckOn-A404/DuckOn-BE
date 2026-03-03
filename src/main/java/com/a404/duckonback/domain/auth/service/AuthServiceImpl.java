@@ -1,10 +1,14 @@
 package com.a404.duckonback.domain.auth.service;
 
 import com.a404.duckonback.common.dto.JWTDTO;
+import com.a404.duckonback.common.enums.TokenStatus;
+import com.a404.duckonback.common.response.ErrorCode;
+import com.a404.duckonback.common.util.CookieUtil;
 import com.a404.duckonback.domain.artist.artist.service.ArtistFollowService;
 import com.a404.duckonback.domain.artist.artist.service.ArtistService;
 import com.a404.duckonback.domain.auth.dto.LoginRequestDTO;
 import com.a404.duckonback.domain.auth.dto.LoginResponseDTO;
+import com.a404.duckonback.domain.auth.dto.RefreshResponseDTO;
 import com.a404.duckonback.domain.auth.dto.SignupRequestDTO;
 import com.a404.duckonback.domain.user.dto.UserDTO;
 import com.a404.duckonback.domain.user.entity.User;
@@ -17,20 +21,18 @@ import com.a404.duckonback.common.security.token.TokenBlacklistService;
 import com.a404.duckonback.domain.user.service.UserService;
 import com.a404.duckonback.common.util.JWTUtil;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -124,7 +126,6 @@ public class AuthServiceImpl implements AuthService {
 
         return LoginResponseDTO.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .user(userDTO)
                 .build();
     }
@@ -158,59 +159,71 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Map<String, String> refreshJWT(String refreshHeader){
+    public RefreshResponseDTO refreshJWT(HttpServletRequest request, HttpServletResponse response) {
         final long now = System.currentTimeMillis();
 
-        String refreshToken = jWTUtil.requireValidToken(refreshHeader);
-        String userId = null;
-
-        if (refreshToken != null) {
-            Claims claims = jWTUtil.getClaims(refreshToken);
-            userId = claims.getSubject();
-
-            Date exp = claims.getExpiration();
-            long ttl = exp.getTime() - now;
-            if (ttl > 0) tokenBlacklistService.blacklist(refreshToken, ttl);
+        String refreshToken = CookieUtil.getCookieValue(request, "refreshToken");
+        if(refreshToken == null || refreshToken.isBlank()) {
+            throw new CustomException(ErrorCode.USER_NOT_AUTHENTICATED);
         }
 
-        User user = userService.findByUserId(userId);
+        TokenStatus status = jWTUtil.getTokenValidationStatus(refreshToken);
+        boolean revoked = tokenBlacklistService.isBlacklisted(refreshToken);
 
+        if(status != TokenStatus.VALID || revoked){
+            CookieUtil.deleteCookie(response, "refreshToken", isHttps(request), "Lax");
+            throw new CustomException(ErrorCode.USER_NOT_AUTHENTICATED);
+        }
+
+        Claims claims = jWTUtil.getClaims(refreshToken);
+        String userId = claims.getSubject();
+
+        long ttl = claims.getExpiration().getTime() - now;
+        if (ttl > 0) tokenBlacklistService.blacklist(refreshToken, ttl);
+
+        User user = userService.findActiveByUserId(userId);
+
+        String newAccessToken  = jWTUtil.generateAccessToken(user);
         String newRefreshToken = jWTUtil.generateRefreshToken(user);
-        String newAccessToken = jWTUtil.generateAccessToken(user);
 
-        Map<String, String> result = new HashMap<>();
-        result.put("accessToken", newAccessToken);
-        result.put("refreshToken", newRefreshToken);
+        CookieUtil.setHttpOnlyCookie(response, "refreshToken", newRefreshToken, isHttps(request), "Lax", null);
 
-        return result;
+        return new RefreshResponseDTO(newAccessToken);
     }
 
 
     @Override
     @Transactional
-    public void logout(User user, String refreshHeader) {
+    public void logout(User user, HttpServletRequest request, HttpServletResponse response) {
         final long now = System.currentTimeMillis();
 
-        // Access Token (Authorization)
-        ServletRequestAttributes attrs =
-                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs != null) {
-            String authorization = attrs.getRequest().getHeader("Authorization");
-            String accessToken = jWTUtil.normalizeIfValid(authorization);
-            if (accessToken != null) {
-                Date exp = jWTUtil.getClaims(accessToken).getExpiration();
-                long ttl = exp.getTime() - now;
-                if (ttl > 0) tokenBlacklistService.blacklist(accessToken, ttl);
-            }
+        // access 블랙리스트
+        String authorization = request.getHeader("Authorization");
+        String accessToken = jWTUtil.normalizeIfValid(authorization);
+
+        if(accessToken != null && !accessToken.isEmpty()) {
+            Date expiration = jWTUtil.getClaims(accessToken).getExpiration();
+            long ttl = expiration.getTime() - now;
+            if (ttl > 0) tokenBlacklistService.blacklist(accessToken, ttl);
         }
 
-        // Refresh Token (X-Refresh-Token) - Bearer 유무와 무관
-        String refreshToken = jWTUtil.normalizeIfValid(refreshHeader);
-        if (refreshToken != null) {
-            Date exp = jWTUtil.getClaims(refreshToken).getExpiration();
-            long ttl = exp.getTime() - now;
+        // refresh 쿠키 삭제
+        String refreshToken = CookieUtil.getCookieValue(request, "refreshToken");
+        if(refreshToken != null && !refreshToken.isBlank()
+            && jWTUtil.getTokenValidationStatus(refreshToken).equals(TokenStatus.VALID)) {
+            Date expiration = jWTUtil.getClaims(refreshToken).getExpiration();
+            long ttl = expiration.getTime() - now;
             if (ttl > 0) tokenBlacklistService.blacklist(refreshToken, ttl);
         }
+
+        // 쿠키 삭제
+        CookieUtil.deleteCookie(response, "refreshToken", isHttps(request), "Lax");
+    }
+
+    private boolean isHttps(HttpServletRequest request) {
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        if (forwardedProto != null) return "https".equalsIgnoreCase(forwardedProto);
+        return request.isSecure();
     }
 
 }

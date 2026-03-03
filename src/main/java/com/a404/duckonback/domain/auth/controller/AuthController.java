@@ -7,12 +7,15 @@ import com.a404.duckonback.common.notification.email.EmailVerificationService;
 import com.a404.duckonback.common.response.ApiResponseDTO;
 import com.a404.duckonback.common.response.ErrorCode;
 import com.a404.duckonback.common.response.SuccessCode;
+import com.a404.duckonback.domain.auth.dto.RefreshResponseDTO;
 import com.a404.duckonback.domain.auth.service.AuthService;
 import com.a404.duckonback.domain.auth.dto.LoginRequestDTO;
 import com.a404.duckonback.domain.auth.dto.SignupRequestDTO;
 import com.a404.duckonback.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,21 +76,25 @@ public class AuthController {
         return ResponseEntity.ok().body(Map.of("isDuplicate", isDuplicate));
     }
 
-    @Operation(summary = "토큰 갱신 (JWT 필요O)", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰, 리프레시 토큰을 발급받습니다.")
+    @Operation(summary = "토큰 갱신 (JWT 필요X)", description = "HttpOnly 쿠키의 refreshToken으로 access token을 재발급합니다.")
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshJWT(@RequestHeader("Authorization") String refreshTokenHeader) {
-        Map<String, String> tokenMap = authService.refreshJWT(refreshTokenHeader);
-        return ResponseEntity.ok(tokenMap);
+    public ResponseEntity<ApiResponseDTO<RefreshResponseDTO>> refreshJWT(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        RefreshResponseDTO dto = authService.refreshJWT(request, response);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.AUTH_REFRESH_SUCCESS, dto));
     }
 
-    @Operation(summary = "로그아웃 (JWT 필요O)", description = "사용자가 로그아웃합니다. 리프레시 토큰을 무효화합니다.")
+    @Operation(summary = "로그아웃 (JWT 필요O)", description = "access 블랙리스트 처리 + refreshToken 쿠키 삭제")
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(
+    public ResponseEntity<ApiResponseDTO<Void>> logout(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
-        authService.logout(principal.getUser(), refreshToken);
-        return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
+        authService.logout(principal.getUser(), request, response);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.AUTH_LOGOUT_SUCCESS));
     }
 
     @Operation(summary = "이메일 인증번호 발송 (JWT 필요X)", description = "싸피 와이파이로 작동하지 않습니다. 꼭 핫스팟으로 실행해주세요!")
