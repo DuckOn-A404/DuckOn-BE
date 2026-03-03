@@ -5,7 +5,7 @@ import com.a404.duckonback.common.enums.ReportStatus;
 import com.a404.duckonback.common.enums.ReportType;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.common.response.ErrorCode;
-import com.a404.duckonback.domain.admin.dto.ReportSearchCondition;
+import com.a404.duckonback.domain.admin.dto.ReportSearchConditionDTO;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
 import com.a404.duckonback.domain.report.dto.ReportCreateRequestDTO;
 import com.a404.duckonback.domain.report.entity.Report;
@@ -73,7 +73,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public PageResponse<ReportDTO> searchReports(ReportSearchCondition condition, int page, int size) {
+    public PageResponse<ReportDTO> searchReports(ReportSearchConditionDTO condition, int page, int size) {
         int safePage = Math.max(page - 1, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("reportedAt").descending());

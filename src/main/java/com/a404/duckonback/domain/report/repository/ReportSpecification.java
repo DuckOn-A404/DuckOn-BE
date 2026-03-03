@@ -17,7 +17,8 @@ public class ReportSpecification {
     public static Specification<Report> hasReportedUserId(String userId) {
         return (root, query, cb) -> {
             if (userId == null || userId.isBlank()) return null;
-            return cb.equal(root.get("reported").get("userId"), userId);
+            // LIKE 검색으로 변경
+            return cb.like(root.get("reported").get("userId"), "%" + userId + "%");
         };
     }
 

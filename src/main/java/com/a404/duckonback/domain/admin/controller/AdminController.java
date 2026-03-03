@@ -16,7 +16,7 @@ import com.a404.duckonback.domain.artist.artist.dto.ArtistDTO;
 import com.a404.duckonback.domain.home.service.HomeSearchPlaceholderService;
 import com.a404.duckonback.domain.meme.service.MemeRankingBatchService;
 import com.a404.duckonback.domain.report.dto.ReportDTO;
-import com.a404.duckonback.domain.admin.dto.ReportSearchCondition;
+import com.a404.duckonback.domain.admin.dto.ReportSearchConditionDTO;
 import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
@@ -144,7 +144,7 @@ public class AdminController {
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "20") int size
     ) {
-        ReportSearchCondition condition = new ReportSearchCondition();
+        ReportSearchConditionDTO condition = new ReportSearchConditionDTO();
         condition.setReporterUserId(reporterUserId);
         condition.setReportedUserId(reportedUserId);
         condition.setStatus(status);
