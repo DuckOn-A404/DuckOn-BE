@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ReportSearchCondition {
+public class ReportSearchConditionDTO {
     private String reporterUserId;
     private String reportedUserId;
     private ReportStatus status;
