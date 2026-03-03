@@ -4,8 +4,10 @@ import com.a404.duckonback.common.dto.PageResponse;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
+import com.a404.duckonback.domain.admin.dto.AdminUserDetailDTO;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
+import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import com.a404.duckonback.common.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -51,5 +53,11 @@ public class AdminServiceImpl implements AdminService {
 
         Page<AdminArtistListDTO> dtoPage = pageResult.map(AdminArtistListDTO::fromEntity);
         return PageResponse.from1Base(dtoPage);
+    }
+
+    @Override
+    public AdminUserDetailDTO getUserDetail(String userId) {
+        User user = userRepository.findByUserId(userId);
+        return AdminUserDetailDTO.fromEntity(user);
     }
 }
