@@ -1,5 +1,6 @@
 package com.a404.duckonback.common.interceptor;
 
+import com.a404.duckonback.common.infra.redis.RedisService;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.common.enums.TokenStatus;
 import com.a404.duckonback.domain.user.repository.UserRepository;
@@ -23,6 +24,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     private final JWTUtil jwtUtil;
     private final UserRepository userRepository;
+    private final RedisService redisService;
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request,
@@ -53,13 +55,7 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
             // 2) 토큰 없음 → 게스트 허용
             if (token == null || token.isBlank()) {
-                String sid = http.getSession(true).getId();
-                String guestId = "guest:" + sid;
-                String guestNick = "익명의 사용자";
-
-                attributes.put("guest", Boolean.TRUE);
-                attributes.put("guestId", guestId);
-                attributes.put("guestNickname", guestNick);
+                putGuestAttributes(servletRequest, redisService, attributes);
                 return true;
             }
 
@@ -81,12 +77,12 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                     }
                 }
                 // 인증객체 만들지 못하면 게스트로
-                attributes.put("guest", Boolean.TRUE);
+                putGuestAttributes((ServletServerHttpRequest) servletRequest, redisService, attributes);
                 return true;
             }
 
             // 4) INVALID/EXPIRED -> 차단하지 말고 게스트로 허용
-            attributes.put("guest", Boolean.TRUE);
+            putGuestAttributes((ServletServerHttpRequest)  servletRequest, redisService, attributes);
             return true;
         }
 
@@ -102,4 +98,21 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                                Exception exception) {
         // 후처리 필요시 여기에 작성
     }
+
+    private void putGuestAttributes(
+            ServletServerHttpRequest servletServerHttpRequest,
+            RedisService redisService,
+            Map<String, Object> attributes
+    ) {
+        var http = servletServerHttpRequest.getServletRequest();
+        String sid = http.getSession(true).getId();
+        String guestId = "guest:" + sid;
+        String guestNick = redisService.getOrCreateGuestNickname(guestId);
+
+        attributes.put("guest", Boolean.TRUE);
+        attributes.put("guestId", guestId);
+        attributes.put("guestNickname", guestNick);
+        attributes.put("guestLang", "en"); // 기본값
+    }
 }
+

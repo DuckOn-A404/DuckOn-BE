@@ -1,5 +1,6 @@
 package com.a404.duckonback.common.infra.redis;
 
+import com.a404.duckonback.common.util.GuestNicknameGenerator;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
 import com.a404.duckonback.domain.room.dto.*;
 import com.a404.duckonback.domain.user.entity.User;
@@ -25,6 +26,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class RedisServiceImpl implements RedisService {
 
+    private final GuestNicknameGenerator guestNicknameGenerator;
+
     private final @Qualifier("roomTemplate")
     RedisTemplate<String, LiveRoomDTO> roomTemplate;
     // DTO 통저장용
@@ -41,34 +44,31 @@ public class RedisServiceImpl implements RedisService {
     private static final String ARTIST_ROOMS_PREFIX = "artist:";
     private static final String ARTIST_ROOMS_SUFFIX = ":rooms";
     private static final Duration ROOM_TTL = Duration.ofHours(6);
-    private static final String ROOM_COUNT_SUFFIX = ":count";
 
     private static final String HOST_ROOM_LOCK_PREFIX = "lock:room:create:";
 
-    private String roomCountKey(String roomId) { return ROOM_KEY_PREFIX + roomId + ROOM_COUNT_SUFFIX; }
-    private String roomCountKey(Long roomId)   { return ROOM_KEY_PREFIX + roomId + ROOM_COUNT_SUFFIX; }
+    private static final String GUEST_PROFILE_SUFFIX = ":profile";
+    private static final Duration GUEST_TTL = Duration.ofHours(6);
+
     private String roomKey(String roomId) { return ROOM_KEY_PREFIX + roomId; }
     private String roomKey(Long roomId)   { return ROOM_KEY_PREFIX + roomId; }
     private String roomUsersKey(String roomId) { return ROOM_KEY_PREFIX + roomId + ROOM_USERS_SUFFIX; }
     private String artistRoomsKey(Long artistId) { return ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX; }
 
+    private String guestProfileKey(String guestId){
+        // guestId는 "guest:xxxx"
+        // 키는 "guest:xxxx:profile"
+        return guestId + GUEST_PROFILE_SUFFIX;
+    }
+
     // ===================== 방 정보 (DTO 통저장) =====================
 
     public void saveRoomInfo(String roomId, LiveRoomDTO room) {
         roomTemplate.opsForValue().set(roomKey(roomId), room, ROOM_TTL);
-
-        // 참여자 수 카운터를 0으로 초기화 (이미 있으면 건들지 않음)
-        String cKey = roomCountKey(roomId);
-        Boolean created = stringRedisTemplate.opsForValue().setIfAbsent(cKey, "0");
-        stringRedisTemplate.expire(cKey, ROOM_TTL);
     }
 
     public LiveRoomDTO getRoomInfo(String roomId) {
-        LiveRoomDTO dto = roomTemplate.opsForValue().get(roomKey(roomId));
-        if (dto == null) {
-            throw new CustomException("Redis에 해당 roomId의 방 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND);
-        }
-        return dto;
+        return roomTemplate.opsForValue().get(roomKey(roomId));
     }
 
     public void updateRoomInfo(LiveRoomSyncDTO dto) {
@@ -96,12 +96,10 @@ public class RedisServiceImpl implements RedisService {
         String rKey = roomKey(roomId);
         String aKey = artistRoomsKey(artistId);
         String uKey = roomUsersKey(roomId.toString());
-        String cKey = roomCountKey(roomId);
 
         Boolean roomDeleted = roomTemplate.delete(rKey);
         Long removed = stringRedisTemplate.opsForSet().remove(aKey, roomId.toString());
         Boolean usersDeleted = stringRedisTemplate.delete(uKey);
-        stringRedisTemplate.delete(cKey); // 카운터 정리
 
         String bKey = "room:" + roomId + ":banned";
         stringRedisTemplate.delete(bKey); // 방 블랙리스트 정리
@@ -124,89 +122,8 @@ public class RedisServiceImpl implements RedisService {
     // ===================== 참가자 관리 =====================
 
     @Override
-    public void addUserToRoom(String roomId, User user) {
-        String uKey = roomUsersKey(roomId);
-        String cKey = roomCountKey(roomId);
-
-        Long added = stringRedisTemplate.opsForSet().add(uKey, user.getUserId());
-
-        // 실제로 추가되었을 때만 카운터 +1
-        if (added != null && added > 0) {
-            addParticipantCountToRoom(roomId);
-        }
-    }
-
-    @Override
-    public void addParticipantCountToRoom(String roomId){
-        String cKey = roomCountKey(roomId);
-        stringRedisTemplate.opsForValue().increment(cKey);
-    }
-
-    @Override
-    public void decreaseParticipantCountFromRoom(String roomId){
-        String cKey = roomCountKey(roomId);
-        stringRedisTemplate.opsForValue().decrement(cKey);
-    }
-
-    @Override
-    public void removeUserFromRoom(String artistId, String roomId, String userId) {
-        String uKey = roomUsersKey(roomId);
-        String rKey = roomKey(roomId);
-        String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
-        String cKey = roomCountKey(roomId);
-
-
-        // 롤백 대비 백업
-        Set<String> before = Optional.ofNullable(stringRedisTemplate.opsForSet().members(uKey))
-                .orElseGet(Collections::emptySet);
-        LiveRoomDTO backup = roomTemplate.opsForValue().get(rKey);
-
-        // 제거 시도
-        Long removedUser = stringRedisTemplate.opsForSet().remove(uKey, userId);
-        if (removedUser != null && removedUser > 0) {
-            // 실제로 빠졌으면 카운터 -1 (음수 방지)
-            Long after = stringRedisTemplate.opsForValue().decrement(cKey);
-            if (after != null && after < 0) {
-                stringRedisTemplate.opsForValue().set(cKey, "0");
-            }
-
-        }
-
-        Long size = stringRedisTemplate.opsForSet().size(uKey);
-        if (size != null && size == 0L) {
-            // 마지막 사용자면 방 정리
-            Boolean deletedUsers = stringRedisTemplate.delete(uKey);
-            Boolean deletedRoom  = roomTemplate.delete(rKey);
-            Long removedFromArtist = stringRedisTemplate.opsForSet().remove(aKey, roomId);
-            // 카운터 키도 정리
-            stringRedisTemplate.delete(cKey);
-
-            if ((deletedRoom != null && !deletedRoom) || removedFromArtist == null || removedFromArtist == 0) {
-                // 롤백
-                if (backup != null) roomTemplate.opsForValue().set(rKey, backup, ROOM_TTL);
-                if (!before.isEmpty()) stringRedisTemplate.opsForSet().add(uKey, before.toArray(String[]::new));
-                // 카운터를 집합 크기로 복원
-                Long fixed = stringRedisTemplate.opsForSet().size(uKey);
-                stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed == null ? 0 : fixed));
-                stringRedisTemplate.expire(uKey, ROOM_TTL);
-                stringRedisTemplate.expire(cKey, ROOM_TTL);
-
-                throw new CustomException("방 정보 삭제 실패", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-    }
-
-    @Override
     public Long getRoomUserCount(String roomId) {
-        String cKey = roomCountKey(roomId);
-        String val = stringRedisTemplate.opsForValue().get(cKey);
-        if (val != null) {
-            try { return Long.valueOf(val); } catch (NumberFormatException ignore) {}
-        }
-        // 카운터가 없으면 집합 크기로 보정하고 카운터 저장
-        Long size = stringRedisTemplate.opsForSet().size(roomUsersKey(roomId));
-        long fixed = (size == null ? 0L : size);
-        stringRedisTemplate.opsForValue().set(cKey, String.valueOf(fixed));
+        Long fixed = getRoomUserCountStrict(roomId);
         return fixed;
     }
 
@@ -452,5 +369,81 @@ public class RedisServiceImpl implements RedisService {
         });
 
         return keys;
+    }
+
+    @Override
+    public String getOrCreateGuestNickname(String guestId) {
+        String key = guestProfileKey(guestId);
+
+        Object existing = stringRedisTemplate.opsForHash().get(key, "nickname");
+        if(existing != null){
+            stringRedisTemplate.expire(key, GUEST_TTL);
+            return existing.toString();
+        }
+
+        String nickname = guestNicknameGenerator.generateNickname();
+
+        // 최초 1회만 저장
+        Boolean ok = stringRedisTemplate.opsForHash().putIfAbsent(key, "nickname", nickname);
+        stringRedisTemplate.expire(key, GUEST_TTL);
+
+        // putIfAbsent가 false여도(레이스) 이미 누가 넣었을 테이 다시 읽어옴
+        Object saved = stringRedisTemplate.opsForHash().get(key, "nickname");
+        return saved != null ? saved.toString() : nickname;
+    }
+
+    @Override
+    public boolean addViewerToRoom(String roomId, String viewerId) {
+        String uKey = roomUsersKey(roomId);
+
+        // 방 존재 여부 확인, DTO가 없으면 방이 없는 것으로 간주, false 반환
+        Boolean roomExists = roomTemplate.hasKey(roomKey(roomId));
+        if(!Boolean.TRUE.equals(roomExists)){
+            return false;
+        }
+
+        Long added = stringRedisTemplate.opsForSet().add(uKey, viewerId);
+
+        // user set에도 TTL 걸어두기
+        stringRedisTemplate.expire(uKey, ROOM_TTL);
+
+        return added != null && added > 0;
+
+    }
+
+    @Override
+    public boolean removeViewerFromRoom(String artistId, String roomId, String viewerId) {
+        String uKey = roomUsersKey(roomId);
+        String rKey = roomKey(roomId);
+        String aKey = ARTIST_ROOMS_PREFIX + artistId + ARTIST_ROOMS_SUFFIX;
+
+        // 멱등 처리: 방이 이미 삭제됐으면 false 반환
+        Boolean roomExists = roomTemplate.hasKey(rKey);
+        if(!Boolean.TRUE.equals(roomExists)) {
+            return false;
+        }
+
+        Long removed = stringRedisTemplate.opsForSet().remove(uKey, viewerId);
+
+        // 마지막 유저라면 방 정리
+        Long size = stringRedisTemplate.opsForSet().size(uKey);
+        if(size != null && size == 0L) {
+            stringRedisTemplate.delete(uKey);
+            roomTemplate.delete(rKey);
+            stringRedisTemplate.opsForSet().remove(aKey, roomId);
+
+            // 방 블랙리스트 정리
+            String bKey = "room:" + roomId + ":banned";
+            stringRedisTemplate.delete(bKey);
+
+        }
+        return removed != null && removed > 0;
+    }
+
+    @Override
+    public Long getRoomUserCountStrict(String roomId) {
+        String uKey = roomUsersKey(roomId);
+        Long size = stringRedisTemplate.opsForSet().size(uKey);
+        return size == null ? 0L : size;
     }
 }
