@@ -58,7 +58,7 @@ public class MeController {
     @PatchMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateMyInfo(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @ModelAttribute UpdateProfileRequestDTO newUserInfo
+            @Valid @ModelAttribute UpdateProfileRequestDTO newUserInfo
     ) {
         userService.updateUserInfo(principal.getUser().getUserId(), newUserInfo);
         return ResponseEntity.ok(Map.of("message", "회원 정보가 수정되었습니다."));
