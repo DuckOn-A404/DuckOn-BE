@@ -1,13 +1,19 @@
 package com.a404.duckonback.domain.admin.service;
 
 import com.a404.duckonback.common.dto.PageResponse;
+import com.a404.duckonback.common.enums.PenaltyStatus;
 import com.a404.duckonback.common.exception.CustomException;
 import com.a404.duckonback.domain.admin.dto.AdminUserListDTO;
 import com.a404.duckonback.domain.admin.dto.UserSearchConditionDTO;
 import com.a404.duckonback.domain.admin.dto.AdminArtistListDTO;
 import com.a404.duckonback.domain.admin.dto.AdminUserDetailDTO;
 import com.a404.duckonback.domain.artist.artist.entity.Artist;
+import com.a404.duckonback.domain.artist.artist.repository.ArtistFollowRepository;
 import com.a404.duckonback.domain.artist.artist.repository.ArtistRepository;
+import com.a404.duckonback.domain.penalty.entity.Penalty;
+import com.a404.duckonback.domain.penalty.repository.PenaltyRepository;
+import com.a404.duckonback.domain.report.entity.Report;
+import com.a404.duckonback.domain.report.repository.ReportRepository;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import com.a404.duckonback.common.response.ErrorCode;
@@ -17,11 +23,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final ArtistRepository artistRepository;
+    private final PenaltyRepository penaltyRepository;
+    private final ReportRepository reportRepository;
+    private final ArtistFollowRepository artistFollowRepository;
 
     @Override
     public PageResponse<AdminUserListDTO> getAdminUserList(int page, int size) {
@@ -59,7 +71,24 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public AdminUserDetailDTO getUserDetail(String userId) {
         User user = userRepository.findByUserId(userId);
-        return AdminUserDetailDTO.fromEntity(user);
+        if (user == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // 만료된 제재 처리 후 활성 제재 조회
+        penaltyRepository.expireOldPenalties(user.getId(), LocalDateTime.now());
+        List<Penalty> activePenalties = penaltyRepository.findByUser_IdAndStatus(
+                user.getId(), PenaltyStatus.ACTIVE);
+
+        // 최근 신고당한 내역 (최신순 5건)
+        List<Report> recentReports = reportRepository.findTop5ByReported_IdOrderByReportedAtDesc(
+                user.getId());
+
+        // 팔로우 중인 아티스트 이름 목록
+        List<String> followingArtists = artistFollowRepository.findArtistNamesByUserId(user.getId());
+
+        return AdminUserDetailDTO.fromEntity(
+                user, activePenalties, recentReports, followingArtists);
     }
 
     @Override
