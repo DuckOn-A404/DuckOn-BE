@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.a404.duckonback.common.response.ApiResponseDTO;
@@ -12,36 +14,53 @@ import org.apache.tomcat.util.http.fileupload.impl.FileCountLimitExceededExcepti
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("message", ex.getMessage());
-        body.put("status", ex.getStatus().value());
+    public ResponseEntity<ApiResponseDTO<Object>> handleCustomException(CustomException ex) {
+        ErrorCode code = ex.getErrorCode();
 
-        // 추가 데이터가 있다면 포함
-        if (ex.getData() != null && !ex.getData().isEmpty()) {
-            body.putAll(ex.getData());
+        // ErrorCode가 명확히 매핑되는 경우
+        if(code != null){
+            return ResponseEntity
+                    .status(code.getHttpStatus())
+                    .body(ApiResponseDTO.fail(code));
         }
 
-        return ResponseEntity.status(ex.getStatus()).body(body);
+        // ErrorCode가 없는 경우, 기본적으로 INVALID_REQUEST로 처리
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ApiResponseDTO.fail(ErrorCode.INVALID_REQUEST, ex.getMessage()));
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-        ex.printStackTrace(); // 개발 중 예외 확인용 로그
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponseDTO<Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getDefaultMessage())
+                .orElse("잘못된 요청입니다.");
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("message", "서버 내부 오류가 발생했습니다.");
-        body.put("status", 500);
+        return ResponseEntity
+                .status(ErrorCode.INVALID_REQUEST.getHttpStatus())
+                .body(ApiResponseDTO.fail(ErrorCode.INVALID_REQUEST, message));
+    }
 
-        return ResponseEntity.status(500).body(body);
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiResponseDTO<Object>> handleBindException(BindException ex) {
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getDefaultMessage())
+                .orElse("잘못된 요청입니다.");
+
+        return ResponseEntity
+                .status(ErrorCode.INVALID_REQUEST.getHttpStatus())
+                .body(ApiResponseDTO.fail(ErrorCode.INVALID_REQUEST, message));
     }
 
     // 파일 용량 초과 (Spring이 던짐)
@@ -104,6 +123,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.INVALID_REQUEST.getHttpStatus())
                 .body(ApiResponseDTO.fail(ErrorCode.INVALID_REQUEST));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponseDTO<Object>> handleGenericException(Exception ex) {
+        log.error("[GlobalExceptionHandler] Unhandled exception: {}", ex.getMessage(), ex);
+
+        return ResponseEntity
+                .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
+                .body(ApiResponseDTO.fail(ErrorCode.INTERNAL_SERVER_ERROR));
     }
 
     private Throwable getRootCause(Throwable t) {
