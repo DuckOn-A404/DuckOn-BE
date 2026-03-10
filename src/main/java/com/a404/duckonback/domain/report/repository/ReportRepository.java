@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ReportRepository extends JpaRepository<Report, Long>,
     JpaSpecificationExecutor<Report> {
@@ -19,4 +21,7 @@ public interface ReportRepository extends JpaRepository<Report, Long>,
     Page<Report> findByReportType(ReportType contentType, Pageable pageable);
     boolean existsByReporterAndContentIdAndReportType(User reporter, Long contentId, ReportType
             reportType);
+    
+    // 최근 신고당한 내역 조회 (최신순 5건)
+    List<Report> findTop5ByReported_IdOrderByReportedAtDesc(Long userId);
 }
