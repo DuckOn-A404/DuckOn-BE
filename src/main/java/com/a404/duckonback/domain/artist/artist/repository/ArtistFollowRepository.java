@@ -27,6 +27,6 @@ public interface ArtistFollowRepository extends JpaRepository<ArtistFollow, Arti
     Page<ArtistFollow> findByUser_Id(Long userId, Pageable pageable);
     
     // 팔로우 중인 아티스트 이름 목록 조회
-    @Query("SELECT af.artist.name FROM ArtistFollow af WHERE af.user.id = :userId")
+    @Query("SELECT af.artist.nameKr FROM ArtistFollow af WHERE af.user.id = :userId")
     List<String> findArtistNamesByUserId(@Param("userId") Long userId);
 }
