@@ -37,6 +37,8 @@ public enum SuccessCode {
     ADMIN_REVIEW_ARTIST_CHANGE_REQUEST_SUCCESS(200, HttpStatus.OK, "[관리자] 아티스트 변경 요청 검토에 성공했습니다."),
     ADMIN_PATCH_EMERGING_ARTIST_SUCCESS(200, HttpStatus.OK, "[관리자] 라이징 아티스트 정보 수정에 성공했습니다."),
     ADMIN_UPDATE_HOME_SEARCH_PLACEHOLDER_SUCCESS(200, HttpStatus.OK, "[관리자] 홈 검색창 플레이스홀더 업데이트에 성공했습니다."),
+    ADMIN_GET_PENALTY_LIST_SUCCESS(200, HttpStatus.OK, "[관리자] 제재 목록 조회에 성공했습니다."),
+    ADMIN_GET_PENALTY_DETAIL_SUCCESS(200, HttpStatus.OK, "[관리자] 제재 상세 조회에 성공했습니다."),
 
     // 신고 api 관련
     REPORT_CREATE_SUCCESS(200, HttpStatus.OK, "신고가 성공적으로 저장되었습니다."),

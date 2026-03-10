@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.a404.duckonback.domain.admin.dto.AdminPenaltyListDTO;
 
 @Repository
 public interface PenaltyRepository extends JpaRepository<Penalty, Long> {
@@ -32,5 +35,13 @@ public interface PenaltyRepository extends JpaRepository<Penalty, Long> {
     void expireOldPenalties(
             @Param("userId") Long userId,
             @Param("now") LocalDateTime now);
+
+    @Query("""
+      SELECT new com.a404.duckonback.domain.admin.dto.AdminPenaltyListDTO
+        (p.penaltyId, p.user.id, u.nickname, p.reason, p.penaltyType, p.status, p.startAt, p.endAt) 
+      FROM Penalty p
+      JOIN p.user u
+      """)
+    Page<AdminPenaltyListDTO> findAllBy(Pageable pageable);
 
 }

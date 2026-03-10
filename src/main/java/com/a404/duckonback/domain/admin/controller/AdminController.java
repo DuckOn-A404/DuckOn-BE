@@ -20,6 +20,8 @@ import com.a404.duckonback.domain.admin.dto.ReportSearchConditionDTO;
 import com.a404.duckonback.domain.report.service.ReportService;
 import com.a404.duckonback.domain.user.service.EngagementBatchService;
 import com.a404.duckonback.common.filter.CustomUserPrincipal;
+import com.a404.duckonback.domain.admin.dto.AdminPenaltyListDTO;
+import com.a404.duckonback.domain.penalty.service.PenaltyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -208,6 +210,23 @@ public class AdminController {
     ) {
         HomeSearchPlaceholderResponseDTO response = homeSearchPlaceholderService.updatePlaceholders(request.getItems(), principal.getId());
         return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_UPDATE_HOME_SEARCH_PLACEHOLDER_SUCCESS, response));
+    }
+
+    @Operation(summary = "제재 목록 조회 (JWT 필요O)", description = "제재 목록을 조회합니다.")
+    @GetMapping("/penalties")
+    public ResponseEntity<ApiResponseDTO<PageResponse<AdminPenaltyListDTO>>> getPenaltyList(
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        PageResponse<AdminPenaltyListDTO> penaltyDTOs = adminService.getPenaltyList(page, size);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_PENALTY_LIST_SUCCESS, penaltyDTOs));
+    }
+
+    @Operation(summary = "제재 상세 조회 (JWT 필요O)", description = "제재 상세를 조회합니다.")
+    @GetMapping("/penalties/{penaltyId}")
+    public ResponseEntity<ApiResponseDTO<AdminPenaltyDetailDTO>> getPenaltyDetail(@PathVariable Long penaltyId) {
+        AdminPenaltyDetailDTO penaltyDetail = adminService.getPenaltyDetail(penaltyId);
+        return ResponseEntity.ok(ApiResponseDTO.success(SuccessCode.ADMIN_GET_PENALTY_DETAIL_SUCCESS, penaltyDetail));
     }
 
 }
