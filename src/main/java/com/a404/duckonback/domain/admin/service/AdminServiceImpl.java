@@ -17,6 +17,8 @@ import com.a404.duckonback.domain.report.repository.ReportRepository;
 import com.a404.duckonback.domain.user.entity.User;
 import com.a404.duckonback.domain.user.repository.UserRepository;
 import com.a404.duckonback.common.response.ErrorCode;
+import com.a404.duckonback.domain.admin.dto.AdminPenaltyListDTO;
+import com.a404.duckonback.domain.admin.dto.AdminPenaltyDetailDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -101,5 +103,23 @@ public class AdminServiceImpl implements AdminService {
             condition.getRole(), 
             pageable);
         return PageResponse.from1Base(pageResult);
+    }
+
+    @Override
+    public PageResponse<AdminPenaltyListDTO> getPenaltyList(int page, int size) {
+        int safePage = Math.max(page - 1, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+        Page<AdminPenaltyListDTO> pageResult = penaltyRepository.findAllBy(pageable);
+        return PageResponse.from1Base(pageResult);
+    }
+
+    @Override
+    public AdminPenaltyDetailDTO getPenaltyDetail(Long penaltyId) {
+        Penalty penalty = penaltyRepository.findById(penaltyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PENALTY_NOT_FOUND));
+        User user = userRepository.findById(penalty.getUser().getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return AdminPenaltyDetailDTO.fromEntity(penalty, user);
     }
 }
