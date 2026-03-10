@@ -9,6 +9,7 @@ import com.a404.duckonback.domain.room.entity.Room;
 import com.a404.duckonback.common.enums.SocialProvider;
 import com.a404.duckonback.common.enums.UserRole;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.Instant;
@@ -45,7 +46,8 @@ public class User {
     @Column(name = "password", nullable = false, length = 255)
     private String password; // OAuth 계정은 더미/랜덤 해시 보관
 
-    @Column(name = "nickname", nullable = false, length = 100)
+    @Size(min = 1, max = 15)
+    @Column(name = "nickname", nullable = false, length = 20)
     private String nickname;
 
     @Column(name = "provider", length = 20)
