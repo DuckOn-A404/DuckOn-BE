@@ -63,7 +63,7 @@ public record ApiResponseDTO<T>(
 
     /*
      * @Valid 오류 메시지 전달 메서드*/
-    public static ApiResponseDTO<?> fail(ErrorCode errorCode, String customMessage) {
+    public static ApiResponseDTO<Object> fail(final ErrorCode errorCode, final String customMessage) {
         return ApiResponseDTO.builder()
                 .httpStatus(errorCode.getHttpStatus())
                 .status(errorCode.getCode())
