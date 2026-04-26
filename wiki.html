@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DuckOn BE — 개발 위키</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2128;
+      --border: #30363d;
+      --accent: #f78166;
+      --accent2: #79c0ff;
+      --accent3: #56d364;
+      --accent4: #e3b341;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --code-bg: #0d1117;
+      --tag-bg: #1f2937;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── Sidebar ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    nav {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.25rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: 2rem;
+    }
+    .nav-logo .duck {
+      font-size: 1.8rem;
+    }
+    .nav-logo h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .nav-logo span {
+      display: block;
+      font-size: .7rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: .04em;
+    }
+
+    nav ul { list-style: none; }
+    nav ul li { margin-bottom: .2rem; }
+    nav ul li a {
+      display: block;
+      padding: .45rem .75rem;
+      border-radius: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: .875rem;
+      transition: background .15s, color .15s;
+    }
+    nav ul li a:hover, nav ul li a.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    nav ul li a .icon { margin-right: .5rem; }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      padding: 3rem 4rem;
+      max-width: 960px;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-header .icon-circle {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #1a2236 0%, #1e2d40 50%, #1a2236 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem 2.5rem;
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(121,192,255,.15) 0%, transparent 70%);
+    }
+    .hero .duck-big { font-size: 3.5rem; margin-bottom: .75rem; display: block; }
+    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .5rem; }
+    .hero h1 span { color: var(--accent2); }
+    .hero p { color: var(--text-muted); font-size: 1rem; max-width: 480px; }
+    .badge-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.25rem; }
+    .badge {
+      padding: .25rem .75rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+    .badge-blue  { background: #1d3557; color: var(--accent2); border: 1px solid #2b4d74; }
+    .badge-green { background: #1a3329; color: var(--accent3); border: 1px solid #2a5040; }
+    .badge-yellow{ background: #3a2f12; color: var(--accent4); border: 1px solid #5c4a1e; }
+    .badge-red   { background: #3d1f1b; color: var(--accent);  border: 1px solid #6b3328; }
+
+    /* ── Code block ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      font-size: .85rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    code { font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace; }
+    pre code { color: #adbac7; }
+    .token-comment { color: #768390; }
+    .token-cmd     { color: var(--accent3); }
+    .token-flag    { color: var(--accent2); }
+    .token-string  { color: #96d0ff; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; margin-bottom: 1rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .875rem;
+    }
+    thead th {
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-align: left;
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: .04em;
+      font-size: .75rem;
+      text-transform: uppercase;
+    }
+    tbody td {
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--surface2); }
+    .cell-tag {
+      font-family: "JetBrains Mono", monospace;
+      font-size: .8rem;
+      background: var(--tag-bg);
+      color: var(--accent2);
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* ── Directory tree ── */
+    .tree {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: .82rem;
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .tree .folder   { color: var(--accent2); }
+    .tree .file     { color: #adbac7; }
+    .tree .comment  { color: var(--text-muted); }
+    .tree .top-level{ color: var(--accent4); font-weight: 700; }
+
+    /* ── Auth flow ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+    .flow-step .step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent2);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: .85rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .flow-step h4 { font-size: .9rem; font-weight: 600; margin-bottom: .2rem; }
+    .flow-step p  { font-size: .83rem; color: var(--text-muted); }
+    .flow-step code {
+      background: var(--tag-bg);
+      color: var(--accent3);
+      padding: .1rem .4rem;
+      border-radius: 4px;
+      font-size: .8rem;
+    }
+
+    /* ── Convention cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .card h4 {
+      font-size: .9rem;
+      font-weight: 700;
+      margin-bottom: .6rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .card ul {
+      list-style: none;
+      font-size: .83rem;
+      color: var(--text-muted);
+    }
+    .card ul li { padding: .2rem 0; }
+    .card ul li::before { content: "›"; color: var(--accent2); margin-right: .5rem; }
+    .card code {
+      background: var(--tag-bg);
+      color: var(--accent3);
+      padding: .1rem .4rem;
+      border-radius: 4px;
+      font-size: .78rem;
+    }
+
+    /* ── Response schema ── */
+    .json-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: .85rem;
+      line-height: 1.8;
+    }
+    .jk { color: #96d0ff; }
+    .jv { color: var(--accent3); }
+    .jp { color: var(--text-muted); }
+
+    /* ── Env vars ── */
+    .env-group { margin-bottom: 1.25rem; }
+    .env-group h4 {
+      font-size: .8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text-muted);
+      margin-bottom: .5rem;
+    }
+    .env-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .env-tag {
+      font-family: "JetBrains Mono", monospace;
+      font-size: .76rem;
+      background: var(--tag-bg);
+      color: var(--accent4);
+      padding: .2rem .55rem;
+      border-radius: 5px;
+      border: 1px solid #3a3012;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: .8rem;
+      text-align: center;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 768px) {
+      nav { display: none; }
+      main { padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav>
+    <div class="nav-logo">
+      <span class="duck">🦆</span>
+      <div>
+        <h1>DuckOn BE</h1>
+        <span>개발 위키 v1.0</span>
+      </div>
+    </div>
+    <ul>
+      <li><a href="#overview"><span class="icon">🏠</span> 프로젝트 개요</a></li>
+      <li><a href="#commands"><span class="icon">⚡</span> 빌드 &amp; 실행</a></li>
+      <li><a href="#structure"><span class="icon">📁</span> 패키지 구조</a></li>
+      <li><a href="#stack"><span class="icon">🛠</span> 기술 스택</a></li>
+      <li><a href="#auth"><span class="icon">🔐</span> 인증 흐름</a></li>
+      <li><a href="#response"><span class="icon">📡</span> 응답 컨벤션</a></li>
+      <li><a href="#entity"><span class="icon">🗄</span> 엔티티 컨벤션</a></li>
+      <li><a href="#env"><span class="icon">🌿</span> 환경 변수</a></li>
+      <li><a href="#dto"><span class="icon">📝</span> DTO 네이밍</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Content ── -->
+  <main>
+
+    <!-- Hero -->
+    <div class="hero">
+      <span class="duck-big">🦆</span>
+      <h1>DuckOn <span>Backend</span></h1>
+      <p>K-POP 팬 커뮤니티 플랫폼 백엔드 서버. 실시간 채팅, 아티스트 관리, 팬 커뮤니티 기능을 제공합니다.</p>
+      <div class="badge-row">
+        <span class="badge badge-blue">Spring Boot 3.5.3</span>
+        <span class="badge badge-blue">Java 21</span>
+        <span class="badge badge-green">MySQL 8</span>
+        <span class="badge badge-green">MongoDB</span>
+        <span class="badge badge-yellow">Redis 7</span>
+        <span class="badge badge-red">WebSocket / STOMP</span>
+      </div>
+    </div>
+
+    <!-- 빌드 & 실행 -->
+    <section class="section" id="commands">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#1a3329;">⚡</div>
+        <h2>빌드 &amp; 실행 명령어</h2>
+      </div>
+      <pre><code><span class="token-comment"># 빌드</span>
+<span class="token-cmd">./gradlew</span> build
+<span class="token-cmd">./gradlew</span> clean build
+
+<span class="token-comment"># 실행</span>
+<span class="token-cmd">./gradlew</span> bootRun
+
+<span class="token-comment"># 전체 테스트</span>
+<span class="token-cmd">./gradlew</span> test
+
+<span class="token-comment"># 단일 테스트 클래스 또는 메서드 실행</span>
+<span class="token-cmd">./gradlew</span> test <span class="token-flag">--tests</span> <span class="token-string">"com.a404.duckonback.SomeTest"</span>
+<span class="token-cmd">./gradlew</span> test <span class="token-flag">--tests</span> <span class="token-string">"com.a404.duckonback.SomeTest.methodName"</span></code></pre>
+    </section>
+
+    <!-- 패키지 구조 -->
+    <section class="section" id="structure">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#1d3557;">📁</div>
+        <h2>패키지 구조</h2>
+      </div>
+      <div class="tree">
+<span class="top-level">src/main/java/com/a404/duckonback/</span>
+├── <span class="folder">common/</span>
+│   ├── <span class="folder">config/</span>         <span class="comment"># Spring Security, Redis, WebSocket, S3, CORS 설정</span>
+│   ├── <span class="folder">dto/</span>            <span class="comment"># 공유 DTO (인증, 페이지네이션 등)</span>
+│   ├── <span class="folder">entity/</span>         <span class="comment"># BaseLastModifiedAuditEntity</span>
+│   ├── <span class="folder">enums/</span>          <span class="comment"># SocialProvider, UserRole 등 공통 열거형</span>
+│   ├── <span class="folder">exception/</span>      <span class="comment"># CustomException, GlobalExceptionHandler</span>
+│   ├── <span class="folder">filter/</span>         <span class="comment"># JWTFilter, OAuth2 인증 필터</span>
+│   ├── <span class="folder">handler/</span>        <span class="comment"># 인증 성공/실패 핸들러</span>
+│   ├── <span class="folder">infra/</span>
+│   │   ├── <span class="folder">redis/</span>      <span class="comment"># RedisService 구현체</span>
+│   │   └── <span class="folder">s3/</span>         <span class="comment"># S3Service + 파일 유효성 검사</span>
+│   ├── <span class="folder">interceptor/</span>    <span class="comment"># JwtHandshakeInterceptor, WsAccessInterceptor</span>
+│   ├── <span class="folder">notification/</span>
+│   │   └── <span class="folder">email/</span>      <span class="comment"># EmailSender, EmailVerificationService</span>
+│   ├── <span class="folder">oauth/</span>          <span class="comment"># OAuth2 프로바이더별 사용자 정보 파싱</span>
+│   ├── <span class="folder">response/</span>       <span class="comment"># ApiResponseDTO, ErrorCode, SuccessCode</span>
+│   ├── <span class="folder">security/token/</span> <span class="comment"># TokenBlacklistService (Redis 기반 JWT 블랙리스트)</span>
+│   ├── <span class="folder">util/</span>           <span class="comment"># JWTUtil, CookieUtil, GuestNicknameGenerator, ChatRateLimiter</span>
+│   └── <span class="folder">validation/</span>     <span class="comment"># 커스텀 제약 어노테이션 (NullOrNotBlank 등)</span>
+│
+└── <span class="folder">domain/</span>
+    ├── <span class="folder">admin/</span>          <span class="comment"># 관리자 기능</span>
+    ├── <span class="folder">artist/</span>
+    │   ├── <span class="folder">artist/</span>     <span class="comment"># 아티스트 CRUD</span>
+    │   ├── <span class="folder">common/</span>     <span class="comment"># ArtistReadable, ArtistSummaryDTO</span>
+    │   ├── <span class="folder">emerging/</span>   <span class="comment"># 신인 아티스트</span>
+    │   ├── <span class="folder">promotion/</span>  <span class="comment"># 아티스트 프로모션</span>
+    │   └── <span class="folder">request/</span>    <span class="comment"># 아티스트 등록 요청</span>
+    ├── <span class="folder">auth/</span>           <span class="comment"># 로그인, 회원가입, 토큰 갱신</span>
+    ├── <span class="folder">chat/</span>           <span class="comment"># WebSocket 채팅 (MongoDB 저장)</span>
+    ├── <span class="folder">home/</span>           <span class="comment"># 홈 화면, 검색 플레이스홀더 관리</span>
+    ├── <span class="folder">me/</span>             <span class="comment"># 내 프로필, 설정</span>
+    ├── <span class="folder">meme/</span>           <span class="comment"># 밈 CRUD, 즐겨찾기, 사용 로그</span>
+    ├── <span class="folder">notification/</span>   <span class="comment"># 알림</span>
+    ├── <span class="folder">penalty/</span>        <span class="comment"># 제재 관리</span>
+    ├── <span class="folder">report/</span>         <span class="comment"># 신고 처리</span>
+    ├── <span class="folder">room/</span>           <span class="comment"># 채팅방 관리</span>
+    ├── <span class="folder">tag/</span>            <span class="comment"># 태그</span>
+    ├── <span class="folder">translation/</span>    <span class="comment"># 외부 번역 서비스 연동</span>
+    ├── <span class="folder">upload/</span>         <span class="comment"># S3 파일 업로드</span>
+    ├── <span class="folder">user/</span>           <span class="comment"># 사용자 계정 관리</span>
+    └── <span class="folder">youtube/</span>        <span class="comment"># YouTube API 연동</span>
+      </div>
+      <br>
+      <p style="font-size:.875rem; color:var(--text-muted); margin-bottom:.75rem;">각 <code style="background:var(--tag-bg);color:var(--accent2);padding:.1rem .4rem;border-radius:4px;">domain/{feature}/</code> 내부 구조:</p>
+      <div class="card-grid">
+        <div class="card">
+          <h4>🎮 controller/</h4>
+          <ul><li><code>@RestController</code></li><li>HTTP 요청 수신</li><li>DTO 변환 후 서비스 호출</li></ul>
+        </div>
+        <div class="card">
+          <h4>⚙️ service/</h4>
+          <ul><li>인터페이스 + Impl 패턴</li><li>비즈니스 로직 처리</li><li><code>@Transactional</code> 적용</li></ul>
+        </div>
+        <div class="card">
+          <h4>📦 dto/</h4>
+          <ul><li><code>*RequestDTO</code></li><li><code>*ResponseDTO</code></li><li>입출력 분리</li></ul>
+        </div>
+        <div class="card">
+          <h4>🗄 entity/</h4>
+          <ul><li><code>@Entity</code></li><li>BaseAuditEntity 상속</li><li>소프트 삭제 지원</li></ul>
+        </div>
+        <div class="card">
+          <h4>🔍 repository/</h4>
+          <ul><li><code>JpaRepository</code> 상속</li><li>커스텀 <code>@Query</code></li><li>left join fetch 활용</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 기술 스택 -->
+    <section class="section" id="stack">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#3a2f12;">🛠</div>
+        <h2>기술 스택</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>레이어</th><th>기술</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>주 DB</td><td><span class="cell-tag">MySQL 8</span> &nbsp; JPA / Hibernate</td></tr>
+            <tr><td>문서 저장소</td><td><span class="cell-tag">MongoDB</span> &nbsp; 채팅 기록</td></tr>
+            <tr><td>캐시 / 블랙리스트</td><td><span class="cell-tag">Redis 7</span> &nbsp; + Caffeine (로컬)</td></tr>
+            <tr><td>인증</td><td><span class="cell-tag">Spring Security 6</span> &nbsp; <span class="cell-tag">JWT (JJWT 0.12.5)</span> &nbsp; <span class="cell-tag">OAuth2</span> &nbsp; Google / Kakao / Naver</td></tr>
+            <tr><td>실시간 채팅</td><td><span class="cell-tag">WebSocket + STOMP</span> &nbsp; <code style="font-size:.8rem;color:var(--text-muted);">/ws-chat</code> via SockJS</td></tr>
+            <tr><td>파일 저장</td><td><span class="cell-tag">AWS S3 SDK v2</span></td></tr>
+            <tr><td>API 문서</td><td><span class="cell-tag">SpringDoc OpenAPI</span> &nbsp; <code style="font-size:.8rem;color:var(--text-muted);">/swagger-ui.html</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 인증 흐름 -->
+    <section class="section" id="auth">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#3d1f1b;">🔐</div>
+        <h2>인증 흐름</h2>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div>
+            <h4>JWT 발급</h4>
+            <p>액세스 토큰 <code>15분</code> 은 응답 바디로 반환, 리프레시 토큰 <code>2주</code> 는 HttpOnly 쿠키로 전달.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div>
+            <h4>토큰 갱신</h4>
+            <p><code>POST /api/auth/refresh</code> 로 리프레시 토큰을 검증하여 새 액세스 토큰을 발급합니다.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div>
+            <h4>로그아웃</h4>
+            <p>토큰을 Redis 블랙리스트 <code>common/security/token/</code> 에 추가한 뒤 쿠키를 삭제합니다.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div>
+            <h4>OAuth2 소셜 로그인</h4>
+            <p>각 프로바이더가 <code>/login/oauth2/code/{google|kakao|naver}</code> 로 리다이렉트. 성공 시 <code>${BASE_URL}/oauth2/success</code>, 실패 시 <code>/oauth2/failure</code> 로 이동.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 응답 & 에러 컨벤션 -->
+    <section class="section" id="response">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#1d3557;">📡</div>
+        <h2>응답 &amp; 에러 컨벤션</h2>
+      </div>
+      <p style="font-size:.875rem; color:var(--text-muted); margin-bottom:.75rem;">모든 엔드포인트는 <code style="background:var(--tag-bg);color:var(--accent2);padding:.1rem .4rem;border-radius:4px;">ApiResponseDTO</code> 형식으로 응답합니다.</p>
+      <div class="json-box">
+        {<br>
+        &nbsp;&nbsp;<span class="jk">"status"</span>: <span class="jv">200</span><span class="jp">,</span><br>
+        &nbsp;&nbsp;<span class="jk">"message"</span>: <span class="jv">"요청이 성공적으로 처리되었습니다."</span><span class="jp">,</span><br>
+        &nbsp;&nbsp;<span class="jk">"data"</span>: { <span class="jp">...</span> }<br>
+        }
+      </div>
+      <br>
+      <div class="card-grid">
+        <div class="card">
+          <h4>❌ 에러 처리</h4>
+          <ul>
+            <li><code>CustomException(ErrorCode.XXX)</code> 를 던지면</li>
+            <li><code>GlobalExceptionHandler</code> 가 자동 변환</li>
+            <li>Spring 표준 예외도 통합 처리</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>➕ 새 코드 추가</h4>
+          <ul>
+            <li><code>common/response/ErrorCode</code> 에 추가</li>
+            <li><code>common/response/SuccessCode</code> 에 추가</li>
+            <li>열거형에 HTTP 상태 + 메시지 정의</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 엔티티 컨벤션 -->
+    <section class="section" id="entity">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#1a3329;">🗄</div>
+        <h2>엔티티 컨벤션</h2>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <h4>📅 감사 필드</h4>
+          <ul>
+            <li><code>createdAt</code>, <code>updatedAt</code> 자동 관리</li>
+            <li><code>BaseLastModifiedAuditEntity</code> 상속</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>🗑 소프트 삭제</h4>
+          <ul>
+            <li><code>boolean deleted</code> + <code>deletedAt</code></li>
+            <li>모든 쿼리에 <code>deleted = false</code> 필터</li>
+            <li>데이터 복구 가능</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>🔢 열거형 저장</h4>
+          <ul>
+            <li><code>@Enumerated(EnumType.STRING)</code></li>
+            <li>DB에 문자열로 저장 (리팩터링 안전)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>⚡ N+1 방지</h4>
+          <ul>
+            <li><code>@Query</code> JPQL 활용</li>
+            <li><code>left join fetch</code> 적극 사용</li>
+            <li>연관 엔티티 한 번에 로드</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 환경 변수 -->
+    <section class="section" id="env">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#1a3329;">🌿</div>
+        <h2>환경 변수</h2>
+      </div>
+      <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1.25rem;">모든 시크릿은 환경 변수로 주입됩니다. 코드에 직접 포함하지 않습니다.</p>
+
+      <div class="env-group">
+        <h4>MySQL</h4>
+        <div class="env-tags">
+          <span class="env-tag">SPRING_DATASOURCE_URL</span>
+          <span class="env-tag">SPRING_DATASOURCE_USERNAME</span>
+          <span class="env-tag">SPRING_DATASOURCE_PASSWORD</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>Redis</h4>
+        <div class="env-tags">
+          <span class="env-tag">REDIS_HOST</span>
+          <span class="env-tag">REDIS_PORT</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>MongoDB</h4>
+        <div class="env-tags">
+          <span class="env-tag">MONGO_DB_URL</span>
+          <span class="env-tag">MONGO_DB_USERNAME</span>
+          <span class="env-tag">MONGO_DB_PASSWORD</span>
+          <span class="env-tag">MONGO_DB_NAME</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>JWT</h4>
+        <div class="env-tags">
+          <span class="env-tag">JWT_SECRET</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>OAuth2</h4>
+        <div class="env-tags">
+          <span class="env-tag">GOOGLE_ID</span>
+          <span class="env-tag">GOOGLE_SECRET</span>
+          <span class="env-tag">KAKAO_ID</span>
+          <span class="env-tag">KAKAO_SECRET</span>
+          <span class="env-tag">NAVER_ID</span>
+          <span class="env-tag">NAVER_SECRET</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>AWS S3</h4>
+        <div class="env-tags">
+          <span class="env-tag">S3_ACCESS_KEY</span>
+          <span class="env-tag">S3_SECRET_KEY</span>
+          <span class="env-tag">S3_REGION</span>
+          <span class="env-tag">S3_BUCKET_NAME</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>이메일 (SMTP)</h4>
+        <div class="env-tags">
+          <span class="env-tag">SMTP_SERVER</span>
+          <span class="env-tag">SMTP_PORT</span>
+          <span class="env-tag">SMTP_ID</span>
+          <span class="env-tag">SMTP_PW</span>
+          <span class="env-tag">FROM_EMAIL</span>
+        </div>
+      </div>
+      <div class="env-group">
+        <h4>외부 서비스</h4>
+        <div class="env-tags">
+          <span class="env-tag">TRANSLATE_BASE_URL</span>
+          <span class="env-tag">YOUTUBE_API_KEY</span>
+          <span class="env-tag">BASE_URL</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DTO 네이밍 -->
+    <section class="section" id="dto">
+      <div class="section-header">
+        <div class="icon-circle" style="background:#1d3557;">📝</div>
+        <h2>DTO 네이밍 규칙</h2>
+      </div>
+      <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:.75rem;">패턴: <code style="background:var(--tag-bg);color:var(--accent2);padding:.1rem .4rem;border-radius:4px;">{엔티티}{작업}{방향}DTO</code></p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>예시</th><th>설명</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="cell-tag">LoginRequestDTO</span></td><td>로그인 요청</td></tr>
+            <tr><td><span class="cell-tag">LoginResponseDTO</span></td><td>로그인 응답</td></tr>
+            <tr><td><span class="cell-tag">ChatMessageRequestDTO</span></td><td>채팅 메시지 전송 요청</td></tr>
+            <tr><td><span class="cell-tag">ChatMessageResponseDTO</span></td><td>채팅 메시지 조회 응답</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <p>DuckOn Backend — Spring Boot 3.5.3 / Java 21 &nbsp;|&nbsp; 이 문서는 CLAUDE.md 로부터 자동 생성되었습니다.</p>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>
